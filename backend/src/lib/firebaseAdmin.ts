@@ -1,4 +1,5 @@
-import { readFileSync } from "fs";
+import { readFileSync, existsSync } from "fs";
+import { resolve } from "path";
 import { initializeApp, cert, getApps, type App } from "firebase-admin/app";
 import { getFirestore, type Firestore } from "firebase-admin/firestore";
 import { getAuth, type Auth } from "firebase-admin/auth";
@@ -9,7 +10,8 @@ import { getAuth, type Auth } from "firebase-admin/auth";
 //   1. FIREBASE_SERVICE_ACCOUNT_JSON  — full JSON string
 //   2. FIREBASE_SERVICE_ACCOUNT_PATH — path to service-account .json file
 //   3. GOOGLE_APPLICATION_CREDENTIALS — same as (2), Google ADC convention
-//   4. Ambient ADC on GCP / Firebase hosting
+//   4. Candidate fallback paths: ./firebase-service-account.json, ../firebase-service-account.json, d:/Bizora/firebase-service-account.json
+//   5. Ambient ADC on GCP / Firebase hosting
 
 let app: App | null = null;
 
@@ -23,25 +25,42 @@ function getFirebaseApp(): App {
   }
 
   const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
-  const serviceAccountPath =
-    process.env.FIREBASE_SERVICE_ACCOUNT_PATH ||
-    process.env.GOOGLE_APPLICATION_CREDENTIALS;
-
-  if (serviceAccountJson) {
-    const serviceAccount = JSON.parse(serviceAccountJson);
-    app = initializeApp({
-      credential: cert(serviceAccount),
-    });
-  } else if (serviceAccountPath) {
-    const raw = readFileSync(serviceAccountPath, "utf8");
-    const serviceAccount = JSON.parse(raw);
-    app = initializeApp({
-      credential: cert(serviceAccount),
-    });
-  } else {
-    app = initializeApp();
+  if (serviceAccountJson && serviceAccountJson.trim().startsWith("{")) {
+    try {
+      const serviceAccount = JSON.parse(serviceAccountJson);
+      app = initializeApp({
+        credential: cert(serviceAccount),
+      });
+      return app;
+    } catch (e) {
+      console.warn("[firebaseAdmin] Failed to parse FIREBASE_SERVICE_ACCOUNT_JSON:", e);
+    }
   }
 
+  const candidatePaths = [
+    process.env.FIREBASE_SERVICE_ACCOUNT_PATH,
+    process.env.GOOGLE_APPLICATION_CREDENTIALS,
+    resolve(process.cwd(), "firebase-service-account.json"),
+    resolve(process.cwd(), "../firebase-service-account.json"),
+    "d:/Bizora/firebase-service-account.json",
+  ].filter(Boolean) as string[];
+
+  for (const p of candidatePaths) {
+    try {
+      if (existsSync(p)) {
+        const raw = readFileSync(p, "utf8");
+        const serviceAccount = JSON.parse(raw);
+        app = initializeApp({
+          credential: cert(serviceAccount),
+        });
+        return app;
+      }
+    } catch (e) {
+      console.warn(`[firebaseAdmin] Candidate path ${p} exists but could not be loaded:`, e);
+    }
+  }
+
+  app = initializeApp();
   return app;
 }
 
@@ -52,7 +71,7 @@ let resilientDbInstance: ResilientFirestore | null = null;
 export function getDb(): Firestore {
   if (!resilientDbInstance) {
     try {
-      const databaseId = process.env.FIRESTORE_DATABASE_ID || process.env.FIREBASE_DATABASE_ID || 'ai-studio-remixbizora-570ce51f-dfd4-4c90-ba35-f978aaa9f905';
+      const databaseId = process.env.FIRESTORE_DATABASE_ID || process.env.FIREBASE_DATABASE_ID;
       const realDb = databaseId ? getFirestore(getFirebaseApp(), databaseId) : getFirestore(getFirebaseApp());
       resilientDbInstance = new ResilientFirestore(realDb);
     } catch (e) {
