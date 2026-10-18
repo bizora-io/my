@@ -1,8 +1,9 @@
 import fs from "fs";
 import path from "path";
+import os from "os";
 import { fileURLToPath } from "url";
 
-const DATA_DIR = path.resolve(process.cwd(), "data");
+const DATA_DIR = process.env.VERCEL ? path.join(os.tmpdir(), "bizora_data") : path.resolve(process.cwd(), "data");
 const SNAPSHOT_FILE = path.join(DATA_DIR, "local_db_snapshot.json");
 
 // In-memory store
@@ -764,8 +765,12 @@ class ResilientStore {
 
   private loadFromDisk() {
     try {
-      if (!fs.existsSync(DATA_DIR)) {
-        fs.mkdirSync(DATA_DIR, { recursive: true });
+      try {
+        if (!fs.existsSync(DATA_DIR)) {
+          fs.mkdirSync(DATA_DIR, { recursive: true });
+        }
+      } catch (e) {
+        // Safe to ignore in read-only environments
       }
       if (fs.existsSync(SNAPSHOT_FILE)) {
         const raw = fs.readFileSync(SNAPSHOT_FILE, "utf-8");
