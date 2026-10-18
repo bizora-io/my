@@ -1,7 +1,7 @@
 import test, { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { processAssistantQuery } from "./assistantService.ts";
-import { ERP_CAPABILITY_REGISTRY } from "./capabilityRegistry.ts";
+import { processAssistantQuery } from "./assistantService.js";
+import { ERP_CAPABILITY_REGISTRY } from "./capabilityRegistry.js";
 
 describe("Bizora ERP Assistant — Capability Registry", () => {
   it("registers essential ERP modules and capabilities", () => {

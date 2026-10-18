@@ -1,4 +1,4 @@
-import { ERP_CAPABILITY_REGISTRY, type ErpCapability } from "./capabilityRegistry.ts";
+import { ERP_CAPABILITY_REGISTRY, type ErpCapability } from "./capabilityRegistry.js";
 import {
   getTenantProfile,
   getLiveSalesMetrics,
@@ -8,7 +8,7 @@ import {
   getLiveCashboxStatus,
   getLiveStaffRoster,
   getLiveSubscriptionContext,
-} from "./bizoraContext.ts";
+} from "./bizoraContext.js";
 
 export interface AssistantUserContext {
   id: string;
