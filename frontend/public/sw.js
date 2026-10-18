@@ -36,6 +36,11 @@ self.addEventListener('activate', (event) => {
 
 // Fetch Event - Handle requests with caching strategies
 self.addEventListener('fetch', (event) => {
+  // Ignore non-http(s) schemes (e.g. chrome-extension://, moz-extension://, blob:)
+  if (!event.request.url.startsWith('http://') && !event.request.url.startsWith('https://')) {
+    return;
+  }
+
   const requestUrl = new URL(event.request.url);
 
   // 1. Cache critical GET API responses (Network-First strategy)

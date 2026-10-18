@@ -4,7 +4,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://api.bizora.io/api/$1"
+      "destination": "https://backend-seven-azure-96.vercel.app/api/$1"
     },
     {
       "source": "/(.*)",

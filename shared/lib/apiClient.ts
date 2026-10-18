@@ -1,11 +1,29 @@
 // The backend is now a separately-deployed API server (see /backend).
 // Both the frontend and admin apps use this to build absolute API URLs
-// instead of relying on same-origin relative paths like '/api/...'.
-export const API_BASE_URL: string =
-  (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000';
+// with automatic fallback to the live production API in cloud environments.
+export function getApiBaseUrl(): string {
+  const envUrl = (import.meta as any).env?.VITE_API_URL;
+  if (envUrl && typeof envUrl === 'string' && envUrl.trim()) {
+    // If running in browser and hostname is not localhost, ignore any baked-in localhost URL
+    if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      if (envUrl.includes('localhost') || envUrl.includes('127.0.0.1')) {
+        return 'https://backend-seven-azure-96.vercel.app';
+      }
+    }
+    return envUrl.replace(/\/+$/, '');
+  }
+  // Production fallback for Vercel / cloud deployments
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    return 'https://backend-seven-azure-96.vercel.app';
+  }
+  return 'http://localhost:3000';
+}
+
+export const API_BASE_URL: string = getApiBaseUrl();
 
 export function apiUrl(path: string): string {
-  return `${API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
+  const base = getApiBaseUrl();
+  return `${base}${path.startsWith('/') ? path : `/${path}`}`;
 }
 
 export function apiFetch(path: string, options?: RequestInit): Promise<Response> {
