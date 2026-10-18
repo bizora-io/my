@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - name: Install
+        run: npm ci || npm install
+      - name: Test
+        run: npm test
+
+  build:
+    name: Build workspaces
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - name: Install
+        run: npm ci || npm install
+      - name: Build backend
+        run: npm run build -w backend
+      - name: Build frontend
+        run: npm run build -w frontend
+        env:
+          VITE_API_URL: ""
+      - name: Build admin
+        run: npm run build -w admin
+
+
+  docker:
+    name: Docker images
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build API image
+        run: docker build -f backend/Dockerfile -t bizora-api:ci .
+      - name: Build web image
+        run: docker build -f frontend/Dockerfile -t bizora-web:ci .
+      - name: Build admin image
+        run: docker build -f admin/Dockerfile -t bizora-admin:ci .

@@ -1,0 +1,45 @@
+{
+  "name": "bizora-monorepo",
+  "private": true,
+  "version": "0.0.0",
+  "workspaces": [
+    "shared",
+    "backend",
+    "frontend",
+    "admin"
+  ],
+  "scripts": {
+    "dev:backend": "npm run dev -w backend",
+    "dev:frontend": "npm run dev -w frontend",
+    "dev:admin": "npm run dev -w admin",
+    "build:backend": "npm run build -w backend",
+    "build:frontend": "npm run build -w frontend",
+    "build:admin": "npm run build -w admin",
+    "build": "npm run build:backend && npm run build:frontend && npm run build:admin",
+    "lint": "npm run lint -w backend && npm run lint -w frontend && npm run lint -w admin",
+    "test": "node --experimental-strip-types --test shared/lib/financialReconciliation.test.ts shared/lib/featureRegistry.test.ts shared/lib/saasChurn.test.ts shared/lib/partialPayments.test.ts backend/src/lib/readiness.test.ts backend/src/lib/securityAudit.test.ts shared/lib/bomExplosion.test.ts shared/lib/capacityPlan.test.ts shared/lib/costVariance.test.ts shared/lib/materialReservation.test.ts shared/lib/fefo.test.ts shared/lib/fefoPolicy.test.ts shared/lib/partialSalesReturn.test.ts shared/lib/journalAutoPost.test.ts shared/lib/subscriptionStatus.test.ts shared/lib/serialUnits.test.ts shared/lib/vatReport.test.ts shared/lib/rbacRoles.test.ts shared/lib/trialLimits.test.ts shared/lib/bankReconcile.edge.test.ts shared/lib/materialReservation.edge.test.ts && npm run test:assistant",
+    "test:churn": "tsx --test shared/lib/saasChurn.test.ts",
+    "test:assistant": "tsx --test backend/src/assistant/assistantService.test.ts",
+    "ci": "npm test && npm run build",
+    "test:smoke": "node --experimental-strip-types --test shared/lib/rbacRoles.test.ts shared/lib/trialLimits.test.ts backend/src/lib/readiness.test.ts backend/src/lib/securityAudit.test.ts shared/lib/subscriptionStatus.test.ts backend/src/lib/loginRateLimit.test.ts",
+    "test:api-smoke": "node backend/scripts/api-smoke.mjs",
+    "test:all-smoke": "npm run test:smoke && npm run test:api-smoke",
+    "verify:otp": "node backend/scripts/verify-otp-providers.mjs",
+    "report:readiness": "node backend/scripts/prod-readiness-report.mjs",
+    "go-live-check": "npm run test:smoke && node backend/scripts/api-smoke.mjs",
+    "check:local": "node backend/scripts/local-dev-check.mjs",
+    "test:edge": "node --experimental-strip-types --test shared/lib/bankReconcile.edge.test.ts shared/lib/materialReservation.edge.test.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0"
+  },
+  "overrides": {
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "dependencies": {
+    "firebase": "^12.14.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  }
+}

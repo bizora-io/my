@@ -1,0 +1,47 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net: Default Deny - Version 2
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    // Validate ID
+    function isValidId(id) {
+        return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Match users collection
+    match /users/{userId} {
+      allow get, update: if isSignedIn() && isOwner(userId);
+      
+      function isOwner(uid) {
+        return request.auth.uid == uid;
+      }
+
+      match /businesses/{businessId} {
+        allow read, write: if isOwner(userId) && isValidId(businessId);
+      }
+      match /products/{productId} {
+        allow read, write: if isOwner(userId) && isValidId(productId);
+      }
+      match /categories/{categoryId} {
+        allow read, write: if isOwner(userId) && isValidId(categoryId);
+      }
+      match /ledgerEntries/{ledgerEntryId} {
+        allow read, write: if isOwner(userId) && isValidId(ledgerEntryId);
+      }
+      match /entities/{entityId} {
+        allow read, write: if isOwner(userId) && isValidId(entityId);
+      }
+      match /supportTickets/{ticketId} {
+        allow read, write: if isOwner(userId) && isValidId(ticketId);
+      }
+    }
+  }
+}

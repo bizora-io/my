@@ -1,0 +1,109 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Represents a business owner/shop owner",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "businessName": { "type": "string" },
+        "owner": { "type": "string" },
+        "mobile": { "type": "string" },
+        "plan": { "type": "string" },
+        "status": { "type": "string" }
+      },
+      "required": ["id", "businessName", "owner", "mobile"]
+    },
+    "Business": {
+      "title": "Business",
+      "description": "Represents a business",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "address": { "type": "string" }
+      },
+      "required": ["id", "name"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Represents a product item",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "stock": { "type": "number" },
+        "salePrice": { "type": "number" },
+        "category": { "type": "string" }
+      },
+      "required": ["id", "name", "stock", "salePrice"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "Product category",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" }
+      },
+      "required": ["id", "name"]
+    },
+    "LedgerEntry": {
+      "title": "LedgerEntry",
+      "description": "Transaction entry",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string" },
+        "amount": { "type": "number" },
+        "date": { "type": "string" }
+      },
+      "required": ["id", "type", "amount", "date"]
+    },
+    "Entity": {
+      "title": "Entity",
+      "description": "Customer/Supplier",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "type": { "type": "string" }
+      },
+      "required": ["id", "name", "type"]
+    },
+    "SupportTicket": {
+      "title": "SupportTicket",
+      "description": "Support Ticket",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "subject": { "type": "string" },
+        "status": { "type": "string" }
+      },
+      "required": ["id", "subject", "status"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "User"
+    },
+    "users/{userId}/businesses/{businessId}": {
+      "schema": "Business"
+    },
+    "users/{userId}/products/{productId}": {
+      "schema": "Product"
+    },
+    "users/{userId}/categories/{categoryId}": {
+      "schema": "Category"
+    },
+    "users/{userId}/ledgerEntries/{ledgerEntryId}": {
+      "schema": "LedgerEntry"
+    },
+    "users/{userId}/entities/{entityId}": {
+      "schema": "Entity"
+    },
+    "users/{userId}/supportTickets/{ticketId}": {
+      "schema": "SupportTicket"
+    }
+  }
+}

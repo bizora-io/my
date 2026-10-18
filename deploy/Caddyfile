@@ -1,0 +1,27 @@
+# Bizora — Caddy auto-HTTPS
+# Replace yourdomain.com · place API on 127.0.0.1:3001
+# Static builds: /var/www/bizora-app and /var/www/bizora-admin
+
+app.yourdomain.com {
+	encode gzip
+	root * /var/www/bizora-app
+	try_files {path} /index.html
+	file_server
+	# Optional same-origin API:
+	# reverse_proxy /api/* 127.0.0.1:3001
+}
+
+admin.yourdomain.com {
+	encode gzip
+	root * /var/www/bizora-admin
+	try_files {path} /index.html
+	file_server
+}
+
+api.yourdomain.com {
+	encode gzip
+	reverse_proxy 127.0.0.1:3001 {
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-Proto {scheme}
+	}
+}

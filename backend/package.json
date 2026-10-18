@@ -1,0 +1,35 @@
+{
+  "name": "@bizora/backend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Bizora Express API server: Context-aware ERP assistant, auth, real-time sync, and multi-tenant REST endpoints backed by Firestore via firebase-admin.",
+  "scripts": {
+    "dev": "tsx watch server.ts",
+    "build": "esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
+    "start": "node dist/server.cjs",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.3.0",
+    "firebase-admin": "^13.0.2",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "otplib": "^12.0.1",
+    "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^22.14.0",
+    "esbuild": "^0.28.1",
+    "tsx": "^4.21.0",
+    "typescript": "~5.8.2"
+  }
+}

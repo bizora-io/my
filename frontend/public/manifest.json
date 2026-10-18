@@ -1,0 +1,23 @@
+{
+  "short_name": "Bizora",
+  "name": "Bizora - AI Accounting, POS & Inventory Management",
+  "description": "All-in-one offline-first ERP, POS, and accounting system for SMEs.",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.ico",
+      "sizes": "16x16 32x32",
+      "type": "image/x-icon"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#f8fafc",
+  "theme_color": "#2563eb",
+  "display": "standalone",
+  "orientation": "portrait"
+}
