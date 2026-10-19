@@ -52,7 +52,7 @@ function withSubscriptionFields(data: Record<string, any>) {
 // Shop owner signup. Employee/customer/supplier use dedicated auth routes under /api/auth/*.
 router.post("/register", loginRateLimitGuard, async (req, res) => {
   try {
-    const { businessName, email, mobile, password, businessType, location, name } = req.body;
+    const { businessName, email, mobile, password, businessType, location, name, firebaseUid } = req.body;
 
     if (!businessName || !email || !mobile || !password) {
       return res.status(400).json({ error: "businessName, email, mobile and password are required" });
@@ -79,6 +79,8 @@ router.post("/register", loginRateLimitGuard, async (req, res) => {
       businessName,
       email: email.toLowerCase(),
       mobile,
+      ...(firebaseUid ? { firebaseUid: String(firebaseUid) } : {}),
+      phoneVerified: true,
       businessType: businessType || "Retail",
       location: location || "Not Specified",
       role: "SHOP_OWNER",

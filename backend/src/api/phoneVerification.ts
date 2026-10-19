@@ -44,7 +44,7 @@ function skipCooldown(): boolean {
 // POST /api/auth/phone-verify/request
 router.post("/request", loginRateLimitGuard, async (req, res) => {
   try {
-    const { mobile } = req.body || {};
+    const { mobile, email } = req.body || {};
     if (!mobile) return res.status(400).json({ error: "mobile is required" });
 
     const docId = normalizeMobile(mobile) || mobile;
@@ -68,6 +68,7 @@ router.post("/request", loginRateLimitGuard, async (req, res) => {
       code,
       purpose: "phone verification",
       preferredChannel: "sms",
+      fallbackEmail: typeof email === "string" ? email : undefined,
     });
     if (!delivery.ok) {
       return res.status(503).json({
@@ -84,6 +85,7 @@ router.post("/request", loginRateLimitGuard, async (req, res) => {
       failedAttempts: 0,
       lockedUntil: null,
       mobile,
+      ...(email ? { email } : {}),
     });
 
     const body: Record<string, unknown> = {

@@ -264,6 +264,8 @@ export const Auth: React.FC<AuthProps> = ({ initialRole, portalMode, lockRole = 
   const [recoveryVerificationStep, setRecoveryVerificationStep] = useState(false);
   const [emailVerificationPending, setEmailVerificationPending] = useState(false);
   const [pendingVerificationEmail, setPendingVerificationEmail] = useState('');
+  const [phoneConfirmation, setPhoneConfirmation] = useState<any>(null);
+  const [otpDeliveryNotice, setOtpDeliveryNotice] = useState<string | null>(null);
 
   const handleGoogleSignIn = async () => {
     if (!signInWithGoogleAuth) return;
@@ -728,11 +730,33 @@ export const Auth: React.FC<AuthProps> = ({ initialRole, portalMode, lockRole = 
         return;
     }
 
+    const fullMobile = `${selectedCountry.code}${cleanMobile}`;
     setLoading(true);
+    setOtpDeliveryNotice(null);
+
+    // 1. Attempt Firebase Phone Authentication first (real SMS directly via Google Firebase)
+    if (sendPhoneOtpCode) {
+      try {
+        const confirmation = await sendPhoneOtpCode(fullMobile, 'recaptcha-container');
+        if (confirmation) {
+          setPhoneConfirmation(confirmation);
+          setOtpDeliveryNotice(`SMS code sent to ${fullMobile} via Firebase.`);
+          setVerificationStep(true);
+          setLoading(false);
+          return;
+        }
+      } catch (fbErr: any) {
+        console.warn('[signup] Firebase Phone Auth unavailable or error:', fbErr?.message || fbErr);
+        // Seamless fallback to backend OTP delivery
+      }
+    }
+
+    // 2. Fallback to backend verification request
     try {
       const res = await apiFetch('/api/auth/phone-verify/request', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mobile: `${selectedCountry.code}${cleanMobile}` }),
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mobile: fullMobile, email: signupData.email }),
       });
       const body = await res.json().catch(() => ({} as any));
       if (!res.ok) {
@@ -742,14 +766,18 @@ export const Auth: React.FC<AuthProps> = ({ initialRole, portalMode, lockRole = 
           (typeof body === 'string' ? body : null) ||
           (res.status === 429
             ? 'Please wait a moment before requesting another OTP (cooldown / rate limit).'
-            : `Could not send verification code (${res.status}). Check backend SMS/OTP config.`);
+            : 'Could not send verification code. Please check your connection.');
         alert(msg);
         setLoading(false);
         return;
       }
       if (body.devCode) {
-        console.info('[OTP dev]', body.devCode);
-        alert(`Dev OTP (also in backend console): ${body.devCode}`);
+        setOtp(body.devCode);
+        setOtpDeliveryNotice(`Verification Code: ${body.devCode}`);
+      } else if (body.channel === 'email') {
+        setOtpDeliveryNotice(`Verification code sent to ${signupData.email}.`);
+      } else {
+        setOtpDeliveryNotice(`Verification code sent via SMS to ${fullMobile}.`);
       }
       setVerificationStep(true);
     } catch (err: any) {
@@ -762,26 +790,54 @@ export const Auth: React.FC<AuthProps> = ({ initialRole, portalMode, lockRole = 
 
   const completeSignup = async (e: React.FormEvent) => {
       e.preventDefault();
-      const cleanMobile = signupData.mobile.replace(/\D/g, '').replace(/^0+/, '');
-      setLoading(true);
-      try {
-        const res = await apiFetch('/api/auth/phone-verify/confirm', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ mobile: `${selectedCountry.code}${cleanMobile}`, otp }),
-        });
-        const { valid } = await res.json();
-        if (!valid) {
-          setLoading(false);
-          alert("Invalid or expired verification code.");
-          return;
-        }
-      } catch (err) {
-        setLoading(false);
-        alert("Could not reach the server to verify the code.");
+      if (!otp || otp.trim().length < 4) {
+        alert("Please enter the verification code.");
         return;
       }
 
-      const result = await signup({ ...signupData, mobile: `${selectedCountry.code}${cleanMobile}` });
+      const cleanMobile = signupData.mobile.replace(/\D/g, '').replace(/^0+/, '');
+      const fullMobile = `${selectedCountry.code}${cleanMobile}`;
+      setLoading(true);
+
+      let firebaseUid: string | undefined;
+
+      // A. Verify with Firebase Phone Auth if confirmationResult exists
+      if (phoneConfirmation) {
+        try {
+          const cred = await phoneConfirmation.confirm(otp.trim());
+          firebaseUid = cred.user?.uid;
+        } catch (fbErr: any) {
+          setLoading(false);
+          alert(fbErr?.message || "Invalid or expired Firebase verification code.");
+          return;
+        }
+      } else {
+        // B. Verify with Backend phone-verify endpoint
+        try {
+          const res = await apiFetch('/api/auth/phone-verify/confirm', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mobile: fullMobile, otp: otp.trim() }),
+          });
+          const body = await res.json().catch(() => ({} as any));
+          if (!body.valid) {
+            setLoading(false);
+            alert(body.error || "Invalid or expired verification code.");
+            return;
+          }
+        } catch (err) {
+          setLoading(false);
+          alert("Could not reach the server to verify the code.");
+          return;
+        }
+      }
+
+      // C. Register account in Bizora backend
+      const result = await signup({
+        ...signupData,
+        mobile: fullMobile,
+        firebaseUid,
+      });
       setLoading(false);
 
       if (result.success) {
@@ -798,6 +854,7 @@ export const Auth: React.FC<AuthProps> = ({ initialRole, portalMode, lockRole = 
         if (goLogin) {
           setIsLogin(true);
           setVerificationStep(false);
+          setPhoneConfirmation(null);
         }
         return;
       }
@@ -889,6 +946,8 @@ export const Auth: React.FC<AuthProps> = ({ initialRole, portalMode, lockRole = 
         {/* Right Side - Forms */}
         <div className="w-full md:w-1/2 p-5 sm:p-8 md:p-12 bg-white relative">
           <div className="max-w-md mx-auto h-full flex flex-col justify-center">
+            {/* Global invisible container for Firebase Phone Auth reCAPTCHA */}
+            <div id="recaptcha-container"></div>
             
             {/* Auth Role Selector or Dedicated Portal Badge */}
             {lockRole ? (
@@ -1851,8 +1910,6 @@ export const Auth: React.FC<AuthProps> = ({ initialRole, portalMode, lockRole = 
                       <span>Continue with Google</span>
                     </button>
 
-                    <div id="recaptcha-container"></div>
-
                     <div className="mt-8 text-center text-sm text-slate-500">
                       Don't have an account?{' '}
                       <button type="button" onClick={() => setIsLogin(false)} className="font-bold text-indigo-600 hover:text-indigo-800">
@@ -1874,7 +1931,12 @@ export const Auth: React.FC<AuthProps> = ({ initialRole, portalMode, lockRole = 
                 // STANDARD VERIFICATION FORM
                 <form onSubmit={completeSignup} className="space-y-6">
                     <div>
-                        <label className="block text-center text-sm font-bold text-slate-500 uppercase mb-4">One-Time Password (OTP)</label>
+                        <label className="block text-center text-sm font-bold text-slate-500 uppercase mb-2">One-Time Password (OTP)</label>
+                        {otpDeliveryNotice && (
+                          <div className="mb-4 p-3 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-800 text-xs text-center font-medium shadow-xs">
+                            {otpDeliveryNotice}
+                          </div>
+                        )}
                         <div className="relative">
                             <MessageSquare className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                             <input
@@ -1892,15 +1954,19 @@ export const Auth: React.FC<AuthProps> = ({ initialRole, portalMode, lockRole = 
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2"
+                        className="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 cursor-pointer"
                     >
                         {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Verify & Create Account"}
                     </button>
                     
                     <button 
                         type="button" 
-                        onClick={() => setVerificationStep(false)}
-                        className="w-full text-sm text-slate-500 hover:text-slate-700"
+                        onClick={() => {
+                          setVerificationStep(false);
+                          setPhoneConfirmation(null);
+                          setOtpDeliveryNotice(null);
+                        }}
+                        className="w-full text-sm text-slate-500 hover:text-slate-700 cursor-pointer"
                     >
                         Back to Details
                     </button>

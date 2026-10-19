@@ -882,6 +882,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           businessType: data.businessType,
           location: data.location,
           name: data.name,
+          firebaseUid: data.firebaseUid,
         }),
       });
 
