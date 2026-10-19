@@ -132,9 +132,9 @@ router.post("/register", loginRateLimitGuard, async (req, res) => {
     });
 
     res.status(201).json({ user: userOut, ...tokens });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Register error:", error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error?.message || "Internal Server Error" });
   }
 });
 
