@@ -266,6 +266,7 @@ export const Auth: React.FC<AuthProps> = ({ initialRole, portalMode, lockRole = 
   const [pendingVerificationEmail, setPendingVerificationEmail] = useState('');
   const [phoneConfirmation, setPhoneConfirmation] = useState<any>(null);
   const [otpDeliveryNotice, setOtpDeliveryNotice] = useState<string | null>(null);
+  const [verificationToken, setVerificationToken] = useState<string | null>(null);
 
   const handleGoogleSignIn = async () => {
     if (!signInWithGoogleAuth) return;
@@ -771,6 +772,9 @@ export const Auth: React.FC<AuthProps> = ({ initialRole, portalMode, lockRole = 
         setLoading(false);
         return;
       }
+      if (body.verificationToken) {
+        setVerificationToken(body.verificationToken);
+      }
       if (body.devCode) {
         setOtp(body.devCode);
         setOtpDeliveryNotice(`Verification Code: ${body.devCode}`);
@@ -817,7 +821,11 @@ export const Auth: React.FC<AuthProps> = ({ initialRole, portalMode, lockRole = 
           const res = await apiFetch('/api/auth/phone-verify/confirm', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mobile: fullMobile, otp: otp.trim() }),
+            body: JSON.stringify({
+              mobile: fullMobile,
+              otp: otp.trim(),
+              verificationToken: verificationToken || undefined,
+            }),
           });
           const body = await res.json().catch(() => ({} as any));
           if (!body.valid) {
