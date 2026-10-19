@@ -44,7 +44,7 @@ export const PortalLogin: React.FC<PortalLoginProps> = ({ portal, onSwitchPortal
               <span>Back to Bizora Main Website</span>
             </button>
             <span className="text-slate-600 hidden sm:inline">|</span>
-            <span className="text-slate-400 hidden sm:inline">{config.productionDomain}</span>
+            <span className="text-slate-400 hidden sm:inline">{config.title}</span>
           </div>
 
           {/* Development Quick Switcher */}
@@ -76,7 +76,7 @@ export const PortalLogin: React.FC<PortalLoginProps> = ({ portal, onSwitchPortal
             </div>
             <div>
               <h2 className="text-2xl font-black text-slate-900">SaaS Administration</h2>
-              <p className="text-xs text-slate-500 font-mono mt-1">dashboard_admin.bizora.io</p>
+              <p className="text-xs text-slate-500 font-mono mt-1">SaaS Infrastructure & Control Plane</p>
               <p className="text-sm text-slate-600 mt-3 leading-relaxed">
                 Platform administration is managed through the dedicated SaaS Admin app. Authorized administrators only.
               </p>
@@ -106,7 +106,7 @@ export const PortalLogin: React.FC<PortalLoginProps> = ({ portal, onSwitchPortal
 
       {/* Subtle Footer */}
       <div className="py-4 text-center text-xs text-slate-400 border-t border-slate-200/60">
-        © {new Date().getFullYear()} Bizora Cloud Platform · {config.productionDomain}
+        © {new Date().getFullYear()} Bizora Cloud Platform · Multi-Portal Architecture
       </div>
     </div>
   );

@@ -1,58 +1,19 @@
 import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { getDb } from "../lib/firebaseAdmin.js";
+import { getDb, getAdminAuth } from "../lib/firebaseAdmin.js";
 import { broadcastBusinessSync, broadcastSaasStaff } from "../lib/chatSocket.js";
 import { authenticateToken, forbidImpersonation } from "./middleware/auth.js";
 import { loginRateLimitGuard, markLoginFailed, markLoginSuccess } from "./middleware/loginRateLimit.js";
 import { deliverOtpToAccount, generateOtpCode, checkOtpCooldown, hashOtp, verifyOtp, isOtpLocked, nextFailedOtpState, clearOtpFields } from "../lib/notify.js";
+import { resolveStaffPermissions } from "../lib/rbacRoles.js";
+import { issueTokenPair, signAccessToken, signRefreshToken } from "../lib/tokenPair.js";
 
 import { getJwtSecret } from "../lib/jwtSecret.js";
 import { validatePassword, validateEmail, validatePhone } from "../lib/validation.js";
 
 const router = express.Router();
 const BCRYPT_ROUNDS = 12;
-
-const ACCESS_TTL = process.env.JWT_ACCESS_TTL || "15m";
-const REFRESH_TTL = process.env.JWT_REFRESH_TTL || "7d";
-const REFRESH_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-
-function signAccessToken(payload: { id: string; email: string; role: string }) {
-  const secret = getJwtSecret();
-  return jwt.sign({ ...payload, typ: "access" }, secret, { expiresIn: ACCESS_TTL } as jwt.SignOptions);
-}
-
-function signRefreshToken(payload: { id: string; email: string; role: string; jti: string }) {
-  const secret = getJwtSecret();
-  return jwt.sign({ ...payload, typ: "refresh" }, secret, { expiresIn: REFRESH_TTL } as jwt.SignOptions);
-}
-
-/** Issue access + refresh pair; stores refresh jti server-side for rotation/revoke. */
-async function issueTokenPair(user: { id: string; email: string; role: string }) {
-  const jti = `rt-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-  const accessToken = signAccessToken({ id: user.id, email: user.email || "", role: user.role });
-  const refreshToken = signRefreshToken({ id: user.id, email: user.email || "", role: user.role, jti });
-  try {
-    const db = getDb();
-    await db.collection("refreshTokens").doc(jti).set({
-      jti,
-      userId: user.id,
-      email: user.email || "",
-      role: user.role,
-      createdAt: new Date().toISOString(),
-      expiresAt: new Date(Date.now() + REFRESH_TTL_MS).toISOString(),
-      revoked: false,
-    });
-  } catch (e) {
-    console.warn("[auth] refreshTokens write failed (login still ok):", e);
-  }
-  return { accessToken, refreshToken, token: accessToken };
-}
-
-/** @deprecated use signAccessToken - kept name for any remaining internal refs */
-function signToken(payload: { id: string; email: string; role: string }) {
-  return signAccessToken(payload);
-}
 
 function stripPassword(doc: Record<string, any>) {
   const { passwordHash, ...rest } = doc;
@@ -274,6 +235,331 @@ router.post("/login", loginRateLimitGuard, async (req, res) => {
       error: "Internal Server Error",
       detail: process.env.NODE_ENV === "production" ? undefined : String(error?.message || error),
     });
+  }
+});
+
+// POST /api/auth/firebase-login - Exchange Firebase ID token for Bizora session tokens
+router.post("/firebase-login", loginRateLimitGuard, async (req, res) => {
+  try {
+    const { idToken, targetRole, businessName, businessType, location, name } = req.body;
+    if (!idToken || typeof idToken !== "string") {
+      return res.status(400).json({ error: "idToken is required" });
+    }
+
+    let decoded: any;
+    try {
+      decoded = await getAdminAuth().verifyIdToken(idToken);
+    } catch (err: any) {
+      console.warn("[auth] Firebase token verification failed:", err?.message || err);
+      return res.status(401).json({ error: "Invalid or expired Firebase token", detail: err?.message });
+    }
+
+    const uid = decoded.uid;
+    const email = (decoded.email || "").toLowerCase().trim();
+    const phone = (decoded.phone_number || "").trim();
+    const tokenName = decoded.name || "";
+    const requestedRole = (targetRole || "SHOP_OWNER").toUpperCase();
+
+    // Security check: NEVER allow self-provisioning or token exchange for SaaS platform admin roles
+    if (requestedRole === "SAAS_OWNER" || requestedRole === "SAAS_ADMIN") {
+      return res.status(403).json({ error: "SaaS administrative roles cannot authenticate via client Firebase exchange." });
+    }
+
+    const db = getDb();
+
+    // --- 1. SHOP OWNER FLOW ---
+    if (requestedRole === "SHOP_OWNER") {
+      const businesses = db.collection("businesses");
+      let snapshot = await businesses.where("firebaseUid", "==", uid).limit(1).get();
+
+      if (snapshot.empty && email) {
+        snapshot = await businesses.where("email", "==", email).limit(1).get();
+      }
+
+      if (snapshot.empty && phone) {
+        snapshot = await businesses.where("mobile", "==", phone).limit(1).get();
+        if (snapshot.empty) {
+          const digits = phone.replace(/\D/g, "");
+          if (digits.length >= 8) {
+            const all = await businesses.get();
+            const hit = all.docs.find((d) => {
+              const m = String(d.data()?.mobile || "").replace(/\D/g, "");
+              return m && (m === digits || m.endsWith(digits) || digits.endsWith(m));
+            });
+            if (hit) snapshot = { empty: false, docs: [hit] } as any;
+          }
+        }
+      }
+
+      if (!snapshot.empty) {
+        // Existing shop owner
+        const doc = snapshot.docs[0];
+        const data = doc.data();
+
+        if (data.accountStatus === "Suspended") {
+          return res.status(403).json({ error: "This account has been suspended. Please contact support." });
+        }
+        if (data.accountStatus === "PendingApproval") {
+          return res.status(403).json({ error: "This account is awaiting approval. Please check back soon." });
+        }
+
+        const updates: Record<string, any> = {
+          lastLoginAt: new Date().toISOString(),
+          lastLoginIp: req.ip || null,
+        };
+        if (!data.firebaseUid || data.firebaseUid !== uid) {
+          updates.firebaseUid = uid;
+        }
+        try {
+          await doc.ref.set(updates, { merge: true });
+        } catch (e) {
+          console.warn("[auth] Failed to update firebaseUid/lastLoginAt:", e);
+        }
+
+        markLoginSuccess(res);
+        const tokens = await issueTokenPair({
+          id: doc.id,
+          email: data.email || email,
+          role: "SHOP_OWNER",
+        });
+
+        const userOut = { id: doc.id, ...withSubscriptionFields(stripPassword({ ...data, ...updates })), role: "SHOP_OWNER" };
+        return res.json({ user: userOut, ...tokens });
+      }
+
+      // New Shop Owner registration with 14-day trial
+      const finalBusinessName = (businessName || name || tokenName || (email ? email.split("@")[0] : "My Store")).trim();
+      const trialEnds = new Date();
+      trialEnds.setDate(trialEnds.getDate() + 14);
+
+      const newShop = {
+        name: name || tokenName || finalBusinessName,
+        businessName: finalBusinessName,
+        email: email || "",
+        mobile: phone || "",
+        firebaseUid: uid,
+        businessType: businessType || "Retail",
+        location: location || "Not Specified",
+        role: "SHOP_OWNER",
+        isPremium: false,
+        unlockedTemplates: [1],
+        twoFactorEnabled: false,
+        pinEnabled: true,
+        passwordEnabled: false,
+        features: ["Single Store", "Basic Reports"],
+        accountStatus: "Active",
+        plan: "Trial",
+        subscriptionStatus: "Trial",
+        subscriptionRenewsAt: trialEnds.toISOString(),
+        subscriptionEnforce: true,
+        trialLimits: {
+          products: 5,
+          customers: 3,
+          buys: 5,
+          sells: 10,
+          expenses: 5,
+          quickSales: 20,
+        },
+        trialUsage: {
+          products: 0,
+          customers: 0,
+          buys: 0,
+          sells: 0,
+          expenses: 0,
+          quickSales: 0,
+        },
+        trialStartedAt: new Date().toISOString(),
+        employeeLimit: 3,
+        branchLimit: 1,
+        productLimit: 500,
+        locationCount: 1,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        lastLoginAt: new Date().toISOString(),
+      };
+
+      const docRef = await businesses.add(newShop);
+      const userOut = { id: docRef.id, ...withSubscriptionFields(newShop) };
+      const tokens = await issueTokenPair({ id: docRef.id, email: newShop.email, role: "SHOP_OWNER" });
+
+      broadcastSaasStaff({
+        domain: "all",
+        reason: "shop_registered",
+        payload: { businessId: docRef.id, businessName: newShop.businessName },
+      });
+
+      markLoginSuccess(res);
+      return res.status(201).json({ user: userOut, ...tokens });
+    }
+
+    // --- 2. EMPLOYEE FLOW ---
+    if (requestedRole === "EMPLOYEE") {
+      const employees = db.collection("globalEmployees");
+      let snapshot = await employees.where("firebaseUid", "==", uid).limit(1).get();
+
+      if (snapshot.empty && phone) {
+        const cleanMobile = phone.replace(/\D/g, "").replace(/^0+/, "");
+        const docRef = employees.doc(cleanMobile);
+        const docSnap = await docRef.get();
+        if (docSnap.exists) {
+          snapshot = { empty: false, docs: [docSnap] } as any;
+        } else if (cleanMobile.length >= 8) {
+          const all = await employees.get();
+          const match = all.docs.find((d) => d.id.length >= 8 && (d.id.endsWith(cleanMobile) || cleanMobile.endsWith(d.id)));
+          if (match) snapshot = { empty: false, docs: [match] } as any;
+        }
+      }
+
+      if (snapshot.empty && email) {
+        snapshot = await employees.where("email", "==", email).limit(1).get();
+      }
+
+      if (snapshot.empty) {
+        return res.status(404).json({ error: "No employee account is associated with this verified phone or email. Please contact your shop administrator." });
+      }
+
+      const doc = snapshot.docs[0];
+      const data = doc.data() || {};
+      const employments = (data.employments || []).filter((e: any) => e.status === "Active");
+      if (employments.length === 0) {
+        return res.status(403).json({ error: "No active employment found for this account." });
+      }
+
+      const employment = employments[0];
+      let permissions: string[] = Array.isArray(employment.permissions) ? employment.permissions : [];
+      let roleTemplateId = employment.roleTemplateId as string | undefined;
+      let roleLabel = employment.role as string | undefined;
+
+      if (employment.businessId) {
+        try {
+          const staffSnap = await db.collection("businesses").doc(employment.businessId).collection("staff").where("mobile", "==", doc.id).limit(1).get();
+          if (!staffSnap.empty) {
+            const sd = staffSnap.docs[0].data();
+            if (Array.isArray(sd.permissions) && sd.permissions.length) permissions = sd.permissions;
+            if (sd.roleTemplateId) roleTemplateId = sd.roleTemplateId;
+            if (sd.role) roleLabel = sd.role;
+          }
+        } catch { /* ignore */ }
+      }
+
+      permissions = resolveStaffPermissions({ role: roleLabel, permissions, roleTemplateId });
+
+      try {
+        await doc.ref.set({ firebaseUid: uid, lastLoginAt: new Date().toISOString() }, { merge: true });
+      } catch { /* ignore */ }
+
+      const tokens = await issueTokenPair({
+        id: doc.id,
+        email: data.email || email || "",
+        role: "EMPLOYEE",
+        businessId: employment.businessId,
+        staffId: employment.staffId || employment.id || null,
+        permissions,
+      });
+
+      markLoginSuccess(res);
+      return res.json({
+        employee: { mobile: doc.id, name: data.name, employments, activeBusinessId: employment.businessId, permissions },
+        user: { id: doc.id, name: data.name, role: "EMPLOYEE", businessId: employment.businessId, permissions },
+        ...tokens,
+      });
+    }
+
+    // --- 3. CUSTOMER FLOW ---
+    if (requestedRole === "CUSTOMER") {
+      const customers = db.collection("globalCustomers");
+      let snapshot = await customers.where("firebaseUid", "==", uid).limit(1).get();
+
+      const cleanPhone = phone ? phone.replace(/\D/g, "").replace(/^0+/, "") : "";
+      if (snapshot.empty && cleanPhone) {
+        const docRef = customers.doc(cleanPhone);
+        const docSnap = await docRef.get();
+        if (docSnap.exists) {
+          snapshot = { empty: false, docs: [docSnap] } as any;
+        }
+      }
+
+      if (snapshot.empty && email) {
+        snapshot = await customers.where("email", "==", email).limit(1).get();
+      }
+
+      if (!snapshot.empty) {
+        const doc = snapshot.docs[0];
+        const data = doc.data() || {};
+        try {
+          await doc.ref.set({ firebaseUid: uid, lastLoginAt: new Date().toISOString() }, { merge: true });
+        } catch { /* ignore */ }
+
+        const tokens = await issueTokenPair({ id: doc.id, email: data.email || email || "", role: "CUSTOMER" });
+        const { pinHash, resetCodeHash, ...customerOut } = data;
+        markLoginSuccess(res);
+        return res.json({
+          customer: { id: doc.id, ...customerOut },
+          user: { id: doc.id, role: "CUSTOMER", ...customerOut },
+          ...tokens,
+        });
+      }
+
+      // Create new customer doc
+      const docId = cleanPhone || uid;
+      const customerData = {
+        firebaseUid: uid,
+        phone: cleanPhone || phone || "",
+        email: email || "",
+        name: name || tokenName || "Customer",
+        address: location || "",
+        createdAt: new Date().toISOString(),
+        lastLoginAt: new Date().toISOString(),
+      };
+      await customers.doc(docId).set(customerData, { merge: true });
+
+      const tokens = await issueTokenPair({ id: docId, email: email || "", role: "CUSTOMER" });
+      markLoginSuccess(res);
+      return res.status(201).json({
+        customer: { id: docId, ...customerData },
+        user: { id: docId, role: "CUSTOMER", ...customerData },
+        ...tokens,
+      });
+    }
+
+    // --- 4. SUPPLIER FLOW ---
+    if (requestedRole === "SUPPLIER") {
+      const suppliers = db.collection("globalSuppliers");
+      let snapshot = await suppliers.where("firebaseUid", "==", uid).limit(1).get();
+      if (snapshot.empty && phone) {
+        const cleanPhone = phone.replace(/\D/g, "").replace(/^0+/, "");
+        const docRef = suppliers.doc(cleanPhone);
+        const docSnap = await docRef.get();
+        if (docSnap.exists) snapshot = { empty: false, docs: [docSnap] } as any;
+      }
+      if (snapshot.empty && email) {
+        snapshot = await suppliers.where("email", "==", email).limit(1).get();
+      }
+
+      if (snapshot.empty) {
+        return res.status(404).json({ error: "No supplier account associated with this account." });
+      }
+
+      const doc = snapshot.docs[0];
+      const data = doc.data() || {};
+      try {
+        await doc.ref.set({ firebaseUid: uid, lastLoginAt: new Date().toISOString() }, { merge: true });
+      } catch { /* ignore */ }
+
+      const tokens = await issueTokenPair({ id: doc.id, email: data.email || email || "", role: "SUPPLIER" });
+      const { pinHash, resetCodeHash, ...supplierOut } = data;
+      markLoginSuccess(res);
+      return res.json({
+        supplier: { id: doc.id, ...supplierOut },
+        user: { id: doc.id, role: "SUPPLIER", ...supplierOut },
+        ...tokens,
+      });
+    }
+
+    return res.status(400).json({ error: "Unsupported targetRole" });
+  } catch (error: any) {
+    console.error("[auth] Firebase login error:", error);
+    res.status(500).json({ error: "Internal Server Error", detail: error?.message });
   }
 });
 

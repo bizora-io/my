@@ -156,14 +156,34 @@ async function startServer() {
     'https://dashboard_admin.bizora.io',
   ];
 
-  const allowedOrigins = process.env.NODE_ENV === 'production'
-    ? Array.from(new Set([
-        ...defaultProdOrigins,
-        process.env.APP_URL,
-        process.env.ADMIN_URL,
-        ...(process.env.CORS_ORIGINS?.split(',').map(s => s.trim()) ?? [])
-      ].filter(Boolean)))
-    : '*';
+  const allowedOrigins = (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    // Non-browser or same-origin requests
+    if (!origin) return callback(null, true);
+
+    if (process.env.NODE_ENV !== 'production') {
+      return callback(null, true);
+    }
+
+    const extra = process.env.CORS_ORIGINS?.split(',').map(s => s.trim()) || [];
+    const allowedExplicit = new Set([
+      ...defaultProdOrigins,
+      process.env.APP_URL,
+      process.env.ADMIN_URL,
+      ...extra,
+    ].filter(Boolean));
+
+    // Allow explicit list, or any vercel.app preview/production deployment, or localhost
+    if (
+      allowedExplicit.has(origin) ||
+      /^https:\/\/[a-z0-9\-.]+\.vercel\.app$/i.test(origin) ||
+      /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)
+    ) {
+      return callback(null, true);
+    }
+
+    console.warn(`[CORS] Blocked request from origin: ${origin}`);
+    return callback(new Error(`CORS blocked for origin ${origin}`), false);
+  };
 
   app.use(cors({
     origin: allowedOrigins,

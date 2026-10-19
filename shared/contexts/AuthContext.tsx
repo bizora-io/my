@@ -4,6 +4,14 @@ import { useNotifications } from './NotificationContext';
 import { apiFetch, authFetch, hasAuthToken, setAuthTokens, clearAuthTokens, getRefreshToken } from '../lib/apiClient';
 import { buildSignupTrialFields } from '../lib/trialLimits';
 import { subscribeBusinessSync, ensureRealtimeSocket } from '../lib/realtimeSocket';
+import {
+  signInWithGoogle,
+  sendFirebasePhoneOtp,
+  confirmFirebasePhoneOtp,
+  registerWithFirebaseEmail,
+  sendEmailVerificationToCurrent,
+  reloadAndCheckEmailVerified,
+} from '../lib/firebaseAuthService';
 
 export interface BusinessSettings {
   category?: string;
@@ -130,7 +138,13 @@ interface AuthContextType {
   devices: DeviceInfo[];
   
   hasFeature: (feature: string) => boolean;
-  login: (identifier: string, secret: string, method: 'PASSWORD' | 'PIN' | 'OTP', opts?: { allowSaas?: boolean }) => Promise<{ success: boolean; require2fa?: boolean; error?: string; retryAfterSec?: number; remainingAttempts?: number }>;
+  login: (identifier: string, secret: string, method: 'PASSWORD' | 'PIN' | 'OTP', opts?: { allowSaas?: boolean; targetRole?: 'business' | 'employee' | 'customer' | 'saas' | 'supplier' }) => Promise<{ success: boolean; require2fa?: boolean; error?: string; retryAfterSec?: number; remainingAttempts?: number }>;
+  signInWithGoogleAuth?: (targetRole?: 'SHOP_OWNER' | 'EMPLOYEE' | 'CUSTOMER' | 'SUPPLIER', metadata?: any) => Promise<{ success: boolean; user?: any; error?: string }>;
+  sendPhoneOtpCode?: (phoneNumber: string, containerId?: string) => Promise<any>;
+  confirmPhoneOtpCode?: (confirmationResult: any, otpCode: string, targetRole?: 'SHOP_OWNER' | 'EMPLOYEE' | 'CUSTOMER' | 'SUPPLIER', metadata?: any) => Promise<{ success: boolean; user?: any; error?: string }>;
+  registerWithEmailOtp?: (email: string, password: string, metadata?: any) => Promise<{ success: boolean; user?: any; error?: string; requireEmailVerification?: boolean }>;
+  reloadEmailVerification?: () => Promise<boolean>;
+  resendEmailVerificationLink?: () => Promise<boolean>;
   signup: (data: any) => Promise<{ success: boolean; error?: string }>;
   socialLogin: (provider: 'google' | 'facebook' | 'apple') => Promise<boolean>;
   complete2fa: (otp: string) => Promise<boolean>;
@@ -409,88 +423,338 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const login = async (rawIdentifier: string, rawSecret: string, method: 'PASSWORD' | 'PIN' | 'OTP', opts?: { allowSaas?: boolean }): Promise<{ success: boolean; require2fa?: boolean; error?: string; retryAfterSec?: number; remainingAttempts?: number }> => {
+  const handleFirebaseSessionResult = (result: any) => {
+    if (!result || !result.success || !result.user) return result;
+    const { user: rawUser } = result;
+    const role = (rawUser.role || '').toUpperCase();
+
+    if (role === 'SHOP_OWNER' || !role) {
+      const sessionUser: User = {
+        ...rawUser,
+        role: UserRole.SHOP_OWNER,
+        locationCount: rawUser.locationCount ?? 1,
+        initialLoginDate: rawUser.initialLoginDate || rawUser.createdAt || new Date().toISOString(),
+        permissions: (rawUser.permissions && rawUser.permissions.length)
+          ? rawUser.permissions
+          : getAllPermissions().filter((p: string) => !p.startsWith('saas.')),
+        businesses: rawUser.businesses || [],
+        features: rawUser.features || [],
+      };
+      setUser(sessionUser);
+      localStorage.setItem('nexus_user', JSON.stringify(sessionUser));
+      logActivity('Login', 'Auth', 'Shop Owner signed in via Firebase');
+    } else if (role === 'EMPLOYEE') {
+      const activeEmp = rawUser.employments?.find((emp: any) => emp.status === 'Active') || rawUser.employments?.[0];
+      const employeeUser: User = {
+        id: rawUser.mobile || rawUser.id,
+        name: rawUser.name || 'Employee',
+        businessName: activeEmp?.businessName || rawUser.businessName || 'Bizora ERP',
+        email: rawUser.email || `${(rawUser.name || 'staff').toLowerCase().replace(/\s/g, '.')}@bizora.com`,
+        mobile: rawUser.mobile || rawUser.id,
+        businessType: 'Retail',
+        location: 'Main Office',
+        locationCount: 1,
+        isPremium: false,
+        unlockedTemplates: [1],
+        role: UserRole.EMPLOYEE,
+        permissions: rawUser.permissions || activeEmp?.permissions || [],
+        initialLoginDate: new Date().toISOString(),
+        twoFactorEnabled: false,
+        pinEnabled: true,
+        passwordEnabled: false,
+        businesses: (rawUser.employments || []).map((emp: any) => ({
+          id: emp.businessId,
+          name: emp.businessName,
+          type: 'Retail',
+          location: 'Not Specified'
+        })),
+        features: [],
+        business_id: rawUser.activeBusinessId || activeEmp?.businessId,
+      };
+      setUser(employeeUser);
+      localStorage.setItem('nexus_user', JSON.stringify(employeeUser));
+      logActivity('Login', 'Auth', `Employee ${rawUser.name} signed in via Firebase`);
+    } else if (role === 'CUSTOMER') {
+      const customerUser: User = {
+        id: rawUser.id || rawUser.phone,
+        name: rawUser.name || 'Customer',
+        businessName: 'Customer Portal',
+        email: rawUser.email || '',
+        mobile: rawUser.phone || rawUser.id,
+        businessType: 'Retail',
+        location: rawUser.address || '',
+        locationCount: 0,
+        isPremium: false,
+        unlockedTemplates: [1],
+        role: UserRole.CUSTOMER,
+        permissions: ['customer.portal'],
+        initialLoginDate: new Date().toISOString(),
+        twoFactorEnabled: false,
+        pinEnabled: true,
+        passwordEnabled: false,
+        businesses: [],
+        features: [],
+      };
+      setUser(customerUser);
+      localStorage.setItem('nexus_user', JSON.stringify(customerUser));
+      logActivity('Login', 'Auth', 'Customer signed in via Firebase');
+    }
+
+    return result;
+  };
+
+  const signInWithGoogleAuth = async (targetRole: 'SHOP_OWNER' | 'EMPLOYEE' | 'CUSTOMER' | 'SUPPLIER' = 'SHOP_OWNER', metadata?: any) => {
+    try {
+      const result = await signInWithGoogle(targetRole, metadata);
+      return handleFirebaseSessionResult(result);
+    } catch (err: any) {
+      console.error('[auth] Google sign in error:', err);
+      return { success: false, error: err?.message || 'Google sign in failed' };
+    }
+  };
+
+  const sendPhoneOtpCode = async (phoneNumber: string, containerId = 'recaptcha-container') => {
+    return await sendFirebasePhoneOtp(phoneNumber, containerId);
+  };
+
+  const confirmPhoneOtpCode = async (confirmationResult: any, otpCode: string, targetRole: 'SHOP_OWNER' | 'EMPLOYEE' | 'CUSTOMER' | 'SUPPLIER' = 'SHOP_OWNER', metadata?: any) => {
+    try {
+      const result = await confirmFirebasePhoneOtp(confirmationResult, otpCode, targetRole, metadata);
+      return handleFirebaseSessionResult(result);
+    } catch (err: any) {
+      console.error('[auth] Phone OTP confirm error:', err);
+      return { success: false, error: err?.message || 'Invalid verification code' };
+    }
+  };
+
+  const registerWithEmailOtp = async (email: string, password: string, metadata?: any) => {
+    try {
+      const result = await registerWithFirebaseEmail(email, password, metadata);
+      return handleFirebaseSessionResult(result);
+    } catch (err: any) {
+      console.error('[auth] Email registration error:', err);
+      return { success: false, error: err?.message || 'Email registration failed' };
+    }
+  };
+
+  const reloadEmailVerification = async () => {
+    return await reloadAndCheckEmailVerified();
+  };
+
+  const resendEmailVerificationLink = async () => {
+    return await sendEmailVerificationToCurrent();
+  };
+
+  const login = async (
+    rawIdentifier: string,
+    rawSecret: string,
+    method: 'PASSWORD' | 'PIN' | 'OTP',
+    opts?: { allowSaas?: boolean; targetRole?: 'business' | 'employee' | 'customer' | 'saas' | 'supplier' }
+  ): Promise<{ success: boolean; require2fa?: boolean; error?: string; retryAfterSec?: number; remainingAttempts?: number }> => {
     const identifier = rawIdentifier.trim();
     const secret = rawSecret.trim();
-    const allowSaas = opts?.allowSaas === true; // only admin portal opts in
+    const allowSaas = opts?.allowSaas === true || opts?.targetRole === 'saas';
+    const targetRole = opts?.targetRole || (allowSaas ? 'saas' : (method === 'PIN' ? 'employee' : 'business'));
+
     if (!identifier || !secret) {
       return { success: false, error: 'empty_fields' };
     }
 
-    // 1 & 2. SaaS Owner / SaaS Admin — only on admin portal (allowSaas)
-    // Shop client must not establish SaaS sessions.
-    if (allowSaas) try {
-      const res = await apiFetch('/api/auth/saas-login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier, password: secret }),
-      });
-      if (res.status === 429) {
-        const body = await res.json().catch(() => ({}));
-        return {
-          success: false,
-          error: 'rate_limited',
-          retryAfterSec: Number(body.retryAfterSec) || Number(res.headers.get('Retry-After')) || 900,
-          remainingAttempts: 0,
-        };
-      }
-      if (res.ok) {
-        const body = await res.json();
-
-        if (body.requires2fa) {
-          localStorage.setItem('bizora_preauth_token', body.preAuthToken);
-          setPendingUser({ role: UserRole.SAAS_OWNER } as User);
-          return { success: true, require2fa: true };
+    // 1. SaaS Owner / SaaS Admin — only on admin portal
+    if (allowSaas || targetRole === 'saas') {
+      try {
+        const res = await apiFetch('/api/auth/saas-login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identifier, password: secret }),
+        });
+        if (res.status === 429) {
+          const body = await res.json().catch(() => ({}));
+          return {
+            success: false,
+            error: 'rate_limited',
+            retryAfterSec: Number(body.retryAfterSec) || Number(res.headers.get('Retry-After')) || 900,
+            remainingAttempts: 0,
+          };
         }
-
-        const { user: backendUser, token, accessToken, refreshToken } = body;
-        const saasUser: User = {
-          ...backendUser,
-          businessType: 'SaaS',
-          location: 'Global',
-          locationCount: 0,
-          isPremium: true,
-          unlockedTemplates: [1, 2, 3, 4, 5],
-          role: backendUser.role === 'SAAS_OWNER' ? UserRole.SAAS_OWNER : UserRole.SAAS_ADMIN,
-          initialLoginDate: new Date().toISOString(),
-          twoFactorEnabled: false,
-          pinEnabled: true,
-          passwordEnabled: true,
-          businesses: [],
-          features: [],
-        };
-        setAuthTokens({ token, accessToken, refreshToken });
-        setUser(saasUser);
-        try { ensureRealtimeSocket(); } catch { /* */ }
-        localStorage.setItem('nexus_user', JSON.stringify(saasUser));
-        logActivity('Login', 'Auth', `${saasUser.role} logged in via ${method}`);
-        return { success: true };
-      }
-      if (res.status === 401) {
-        const body = await res.json().catch(() => ({}));
-        return {
-          success: false,
-          error: 'invalid_credentials',
-          remainingAttempts: body.remainingAttempts,
-          retryAfterSec: body.retryAfterSec,
-        };
-      }
-      if (res.status === 403) {
-        const body = await res.json().catch(() => ({}));
-        return { success: false, error: body.error === 'This account has been suspended. Please contact support.' ? 'suspended' : 'forbidden' };
-      }
-      if (res.status >= 500) {
-        const body = await res.json().catch(() => ({}));
-        console.error('[auth] shop login server error', res.status, body);
+        if (res.ok) {
+          const body = await res.json();
+          if (body.requires2fa) {
+            localStorage.setItem('bizora_preauth_token', body.preAuthToken);
+            setPendingUser({ role: UserRole.SAAS_OWNER } as User);
+            return { success: true, require2fa: true };
+          }
+          const { user: backendUser, token, accessToken, refreshToken } = body;
+          const saasUser: User = {
+            ...backendUser,
+            businessType: 'SaaS',
+            location: 'Global',
+            locationCount: 0,
+            isPremium: true,
+            unlockedTemplates: [1, 2, 3, 4, 5],
+            role: backendUser.role === 'SAAS_OWNER' ? UserRole.SAAS_OWNER : UserRole.SAAS_ADMIN,
+            initialLoginDate: new Date().toISOString(),
+            twoFactorEnabled: false,
+            pinEnabled: true,
+            passwordEnabled: true,
+            businesses: [],
+            features: [],
+          };
+          setAuthTokens({ token, accessToken, refreshToken });
+          setUser(saasUser);
+          try { ensureRealtimeSocket(); } catch { /* */ }
+          localStorage.setItem('nexus_user', JSON.stringify(saasUser));
+          logActivity('Login', 'Auth', `${saasUser.role} logged in via ${method}`);
+          return { success: true };
+        }
+        if (res.status === 401) {
+          const body = await res.json().catch(() => ({}));
+          return {
+            success: false,
+            error: 'invalid_credentials',
+            remainingAttempts: body.remainingAttempts,
+            retryAfterSec: body.retryAfterSec,
+          };
+        }
+        if (res.status === 403) {
+          const body = await res.json().catch(() => ({}));
+          return { success: false, error: body.error === 'This account has been suspended. Please contact support.' ? 'suspended' : 'forbidden' };
+        }
         return { success: false, error: 'server_error' };
+      } catch (err) {
+        console.error('[auth] SaaS login error:', err);
+        return { success: false, error: 'network_error' };
       }
-
-    } catch (err) {
-      console.warn('SaaS backend login unavailable, falling through to other checks:', err);
     }
 
-    // 3. Shop Owner — always try password login first (email OR mobile + password).
-    // PIN/phone form also reaches here so shop owners can sign in with mobile+password.
+    // 2. Customer Portal Login
+    if (targetRole === 'customer') {
+      if (customerLogin) {
+        const res = await customerLogin(identifier, secret);
+        return { success: res.success, error: res.error };
+      }
+      return { success: false, error: 'invalid_credentials' };
+    }
+
+    // 3. Supplier Portal Login
+    if (targetRole === 'supplier') {
+      if (supplierLogin) {
+        const res = await supplierLogin(identifier, secret);
+        return { success: res.success, error: res.error };
+      }
+      return { success: false, error: 'invalid_credentials' };
+    }
+
+    // 4. Employee Portal Login (Dedicated - Never calls Shop Owner login)
+    if (targetRole === 'employee') {
+      try {
+        const res = await apiFetch('/api/auth/employee-login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identifier, pin: secret }),
+        });
+        if (res.ok) {
+          const body = await res.json();
+          const { employee, token, accessToken, refreshToken } = body;
+          setAuthTokens({ token, accessToken, refreshToken });
+          const activeEmp = employee.employments?.find((emp: any) => emp.status === 'Active') || employee.employments?.[0];
+          const empPerms: string[] = Array.isArray(employee.permissions) && employee.permissions.length
+            ? employee.permissions
+            : (Array.isArray(body.permissions) ? body.permissions : (activeEmp?.permissions || []));
+          const employeeUser: User = {
+            id: employee.mobile,
+            name: employee.name,
+            businessName: activeEmp?.businessName || 'Bizora ERP',
+            email: `${employee.name.toLowerCase().replace(/\s/g, '.')}@bizora.com`,
+            mobile: employee.mobile,
+            businessType: 'Retail',
+            location: 'Main Office',
+            locationCount: 1,
+            isPremium: false,
+            unlockedTemplates: [1],
+            role: UserRole.EMPLOYEE,
+            permissions: empPerms,
+            initialLoginDate: new Date().toISOString(),
+            twoFactorEnabled: false,
+            pinEnabled: true,
+            passwordEnabled: false,
+            businesses: (employee.employments || []).map((emp: any) => ({
+              id: emp.businessId,
+              name: emp.businessName,
+              type: 'Retail',
+              location: 'Not Specified'
+            })),
+            features: [],
+            business_id: employee.activeBusinessId || activeEmp?.businessId,
+          };
+          setUser(employeeUser);
+          localStorage.setItem('nexus_user', JSON.stringify(employeeUser));
+          logActivity('Login', 'Auth', `Employee ${employee.name} logged in (backend-verified)`);
+          return { success: true };
+        }
+        if (res.status === 401) {
+          return { success: false, error: 'invalid_credentials' };
+        }
+        if (res.status === 403) {
+          return { success: false, error: 'forbidden' };
+        }
+      } catch (err) {
+        console.warn('Employee backend login unavailable, falling back to local registry:', err);
+      }
+
+      const savedGlobalRegistry = localStorage.getItem('bizora_global_employee_registry');
+      if (savedGlobalRegistry) {
+        let globalEmployees: GlobalEmployee[] = [];
+        try {
+          globalEmployees = JSON.parse(savedGlobalRegistry);
+        } catch (e) {
+          console.error("Error parsing global employee registry:", e);
+        }
+        
+        const cleanMobile = identifier.replace(/\D/g, '');
+        const empMatch = globalEmployees.find(e => 
+          (e.mobile === identifier || e.mobile.replace(/\D/g, '').endsWith(cleanMobile)) && 
+          e.pin === secret
+        );
+
+        if (empMatch) {
+          const activeEmployment = empMatch.employments.find(emp => emp.status === 'Active') || empMatch.employments[0];
+          const employeeUser: User = {
+            id: empMatch.mobile,
+            name: empMatch.name,
+            businessName: activeEmployment?.businessName || 'Bizora ERP',
+            email: `${empMatch.name.toLowerCase().replace(/\s/g, '.')}@bizora.com`,
+            mobile: empMatch.mobile,
+            businessType: 'Retail',
+            location: 'Main Office',
+            locationCount: 1,
+            isPremium: false,
+            unlockedTemplates: [1],
+            role: UserRole.EMPLOYEE,
+            permissions: Array.isArray(activeEmployment?.permissions) ? activeEmployment.permissions : [],
+            initialLoginDate: new Date().toISOString(),
+            twoFactorEnabled: false,
+            pinEnabled: true,
+            passwordEnabled: false,
+            businesses: empMatch.employments.map(emp => ({
+              id: emp.businessId,
+              name: emp.businessName,
+              type: 'Retail',
+              location: 'Not Specified'
+            })),
+            features: []
+          };
+          setUser(employeeUser);
+          localStorage.setItem('nexus_user', JSON.stringify(employeeUser));
+          logActivity('Login', 'Auth', `Employee ${empMatch.name} logged in`);
+          return { success: true };
+        }
+      }
+
+      return { success: false, error: 'invalid_credentials' };
+    }
+
+    // 5. Shop Owner Login (Dedicated - Never waterfalls to employee login)
     try {
       const res = await apiFetch('/api/auth/login', {
         method: 'POST',
@@ -508,10 +772,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       if (res.ok) {
         const body = await res.json();
-
         if (body.requires2fa) {
-          // No session token yet - only a short-lived pre-auth token that
-          // complete2fa() exchanges for a real one after checking the TOTP code.
           localStorage.setItem('bizora_preauth_token', body.preAuthToken);
           setPendingUser({ role: UserRole.SHOP_OWNER } as User);
           return { success: true, require2fa: true };
@@ -545,116 +806,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           retryAfterSec: body.retryAfterSec,
         };
       }
+      if (res.status === 403) {
+        const body = await res.json().catch(() => ({}));
+        return { success: false, error: body.error === 'This account has been suspended. Please contact support.' ? 'suspended' : 'forbidden' };
+      }
+      if (res.status >= 500) {
+        return { success: false, error: 'server_error' };
+      }
+      return { success: false, error: 'invalid_credentials' };
     } catch (err) {
-      console.warn('Backend login unavailable, falling back to legacy local checks:', err);
+      console.error('[auth] Shop login network error:', err);
+      return { success: false, error: 'network_error' };
     }
-
-    // Check Global Employee Registry (Mobile Number Based Employee Login)
-    // Real backend verification first (backend/src/api/employees.ts,
-    // Firestore `globalEmployees`, bcrypt-hashed PINs). Falls back to the
-    // local registry below if the backend rejects/is unreachable, so
-    // employees added before this migration (or while offline) still work.
-    try {
-      const res = await apiFetch('/api/auth/employee-login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier, pin: secret }),
-      });
-      if (res.ok) {
-        const body = await res.json();
-        const { employee, token, accessToken, refreshToken } = body;
-        setAuthTokens({ token, accessToken, refreshToken });
-        const activeEmp = employee.employments?.find((emp: any) => emp.status === 'Active') || employee.employments?.[0];
-        const empPerms: string[] = Array.isArray(employee.permissions) && employee.permissions.length
-          ? employee.permissions
-          : (Array.isArray(body.permissions) ? body.permissions : (activeEmp?.permissions || []));
-        const employeeUser: User = {
-          id: employee.mobile,
-          name: employee.name,
-          businessName: activeEmp?.businessName || 'Bizora ERP',
-          email: `${employee.name.toLowerCase().replace(/\s/g, '.')}@bizora.com`,
-          mobile: employee.mobile,
-          businessType: 'Retail',
-          location: 'Main Office',
-          locationCount: 1,
-          isPremium: false,
-          unlockedTemplates: [1],
-          role: UserRole.EMPLOYEE,
-          permissions: empPerms,
-          initialLoginDate: new Date().toISOString(),
-          twoFactorEnabled: false,
-          pinEnabled: true,
-          passwordEnabled: false,
-          businesses: (employee.employments || []).map((emp: any) => ({
-            id: emp.businessId,
-            name: emp.businessName,
-            type: 'Retail',
-            location: 'Not Specified'
-          })),
-          features: [],
-          business_id: employee.activeBusinessId || activeEmp?.businessId,
-        };
-        setUser(employeeUser);
-        localStorage.setItem('nexus_user', JSON.stringify(employeeUser));
-        logActivity('Login', 'Auth', `Employee ${employee.name} logged in (backend-verified)`);
-        return { success: true };
-      }
-    } catch (err) {
-      console.warn('Employee backend login unavailable, falling back to local registry:', err);
-    }
-
-    const savedGlobalRegistry = localStorage.getItem('bizora_global_employee_registry');
-    if (savedGlobalRegistry) {
-      let globalEmployees: GlobalEmployee[] = [];
-      try {
-        globalEmployees = JSON.parse(savedGlobalRegistry);
-      } catch (e) {
-        console.error("Error parsing global employee registry:", e);
-      }
-      
-      const cleanMobile = identifier.replace(/\D/g, '');
-      const empMatch = globalEmployees.find(e => 
-        (e.mobile === identifier || e.mobile.replace(/\D/g, '').endsWith(cleanMobile)) && 
-        e.pin === secret
-      );
-
-      if (empMatch) {
-        const activeEmployment = empMatch.employments.find(emp => emp.status === 'Active') || empMatch.employments[0];
-        // Construct employee session
-        const employeeUser: User = {
-          id: empMatch.mobile,
-          name: empMatch.name,
-          businessName: activeEmployment?.businessName || 'Bizora ERP',
-          email: `${empMatch.name.toLowerCase().replace(/\s/g, '.')}@bizora.com`,
-          mobile: empMatch.mobile,
-          businessType: 'Retail',
-          location: 'Main Office',
-          locationCount: 1,
-          isPremium: false,
-          unlockedTemplates: [1],
-          role: UserRole.EMPLOYEE,
-          permissions: Array.isArray(activeEmployment?.permissions) ? activeEmployment.permissions : [],
-          initialLoginDate: new Date().toISOString(),
-          twoFactorEnabled: false,
-          pinEnabled: true,
-          passwordEnabled: false,
-          businesses: empMatch.employments.map(emp => ({
-            id: emp.businessId,
-            name: emp.businessName,
-            type: 'Retail',
-            location: 'Not Specified'
-          })),
-          features: []
-        };
-        setUser(employeeUser);
-        localStorage.setItem('nexus_user', JSON.stringify(employeeUser));
-        logActivity('Login', 'Auth', `Employee ${empMatch.name} logged in`);
-        return { success: true };
-      }
-    }
-
-    // No fallback, explicit failure
-    return { success: false, error: 'invalid_credentials' };
   };
 
   const complete2fa = async (otp: string): Promise<boolean> => {
@@ -1867,7 +2030,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         resetCustomerPin,
         supplierLogin,
         supplierSignup,
-        resetSupplierPin
+        resetSupplierPin,
+        signInWithGoogleAuth,
+        sendPhoneOtpCode,
+        confirmPhoneOtpCode,
+        registerWithEmailOtp,
+        reloadEmailVerification,
+        resendEmailVerificationLink,
     }}>
       {children}
     </AuthContext.Provider>

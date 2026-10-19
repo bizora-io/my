@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   ShoppingBag, Shield, Zap, TrendingUp, Store, Users, DollarSign, Package, 
-  Check, X as XIcon, ChevronDown, ChevronRight, ChevronLeft, Globe, Lock, ArrowRight,
+  Check, X as XIcon, Menu, ChevronDown, ChevronRight, ChevronLeft, Globe, Lock, ArrowRight,
   Sparkles, Layers, Activity, Smartphone, Truck, FileText, BarChart3, HelpCircle,
   ExternalLink, ArrowUpRight, Crown, RefreshCw, CheckCircle2, ShieldCheck, Database,
   Boxes, Clock, CalendarClock, BookOpen, Building, Award, ChefHat, HeartPulse, Shirt,
@@ -153,6 +153,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) =>
   const [feedIndex, setFeedIndex] = useState(0);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [themeDark, setThemeDark] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Dynamic Pricing & SaaS Admin Synchronization State
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
@@ -403,12 +404,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) =>
             </a>
           </nav>
 
-          {/* Actions & Language Switcher */}
-          <div className="flex items-center gap-3">
+          {/* Actions, Sign In, & Mobile Menu */}
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={() => setIsBn(!isBn)}
               aria-label="Toggle language"
-              className="px-3 py-1.5 rounded-full border border-white/20 text-xs font-bold text-white hover:bg-white/10 transition-colors flex items-center gap-1.5 cursor-pointer"
+              className="px-2.5 sm:px-3 py-1.5 rounded-full border border-white/20 text-xs font-bold text-white hover:bg-white/10 transition-colors flex items-center gap-1.5 cursor-pointer"
             >
               <Globe className="w-3.5 h-3.5 text-amber-400" />
               <span>{isBn ? 'English' : 'বাংলা'}</span>
@@ -416,19 +417,93 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) =>
 
             <button
               onClick={(e) => handlePortalClick('shop', e)}
-              className="hidden sm:inline-flex items-center px-4 py-2 rounded-full border border-amber-400/50 text-amber-400 text-sm font-bold hover:bg-amber-400 hover:text-black transition-all cursor-pointer"
+              className="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border border-amber-400/50 text-amber-400 text-xs sm:text-sm font-bold hover:bg-amber-400 hover:text-black transition-all cursor-pointer"
             >
               {isBn ? 'লগইন' : 'Sign In'}
             </button>
 
             <a
               href="#plans"
-              className="px-5 py-2.5 rounded-full bg-amber-400 text-black text-sm font-extrabold hover:bg-amber-300 hover:shadow-lg hover:shadow-amber-400/25 transition-all active:scale-95 cursor-pointer"
+              className="hidden sm:inline-flex px-5 py-2 rounded-full bg-amber-400 text-black text-sm font-extrabold hover:bg-amber-300 hover:shadow-lg hover:shadow-amber-400/25 transition-all active:scale-95 cursor-pointer"
             >
               {isBn ? 'ফ্রি ট্রায়াল' : 'Get Started'}
             </a>
+
+            {/* Mobile Hamburger Menu Toggle */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle navigation menu"
+              className="lg:hidden p-2 rounded-full border border-white/20 text-slate-300 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+            >
+              {mobileMenuOpen ? <XIcon className="w-5 h-5 text-amber-400" /> : <Menu className="w-5 h-5 text-slate-200" />}
+            </button>
           </div>
         </div>
+
+        {/* Mobile Navigation Drawer */}
+        {mobileMenuOpen && (
+          <div className="lg:hidden bg-[#0c0c0e] border-b border-white/15 px-4 py-4 space-y-4 animate-in slide-in-from-top-2 duration-200">
+            {/* Quick Portal Switcher for Mobile */}
+            <div className="space-y-1.5">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-amber-400">
+                {isBn ? 'সরাসরি পোর্টাল লগইন' : 'Direct Portal Access'}
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  onClick={(e) => { setMobileMenuOpen(false); handlePortalClick('shop', e); }}
+                  className="px-2 py-2.5 rounded-xl bg-white/5 border border-white/10 text-center hover:bg-amber-400/10 hover:border-amber-400/40 transition-colors cursor-pointer"
+                >
+                  <Store className="w-4 h-4 text-emerald-400 mx-auto mb-1" />
+                  <span className="block text-[11px] font-bold text-white">{isBn ? 'শপ ওনার' : 'Shop Owner'}</span>
+                </button>
+                <button
+                  onClick={(e) => { setMobileMenuOpen(false); handlePortalClick('employee', e); }}
+                  className="px-2 py-2.5 rounded-xl bg-white/5 border border-white/10 text-center hover:bg-blue-400/10 hover:border-blue-400/40 transition-colors cursor-pointer"
+                >
+                  <Users className="w-4 h-4 text-blue-400 mx-auto mb-1" />
+                  <span className="block text-[11px] font-bold text-white">{isBn ? 'এমপ্লয়ী' : 'Employee'}</span>
+                </button>
+                <button
+                  onClick={(e) => { setMobileMenuOpen(false); handlePortalClick('customer', e); }}
+                  className="px-2 py-2.5 rounded-xl bg-white/5 border border-white/10 text-center hover:bg-purple-400/10 hover:border-purple-400/40 transition-colors cursor-pointer"
+                >
+                  <ShoppingBag className="w-4 h-4 text-purple-400 mx-auto mb-1" />
+                  <span className="block text-[11px] font-bold text-white">{isBn ? 'কাস্টমার' : 'Customer'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Navigation Section Links */}
+            <div className="pt-2 border-t border-white/10 grid grid-cols-2 gap-2 text-xs">
+              <a onClick={() => setMobileMenuOpen(false)} href="#features" className="py-2 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-slate-200">
+                {isBn ? 'ফিচারসমূহ' : 'Features'}
+              </a>
+              <a onClick={() => setMobileMenuOpen(false)} href="#about" className="py-2 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-slate-200">
+                {isBn ? 'Bizora সম্পর্কে' : 'About Bizora'}
+              </a>
+              <a onClick={() => setMobileMenuOpen(false)} href="#os" className="py-2 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-slate-200">
+                {isBn ? 'বিজনেস OS' : 'Business OS'}
+              </a>
+              <a onClick={() => setMobileMenuOpen(false)} href="#industries" className="py-2 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-slate-200">
+                {isBn ? 'ব্যবসার ধরন' : 'Industries'}
+              </a>
+              <a onClick={() => setMobileMenuOpen(false)} href="#compare" className="py-2 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-slate-200">
+                {isBn ? 'তুলনা' : 'Compare'}
+              </a>
+              <a onClick={() => setMobileMenuOpen(false)} href="#plans" className="py-2 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-slate-200">
+                {isBn ? 'সাবস্ক্রিপশন' : 'Pricing'}
+              </a>
+            </div>
+
+            <a
+              onClick={() => setMobileMenuOpen(false)}
+              href="#plans"
+              className="block w-full text-center py-3 rounded-xl bg-amber-400 text-black text-xs font-black shadow-lg shadow-amber-400/20"
+            >
+              {isBn ? 'ফ্রি ট্রায়াল শুরু করুন' : 'Start 14-Day Free Trial'}
+            </a>
+          </div>
+        )}
       </header>
 
       {/* 2. HERO SECTION WITH 3D CANVAS & HIGH-CONVERSION TRUST METRICS */}
@@ -1953,7 +2028,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) =>
                   : 'The complete enterprise cloud operating system for retail point of sale, FEFO batch inventory, and double-entry books.'}
               </p>
               <div className="text-xs text-amber-400 font-mono">
-                bizora.io · shop · employee · customer
+                {typeof window !== 'undefined' ? `${window.location.hostname} · shop · employee · customer` : 'Bizora Multi-Portal ERP'}
               </div>
             </div>
 
@@ -1964,19 +2039,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) =>
                 <li>
                   <button onClick={(e) => handlePortalClick('shop', e)} className="hover:text-amber-400 transition-colors cursor-pointer flex items-center gap-1.5">
                     <Store className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Shop Owner Portal (shop.bizora.io)</span>
+                    <span>{isBn ? 'শপ ওনার পোর্টাল' : 'Shop Owner Portal'}</span>
                   </button>
                 </li>
                 <li>
                   <button onClick={(e) => handlePortalClick('employee', e)} className="hover:text-amber-400 transition-colors cursor-pointer flex items-center gap-1.5">
                     <Users className="w-3.5 h-3.5 text-blue-400" />
-                    <span>Employee Portal (employee.bizora.io)</span>
+                    <span>{isBn ? 'এমপ্লয়ী পোর্টাল' : 'Employee Portal'}</span>
                   </button>
                 </li>
                 <li>
                   <button onClick={(e) => handlePortalClick('customer', e)} className="hover:text-amber-400 transition-colors cursor-pointer flex items-center gap-1.5">
                     <ShoppingBag className="w-3.5 h-3.5 text-purple-400" />
-                    <span>Customer Portal (customer.bizora.io)</span>
+                    <span>{isBn ? 'কাস্টমার পোর্টাল' : 'Customer Portal'}</span>
                   </button>
                 </li>
               </ul>
