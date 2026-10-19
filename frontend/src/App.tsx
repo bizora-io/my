@@ -72,7 +72,7 @@ import { SettingsProvider, useSettings, CURRENCY_SYMBOLS } from './contexts/Sett
 import { NotificationProvider, useNotifications } from './contexts/NotificationContext';
 import { StoreProvider, useStores } from './contexts/StoreContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { authFetch } from './lib/apiClient';
+import { authFetch, getAdminPortalUrl } from './lib/apiClient';
 import { DataProvider, useData } from './contexts/DataContext';
 import { PERMISSIONS, hasPermission, canAccessPermission, hasOperationalPermissions, isFullAccessRole } from './utils/permissions';
 import { OnboardingProvider, useOnboarding } from './contexts/OnboardingContext';
@@ -213,7 +213,7 @@ const PageLoader = () => (
 
 // The Admin (SaaS) panel now lives in its own separately-deployed app.
 // Any nav item pointing at /admin is opened there instead of via in-app routing.
-const ADMIN_APP_URL: string = (import.meta as any).env?.VITE_ADMIN_URL || 'http://localhost:5174';
+const ADMIN_APP_URL: string = getAdminPortalUrl();
 const isAdminPath = (to: string) => typeof to === 'string' && to.startsWith('/admin');
 
 // The Admin (SaaS) panel is a separate deployed app now. Anything that used

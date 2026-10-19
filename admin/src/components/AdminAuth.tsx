@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { getShopPortalUrl } from '../lib/apiClient';
 import { Shield, Lock, Mail, ArrowRight, Loader2, Server, Activity, KeyRound } from 'lucide-react';
 
 /**
@@ -73,7 +74,7 @@ export const Auth: React.FC = () => {
     }
   };
 
-  const shopUrl = (import.meta as any).env?.VITE_SHOP_URL || 'http://localhost:5173';
+  const shopUrl = getShopPortalUrl();
 
   return (
     <div className="min-h-screen flex bg-slate-950 text-slate-100">

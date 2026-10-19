@@ -1,8 +1,9 @@
 import React from 'react';
 import { LayoutDashboard, ArrowLeft, ShieldAlert, Store, RefreshCw } from 'lucide-react';
+import { getShopPortalUrl } from '../lib/apiClient';
 
 export const AdminNotFound: React.FC = () => {
-  const shopAppUrl = (import.meta as any).env?.VITE_APP_URL || 'http://localhost:5173';
+  const shopAppUrl = getShopPortalUrl();
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-900 text-slate-100 p-6">

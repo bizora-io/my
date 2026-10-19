@@ -434,12 +434,8 @@ const AdminPanel: React.FC = () => {
     const [serverDashboardStats, setServerDashboardStats] = useState<any>(null);
     useEffect(() => {
         if (activeTab !== 'dashboard' && activeTab !== 'analytics-center') return;
-        const token = localStorage.getItem('bizora_token');
-        if (!token) return;
-        const base = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000';
-        fetch(`${base}/api/admin/dashboard-stats`, {
-            headers: { Authorization: `Bearer ${token}` },
-        })
+        if (!hasAuthToken()) return;
+        authFetch('/api/admin/dashboard-stats')
             .then(r => r.ok ? r.json() : null)
             .then(body => { if (body?.stats) setServerDashboardStats(body.stats); })
             .catch(() => {});

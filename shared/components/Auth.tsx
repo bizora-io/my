@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../contexts/SettingsContext';
-import { apiFetch } from '../lib/apiClient';
+import { apiFetch, getAdminPortalUrl } from '../lib/apiClient';
 import { Lock, Mail, Phone, MapPin, Building2, Store, Hash, ArrowRight, Loader2, MessageSquare, ChevronDown, Info, Shield, Zap, Globe, UserCircle, Users, ShoppingBag } from 'lucide-react';
 import { appVersionLabel } from '../lib/appVersion';
 
@@ -922,7 +922,7 @@ export const Auth: React.FC<AuthProps> = ({ initialRole, portalMode, lockRole = 
             <p className="text-[11px] text-slate-500 mb-4 text-center">
               Platform / SaaS admin? Use the{' '}
               <a
-                href={(import.meta as any).env?.VITE_ADMIN_URL || 'http://localhost:5174'}
+                href={getAdminPortalUrl()}
                 className="font-bold text-indigo-600 hover:underline"
               >
                 Admin portal

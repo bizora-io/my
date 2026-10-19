@@ -122,3 +122,5 @@ export async function authFetch(path: string, options: RequestInit = {}): Promis
 
   return res;
 }
+
+export { getAdminPortalUrl, getShopPortalUrl } from './portalUrls.js';

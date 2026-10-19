@@ -157,6 +157,17 @@ export function getPortalUrl(target: PortalType): string {
     if (target === 'customer') return '#/customer-login';
   }
 
+  // If running on Vercel preview/production domains (*.vercel.app)
+  if (hostname.endsWith('.vercel.app')) {
+    if (target === 'admin') {
+      return (import.meta as any).env?.VITE_ADMIN_URL || 'https://admin-bizora-app.vercel.app';
+    }
+    if (target === 'landing') return '#/landing';
+    if (target === 'shop') return '#/shop-login';
+    if (target === 'employee') return '#/employee-login';
+    if (target === 'customer') return '#/customer-login';
+  }
+
   return PORTAL_CONFIGS[target].productionDomain;
 }
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useSettings } from '../contexts/SettingsContext';
 import { useAuth } from '../contexts/AuthContext';
 import { getSubscriptionView } from '../lib/subscriptionStatus';
+import { apiFetch } from '../lib/apiClient';
 import { TRIAL_LIMIT_LABELS, type TrialLimitKey } from '@shared/lib/trialLimits';
 import { 
   ALL_FEATURES, 
@@ -299,8 +300,7 @@ const Subscription: React.FC = () => {
     let isMounted = true;
     (async () => {
       try {
-        const base = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000';
-        const res = await fetch(`${base}/api/platform/plans`);
+        const res = await apiFetch('/api/platform/plans');
         if (!res.ok) return;
         const body = await res.json();
         if (isMounted && Array.isArray(body?.plans) && body.plans.length) {
