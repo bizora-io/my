@@ -1,3 +1,4 @@
+process.env.BIZORA_USE_LOCAL_DB = "true";
 import test, { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { processAssistantQuery } from "./assistantService.js";
@@ -159,6 +160,10 @@ describe("Bizora ERP Assistant — RBAC & Tenant Permission Enforcement", () => 
     });
     assert.equal(guideRes.source, "erp_guide");
     assert.equal(guideRes.intent, "sales_return_workflow");
+  });
+
+  test.after(() => {
+    setTimeout(() => process.exit(0), 50);
   });
 });
 

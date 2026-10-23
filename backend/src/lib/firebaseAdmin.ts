@@ -70,6 +70,10 @@ let resilientDbInstance: ResilientFirestore | null = null;
 
 export function getDb(): Firestore {
   if (!resilientDbInstance) {
+    if (process.env.BIZORA_USE_LOCAL_DB === "true" || process.env.TEST_OFFLINE_DB === "true") {
+      resilientDbInstance = new ResilientFirestore(null);
+      return resilientDbInstance as unknown as Firestore;
+    }
     try {
       const databaseId = process.env.FIRESTORE_DATABASE_ID || process.env.FIREBASE_DATABASE_ID;
       const realDb = databaseId ? getFirestore(getFirebaseApp(), databaseId) : getFirestore(getFirebaseApp());
