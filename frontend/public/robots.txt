@@ -70,3 +70,4 @@ Disallow: /*?*portal=
 
 # Authoritative XML Sitemap Reference
 Sitemap: https://bizora-app-io.vercel.app/sitemap.xml
+

@@ -148,6 +148,443 @@ const FALLBACK_PLANS = [
   },
 ];
 
+const INDUSTRIES = [
+  {
+    id: 'retail',
+    trade: 'Retail & General Stores',
+    tradeBn: 'সাধারণ রিটেল ও ডিপার্টমেন্টাল শপ',
+    badge: 'High-Speed POS & Billing',
+    badgeBn: 'হাই-স্পিড পিওএস ও বিলিং',
+    icon: Store,
+    accentColor: 'from-blue-600 to-indigo-600',
+    badgeBg: 'bg-blue-500/10',
+    badgeBorder: 'border-blue-500/30',
+    badgeText: 'text-blue-400',
+    description: 'Accelerate checkout lines with sub-second barcode scanning, cash drawer float balancing, split payments, and instant returns.',
+    descriptionBn: 'দ্রুত বারকোড স্ক্যানিং, ক্যাশ ড্রয়ার ব্যালেন্সিং, স্প্লিট পেমেন্ট এবং ইনস্ট্যান্ট সেলস রিটার্নের মাধ্যমে কাউন্টার বিলিং করুন নিমেষেই।',
+    features: [
+      'Sub-Second Barcode Scanning Till',
+      'Split Tender: Cash, Card & bKash/MFS',
+      'Shift Cashbox Float Reconciliation',
+      'Instant Sales Return & Store Credit'
+    ],
+    featuresBn: [
+      'এক সেকেন্ডের কম সময়ে বারকোড বিলিং',
+      'নগদ, কার্ড ও মোবাইল ব্যাংকিং স্প্লিট পেমেন্ট',
+      'শিফটভিত্তিক ক্যাশবাক্স হিসাব মেলানো',
+      'সহজ পণ্য রিটার্ন ও স্টোর ক্রেডিট'
+    ],
+    workflowTitle: 'High-Speed Retail Counter Workflow',
+    workflowTitleBn: 'কাউন্টার ও পিওএস বিলিং ওয়ার্কফ্লো',
+    statBadge: '< 0.3s Barcode Scan',
+    statBadgeBn: '০.৩ সেকেন্ডে বারকোড স্ক্যান',
+    steps: [
+      {
+        num: '01',
+        title: 'Instant Barcode Scan',
+        titleBn: 'ইনস্ট্যান্ট বারকোড রিডিং',
+        desc: 'Scan products using any barcode reader; prices, VAT, and active promotions load automatically without delay.',
+        descBn: 'যেকোনো বারকোড স্ক্যানার দিয়ে স্ক্যান করুন; মূল্য, ভ্যাট এবং ডিসকাউন্ট স্বয়ংক্রিয়ভাবে হিসাব হয়ে যাবে।'
+      },
+      {
+        num: '02',
+        title: 'Multi-Tender Split Settlement',
+        titleBn: 'ফ্লেক্সিবল স্প্লিট পেমেন্ট',
+        desc: 'Accept partial cash and partial mobile banking (bKash/Nagad) in a single bill with automatic change calculation.',
+        descBn: 'একই বিলে নগদ ও মোবাইল ব্যাংকিং উভয় পেমেন্ট গ্রহণ করুন এবং কাস্টমারের ফেরত টাকা নির্ভুল হিসাব করুন।'
+      },
+      {
+        num: '03',
+        title: 'Thermal Receipt & Realtime Ledger',
+        titleBn: 'থার্মাল রসিদ ও অটো জার্নাল',
+        desc: 'Print 58mm/80mm receipt while stock levels deduct and double-entry sales journals record in real time.',
+        descBn: 'রসিদ প্রিন্ট হওয়ার সাথে সাথেই স্টক কমে যায় এবং আর্থিক জার্নালে ডাবল-এন্ট্রি সেলস জমা হয়।'
+      }
+    ],
+    previewCard: {
+      title: 'Live Retail Counter Dashboard',
+      titleBn: 'লাইভ রিটেল ক্যাশবাক্স স্ট্যাটাস',
+      stats: [
+        { label: "Today's Sales", labelBn: 'আজকের বিক্রি', val: '৳ 84,250' },
+        { label: 'Transactions', labelBn: 'মোট বিল', val: '186 Bills' },
+        { label: 'Offline Sync', labelBn: 'অফলাইন সিঙ্ক', val: '100% Up to Date' }
+      ]
+    }
+  },
+  {
+    id: 'grocery',
+    trade: 'Grocery & Super Shops',
+    tradeBn: 'গ্রোসারি ও সুপারশপ',
+    badge: 'FEFO Batch & Expiry Guard',
+    badgeBn: 'এফইএফও ব্যাচ ও মেয়াদ সুরক্ষা',
+    icon: Boxes,
+    accentColor: 'from-emerald-600 to-teal-600',
+    badgeBg: 'bg-emerald-500/10',
+    badgeBorder: 'border-emerald-500/30',
+    badgeText: 'text-emerald-400',
+    description: 'Eliminate expired item losses with FEFO oldest-expiry selling algorithm, digital scale barcode decoding, and automated reorder alerts.',
+    descriptionBn: 'আগে মেয়াদ শেষ হওয়া ব্যাচ আগে বিক্রি (FEFO) নিশ্চিত করুন, ডিজিটাল ওজন স্কেলের বারকোড রিড করুন এবং কম-স্টক অটো রি-অর্ডার ড্রাফট তৈরি করুন।',
+    features: [
+      'Automated FEFO Oldest-Expiry Allocation',
+      'Weigh Scale Barcode Decoding (EAN-13)',
+      '30/60/90 Day Near-Expiry Warning Radar',
+      'Automated Low-Stock Reorder Triggers'
+    ],
+    featuresBn: [
+      'স্বয়ংক্রিয় এফইএফও ব্যাচ এলোকেশন',
+      'ওজন স্কেল ইএএন-১৩ বারকোড ডিকোডিং',
+      '৩০/৬০/৯০ দিনের মেয়াদের আগাম রাডার',
+      'কম-স্টক সতর্কতা ও অটো রি-অর্ডার ড্রাফট'
+    ],
+    workflowTitle: 'Zero-Waste Freshness & Expiry Pipeline',
+    workflowTitleBn: 'মেয়াদোত্তীর্ণ অপচয়মুক্ত ইনভেন্টরি পাইপলাইন',
+    statBadge: 'Zero Spoilage Waste',
+    statBadgeBn: 'জিরো মেয়াদোত্তীর্ণ অপচয়',
+    steps: [
+      {
+        num: '01',
+        title: 'Batch & Expiry Inwarding',
+        titleBn: 'ব্যাচ ও মেয়াদ এন্ট্রি',
+        desc: 'Log supplier lot numbers with manufacturing and expiry dates during goods delivery inwarding.',
+        descBn: 'পণ্য রিসিভ করার সময়েই লট নম্বর ও মেয়াদোত্তীর্ণ তারিখ সিস্টেমে নিরাপদভাবে এন্ট্রি দিন।'
+      },
+      {
+        num: '02',
+        title: 'Automated FEFO Selling',
+        titleBn: 'এফইএফও অটো বিক্রি',
+        desc: 'POS automatically suggests and deducts the batch expiring soonest to protect retail margins.',
+        descBn: 'বিল করার সময় সিস্টেম নিজ থেকেই আগে মেয়াদ শেষ হওয়া লট থেকে স্টক মাইনাস করে।'
+      },
+      {
+        num: '03',
+        title: 'Expiry Early-Warning Radar',
+        titleBn: 'আগাম মেয়াদোত্তীর্ণ সতর্কতা',
+        desc: 'Identify aging stock 30 days ahead to discount, bundle, or return to vendor with full audit trails.',
+        descBn: 'মেয়াদ শেষ হওয়ার আগেই বিশেষ অফার দিন অথবা সাপ্লায়ারকে ফেরত পাঠিয়ে নিশ্চিত ক্ষতি রোধ করুন।'
+      }
+    ],
+    previewCard: {
+      title: 'FEFO Expiry Protection Radar',
+      titleBn: 'এফইএফও স্টক ট্র্যাকিং রাডার',
+      stats: [
+        { label: 'Monitored Lots', labelBn: 'অ্যাক্টিভ লট', val: '1,420 Lots' },
+        { label: 'Expiring in 30d', labelBn: '৩০ দিনে মেয়াদ শেষ', val: '0 Critical' },
+        { label: 'Spoilage Prevented', labelBn: 'অপচয় রোধ', val: '৳ 42,800' }
+      ]
+    }
+  },
+  {
+    id: 'fashion',
+    trade: 'Fashion & Clothing',
+    tradeBn: 'ফ্যাশন, বুটিক ও পোশাক',
+    badge: 'Matrix Variants & Storefront',
+    badgeBn: 'ম্যাট্রিক্স ভ্যারিয়েন্ট ও অনলাইন শপ',
+    icon: Shirt,
+    accentColor: 'from-pink-600 to-rose-600',
+    badgeBg: 'bg-pink-500/10',
+    badgeBorder: 'border-pink-500/30',
+    badgeText: 'text-pink-400',
+    description: 'Manage thousands of apparel styles, sizes, and colors with 2D matrix variants, custom price tag sticker printing, and live online boutique sync.',
+    descriptionBn: 'রং, সাইজ ও ফেব্রিকের ম্যাট্রিক্স ভ্যারিয়েন্ট, নিজস্ব বারকোড প্রাইস ট্যাগ স্টিকার প্রিন্টিং এবং রিয়েলটাইম অনলাইন বুটিক শপ পরিচালনা করুন।',
+    features: [
+      'Multi-Attribute Matrix (Size, Color, Fit)',
+      'Custom Garment Barcode & Price Tag Printing',
+      'Integrated Boutique E-Commerce Storefront',
+      'Omnichannel In-Store & Online Stock Reservation'
+    ],
+    featuresBn: [
+      'সাইজ, কালার ও ফিট ম্যাট্রিক্স গ্রিড',
+      'গার্মেন্টস বারকোড ও প্রাইস ট্যাগ স্টিকার প্রিন্ট',
+      'ইন্টিগ্রেটেড অনলাইন বুটিক স্টোরফ্রন্ট',
+      'দোকান ও অনলাইন স্টকের লাইভ সমন্বয়'
+    ],
+    workflowTitle: 'Apparel Omnichannel Merchandising',
+    workflowTitleBn: 'ফ্যাশন ও অনলাইন মার্চেন্ডাইজিং ওয়ার্কফ্লো',
+    statBadge: 'Realtime Omnichannel Sync',
+    statBadgeBn: 'রিয়েলটাইম মাল্টি-চ্যানেল সিঙ্ক',
+    steps: [
+      {
+        num: '01',
+        title: 'Matrix Style Creation',
+        titleBn: 'ম্যাট্রিক্স স্টাইল তৈরি',
+        desc: 'Create one apparel item; generate S/M/L/XL sizes across all seasonal colors in a single click.',
+        descBn: 'একটি পোশাক ডিজাইন করে এক ক্লিকেই সব সাইজ ও কালার ভ্যারিয়েন্ট তৈরি করে ক্যাটালগে যুক্ত করুন।'
+      },
+      {
+        num: '02',
+        title: 'Barcode Hangtag Printing',
+        titleBn: 'বারকোড ট্যাগ প্রিন্ট',
+        desc: 'Print branded price stickers and garment hangtags with custom SKU barcodes directly from Bizora.',
+        descBn: 'পোশাকের জন্য নিজস্ব ব্র্যান্ডেড বারকোড প্রাইস স্টিকার ও হ্যাংট্যাগ সরাসরি প্রিন্ট করুন।'
+      },
+      {
+        num: '03',
+        title: 'Omnichannel Realtime Sync',
+        titleBn: 'অনলাইন ও শো-রুম সিঙ্ক',
+        desc: 'When an item sells in the showroom, your public digital storefront inventory updates instantly.',
+        descBn: 'দোকানে বিক্রি হওয়ার সাথে সাথেই আপনার অনলাইন ক্যাটালগের স্টক তাৎক্ষণিক আপডেট হয়ে যায়।'
+      }
+    ],
+    previewCard: {
+      title: 'Apparel Matrix & Live Storefront',
+      titleBn: 'পোশাক ভ্যারিয়েন্ট ও অনলাইন শপ',
+      stats: [
+        { label: 'Active Styles', labelBn: 'অ্যাক্টিভ ডিজাইন', val: '380 Designs' },
+        { label: 'SKU Variations', labelBn: 'মোট ভ্যারিয়েন্ট', val: '2,280 SKUs' },
+        { label: 'Online Sync', labelBn: 'অনলাইন সিঙ্ক', val: 'Live & Locked' }
+      ]
+    }
+  },
+  {
+    id: 'electronics',
+    trade: 'Electronics & Mobile Devices',
+    tradeBn: 'মোবাইল ও ইলেকট্রনিক্স',
+    badge: 'IMEI & Warranty Lifecycle',
+    badgeBn: 'আইএমইআই ও ওয়ারেন্টি ট্র্যাকিং',
+    icon: Smartphone,
+    accentColor: 'from-cyan-600 to-blue-600',
+    badgeBg: 'bg-cyan-500/10',
+    badgeBorder: 'border-cyan-500/30',
+    badgeText: 'text-cyan-400',
+    description: 'Track individual IMEI and serial numbers from vendor invoice to customer sale, with digital warranty lookup, customer credit ledgers, and installment EMI schedules.',
+    descriptionBn: 'প্রতিটি ডিভাইসের ইউনিক আইএমইআই/সিরিয়াল নম্বর ট্র্যাক করুন, ডিজিটাল ওয়ারেন্টি চেক করুন এবং বাকিতে বিক্রিতে কিস্তির শিডিউল বজায় রাখুন।',
+    features: [
+      'Per-Unit IMEI & Serial Lifecycle Tracking',
+      'Digital Warranty Card & Service History',
+      'Customer Credit Due Ledger with Reminders',
+      'Flexible Installment (EMI) Billing Plans'
+    ],
+    featuresBn: [
+      'প্রতিটি সেটের ইউনিক আইএমইআই ট্র্যাকিং',
+      'ডিজিটাল ওয়ারেন্টি কার্ড ও সার্ভিস হিস্টোরি',
+      'কাস্টমার বাকির খাতা ও অটো এসএমএস',
+      'মাসিক কিস্তি (ইএমআই) শিডিউল ও ট্র্যাকিং'
+    ],
+    workflowTitle: 'Serialized Device Traceability Pipeline',
+    workflowTitleBn: 'সিরিয়ালাইজড ডিভাইস ট্রেসেবিলিটি পাইপলাইন',
+    statBadge: '100% Serialized Accountability',
+    statBadgeBn: '১০০% সিরিয়াল অ্যাকাউন্টেবিলিটি',
+    steps: [
+      {
+        num: '01',
+        title: 'Scan Serial on Inwarding',
+        titleBn: 'ক্রয়ে সিরিয়াল স্ক্যান',
+        desc: 'Scan smartphone IMEI or appliance serial number directly from the supplier box upon receiving.',
+        descBn: 'সাপ্লায়ারের কাছ থেকে মাল নেওয়ার সময় বক্সের আইএমইআই বা সিরিয়াল স্ক্যান করে ইনওয়ার্ড করুন।'
+      },
+      {
+        num: '02',
+        title: 'Warranty Card Binding',
+        titleBn: 'ওয়ারেন্টি কার্ড বাইন্ডিং',
+        desc: 'Invoice ties the exact serial to customer contact details, activating the warranty duration clock.',
+        descBn: 'কাস্টমারের মেমোতে নির্দিষ্ট সিরিয়াল যুক্ত হয়ে ওয়ারেন্টির সময় গণনা নিরাপদভাবে শুরু হয়।'
+      },
+      {
+        num: '03',
+        title: 'Installment & Due Follow-Up',
+        titleBn: 'কিস্তি ও বকেয়া ফলো-আপ',
+        desc: 'Monitor unpaid installment balances and send automated SMS reminders before payment due dates.',
+        descBn: 'বকেয়া কিস্তির তারিখ ট্র্যাক করুন এবং সময়মতো কাস্টমারকে স্বয়ংক্রিয় রিমাইন্ডার পাঠান।'
+      }
+    ],
+    previewCard: {
+      title: 'Serialized Inventory Register',
+      titleBn: 'সিরিয়ালাইজড ডিভাইস রেজিস্টার',
+      stats: [
+        { label: 'Serialized Units', labelBn: 'সিরিয়াল ডিভাইস', val: '840 Units' },
+        { label: 'Active Warranties', labelBn: 'চলতি ওয়ারেন্টি', val: '512 Devices' },
+        { label: 'EMI Recovery', labelBn: 'কিস্তি কালেকশন', val: '98.4% On-Time' }
+      ]
+    }
+  },
+  {
+    id: 'pharmacy',
+    trade: 'Pharmacy & Healthcare',
+    tradeBn: 'ফার্মেসি ও ড্রাগ স্টোর',
+    badge: 'Drug Batch Safety Lock',
+    badgeBn: 'ওষুধ ব্যাচ ও সুরক্ষা লক',
+    icon: HeartPulse,
+    accentColor: 'from-violet-600 to-purple-600',
+    badgeBg: 'bg-violet-500/10',
+    badgeBorder: 'border-violet-500/30',
+    badgeText: 'text-violet-400',
+    description: 'Enforce strict patient safety with automated medicine batch tracking, hard lockouts on expired drugs, supplier return logging, and instant generic brand lookups.',
+    descriptionBn: 'ওষুধের ব্যাচ নম্বর ট্র্যাকিং, মেয়াদোত্তীর্ণ ওষুধ বিক্রিতে স্বয়ংক্রিয় লক, সাপ্লায়ার রিটার্ন এবং দ্রুত জেনেরিক বিকল্প খোঁজার নির্ভরযোগ্য ব্যবস্থা।',
+    features: [
+      'Strict Medicine Lot & Expiry Enforcement',
+      'Hard Sale Lockout on Expired Pharmaceuticals',
+      'Generic Molecule Alternative Search',
+      'Supplier Expiry Return Claims & Credit Slips'
+    ],
+    featuresBn: [
+      'ওষুধের ব্যাচ ও মেয়াদ বাধ্যতামূলক ট্র্যাকিং',
+      'মেয়াদোত্তীর্ণ ওষুধে স্বয়ংক্রিয় সেলস লক',
+      'জেনেরিক গ্রুপের বিকল্প ওষুধ খোঁজার সুবিধা',
+      'সাপ্লায়ার মেয়াদোত্তীর্ণ রিটার্ন ও ক্রেডিট স্লিপ'
+    ],
+    workflowTitle: 'Patient Safety & Drug Regulation Pipeline',
+    workflowTitleBn: 'রোগীর সুরক্ষা ও ফার্মাসিউটিক্যাল রেগুলেশন',
+    statBadge: 'Guaranteed Expiry Lockout',
+    statBadgeBn: 'মেয়াদোত্তীর্ণ বিক্রি শতভাগ রোধ',
+    steps: [
+      {
+        num: '01',
+        title: 'Receive Medicine Lots',
+        titleBn: 'লট ও মেয়াদ এন্ট্রি',
+        desc: 'Record manufacturer batch numbers, expiry dates, and supplier purchase trade rates.',
+        descBn: 'ওষুধ রিসিভ করার সময় ব্যাচ নম্বর, মেয়াদ এবং সাপ্লায়ার মূল্য তালিকা সিস্টেমে এন্ট্রি দিন।'
+      },
+      {
+        num: '02',
+        title: 'Generic Alternative Search',
+        titleBn: 'জেনেরিক বিকল্প সন্ধান',
+        desc: 'Find prescribed medicines or quickly identify equivalent generics during stock shortages.',
+        descBn: 'প্রেসক্রিপশনের নির্দিষ্ট ব্র্যান্ড না থাকলে দ্রুত একই জেনেরিকের বিকল্প ওষুধ খুঁজে বিল করুন।'
+      },
+      {
+        num: '03',
+        title: 'Safety Lockout & Vendor Claim',
+        titleBn: 'সুরক্ষা লক ও রিটার্ন দাবি',
+        desc: 'If a medicine batch expires, the POS blocks checkout and issues a supplier credit return memo.',
+        descBn: 'মেয়াদ শেষ হওয়া মাত্রই পিওএস বিক্রি বন্ধ করে দেয় এবং সাপ্লায়ার রিটার্ন ভাউচার প্রস্তুত করে।'
+      }
+    ],
+    previewCard: {
+      title: 'Drug Safety & Audit Sentinel',
+      titleBn: 'ওষুধ সুরক্ষা ও অডিট সেনটিনেল',
+      stats: [
+        { label: 'Active Medicines', labelBn: 'মোট ওষুধ আইটেম', val: '3,850 Items' },
+        { label: 'Safety Lockouts', labelBn: 'সেফটি লকআউট', val: '100% Enforced' },
+        { label: 'Vendor Returns', labelBn: 'সাপ্লায়ার রিটার্ন', val: 'Processed' }
+      ]
+    }
+  },
+  {
+    id: 'restaurant',
+    trade: 'Restaurants & Cafes',
+    tradeBn: 'রেস্টুরেন্ট, ক্যাফে ও ফুড',
+    badge: 'Live KDS & Thermal Tickets',
+    badgeBn: 'লাইভ কিচেন ও থার্মাল টিকিট',
+    icon: ChefHat,
+    accentColor: 'from-amber-600 to-orange-600',
+    badgeBg: 'bg-amber-500/10',
+    badgeBorder: 'border-amber-500/30',
+    badgeText: 'text-amber-400',
+    description: 'Eliminate counter-to-kitchen miscommunication with live Kitchen Display System (KDS), automated 80mm order tickets (KOT), table token billing, and split payments.',
+    descriptionBn: 'কাউন্টার ও রান্নাঘরের ভুল বোঝাবুঝি দূর করুন লাইভ কিচেন ডিসপ্লে (KDS), থার্মাল ফুড টিকিট (KOT), টেবিল টোকেন ও স্প্লিট বিলিংয়ের মাধ্যমে।',
+    features: [
+      'Real-Time Kitchen Display System (KDS) Routing',
+      '80mm Kitchen Order Ticket (KOT) Auto-Printing',
+      'Table Number, Dine-In Token & Takeaway Tracking',
+      'Split Tender Bills for Group Dining Customers'
+    ],
+    featuresBn: [
+      'লাইভ কিচেন ডিসপ্লে সিস্টেমে ইনস্ট্যান্ট অর্ডার',
+      '৮০ মিমি কিচেন অর্ডার টিকিট (KOT) অটো প্রিন্ট',
+      'টেবিল নম্বর, ডাইন-ইন টোকেন ও পার্সেল ট্র্যাকিং',
+      'গ্রুপ আড্ডায় আলাদা আলাদা স্প্লিট বিলিং'
+    ],
+    workflowTitle: 'Counter-to-Kitchen Rapid Service Flow',
+    workflowTitleBn: 'কাউন্টার থেকে কিচেন র্যাপিড সার্ভিস ফ্লো',
+    statBadge: 'Zero Kitchen Ticket Mix-Ups',
+    statBadgeBn: 'অর্ডার টিকিট বিভ্রান্তিমুক্ত',
+    steps: [
+      {
+        num: '01',
+        title: 'Punch Table or Takeaway Order',
+        titleBn: 'টেবিল বা পার্সেল অর্ডার',
+        desc: 'Cashier inputs food items, special cooking notes, and assigned table/token number on touch POS.',
+        descBn: 'ক্যাশিয়ার খাবার আইটেম, রান্নার বিশেষ নির্দেশ ও টেবিল বা টোকেন নম্বর ইনপুট দেন।'
+      },
+      {
+        num: '02',
+        title: 'Instant KDS & Ticket Routing',
+        titleBn: 'কিচেন স্ক্রিনে ইনস্ট্যান্ট টিকিট',
+        desc: 'Kitchen screen dings with live cooking timer; chef marks preparation complete when ready to serve.',
+        descBn: 'রান্নাঘরের স্ক্রিনে টাইমারসহ টিকিট ভেসে ওঠে; রান্না শেষে শেফ কমপ্লিট চাপেন।'
+      },
+      {
+        num: '03',
+        title: 'Split Bill & Fast Payment',
+        titleBn: 'স্প্লিট বিল ও দ্রুত পেমেন্ট',
+        desc: 'Cashier prints final guest receipt and splits cost between cash, card, or bKash in one tap.',
+        descBn: 'অতিথি রসিদ প্রিন্ট করুন এবং একাধিক বন্ধুদের মাঝে বিল ভাগ করে দ্রুত পেমেন্ট নিন।'
+      }
+    ],
+    previewCard: {
+      title: 'Live Kitchen Order Terminal',
+      titleBn: 'লাইভ কিচেন ডিসপ্লে স্ট্যাটাস',
+      stats: [
+        { label: 'Active Orders', labelBn: 'চলতি অর্ডার', val: '14 Orders' },
+        { label: 'Avg Prep Time', labelBn: 'গড় রান্নার সময়', val: '8.5 Mins' },
+        { label: 'Order Accuracy', labelBn: 'অর্ডার অ্যাকুরেসি', val: '99.8%' }
+      ]
+    }
+  },
+  {
+    id: 'wholesale',
+    trade: 'Wholesale & Distribution',
+    tradeBn: 'পাইকারি ও ডিস্ট্রিবিউশন',
+    badge: 'Tiered Pricing & Multi-Branch',
+    badgeBn: 'পাইকারি রেট ও ব্রাঞ্চ ট্রান্সফার',
+    icon: Truck,
+    accentColor: 'from-sky-600 to-indigo-700',
+    badgeBg: 'bg-sky-500/10',
+    badgeBorder: 'border-sky-500/30',
+    badgeText: 'text-sky-400',
+    description: 'Manage high-volume B2B commerce with tiered wholesale price lists, master carton packaging conversions, inter-branch store stock transfers, and customer credit aging.',
+    descriptionBn: 'বাল্ক ভলিউম পাইকারি রেট, মাস্টার কার্টন থেকে পিস রূপান্তর, একাধিক ব্রাঞ্চে স্টক ট্রান্সফার এবং কাস্টমার ক্রেডিট এজিং খাতা পরিচালনা করুন।',
+    features: [
+      'Tiered Volume & Wholesale Customer Price Lists',
+      'Master Carton to Inner Box & Unit Conversions',
+      'Inter-Branch Stock Transfers with Gate Passes',
+      'Unified Multi-Store Financial Consolidation'
+    ],
+    featuresBn: [
+      'ভলিউমভিত্তিক কাস্টমার পাইকারি মূল্য তালিকা',
+      'মাস্টার কার্টন থেকে ডজন ও পিস রূপান্তর',
+      'গেটপাসসহ শাখাগুলোর মাঝে স্টক ট্রান্সফার',
+      'সব ব্রাঞ্চের সমন্বিত ব্যালেন্স শিট ও রিপোর্ট'
+    ],
+    workflowTitle: 'High-Volume B2B Distribution Pipeline',
+    workflowTitleBn: 'উচ্চ ভলিউম বি২বি ডিস্ট্রিবিউশন পাইপলাইন',
+    statBadge: 'Centralized Multi-Store Control',
+    statBadgeBn: 'এক লগইনে সব ব্রাঞ্চ নিয়ন্ত্রণ',
+    steps: [
+      {
+        num: '01',
+        title: 'Inward Master Cartons',
+        titleBn: 'মাস্টার কার্টন রিসিভ',
+        desc: 'Receive bulk cargo; system automatically calculates piece unit cost from carton trade price.',
+        descBn: 'কন্টেইনার বা বড় কার্টন রিসিভ করুন; কার্টন থেকে প্রতি পিসের মূল্য অটো হিসাব হবে।'
+      },
+      {
+        num: '02',
+        title: 'Inter-Branch Stock Dispatch',
+        titleBn: 'ব্রাঞ্চে স্টক ডিসপ্যাচ',
+        desc: 'Dispatch goods from central warehouse to retail outlets with in-transit gate pass tracking.',
+        descBn: 'সেন্ট্রাল ওয়্যারহাউস থেকে বিভিন্ন শাখায় স্টক পাঠান ও ইন-ট্রানজিট ট্র্যাক করুন।'
+      },
+      {
+        num: '03',
+        title: 'Consolidated B2B Ledger',
+        titleBn: 'একত্রিত বি২বি লেজার',
+        desc: 'Review customer receivable aging and unified profit & loss across all branch locations.',
+        descBn: 'সব কাস্টমারের বকেয়ার বয়স বিশ্লেষণ এবং সব শাখার সমন্বিত লাভ-ক্ষতি রিপোর্ট দেখুন।'
+      }
+    ],
+    previewCard: {
+      title: 'Multi-Branch Distribution Hub',
+      titleBn: 'মাল্টি-ব্রাঞ্চ ডিস্ট্রিবিউশন হাব',
+      stats: [
+        { label: 'Branch Stores', labelBn: 'শাখা দোকান', val: '6 Branches' },
+        { label: 'In-Transit Goods', labelBn: 'ট্রান্সফার স্টক', val: '৳ 1,84,000' },
+        { label: 'Consolidated Sales', labelBn: 'মোট বিক্রি', val: '৳ 14.8L / Mo' }
+      ]
+    }
+  }
+];
+
 export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) => {
   const [isBn, setIsBn] = useState(false);
   const [activeTab, setActiveTab] = useState<'pos' | 'stock' | 'accounts' | 'vat' | 'store'>('pos');
@@ -156,6 +593,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) =>
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [themeDark, setThemeDark] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [selectedIndustryIndex, setSelectedIndustryIndex] = useState<number>(0);
 
   // Dynamic Pricing & SaaS Admin Synchronization State
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
@@ -1463,95 +1901,266 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) =>
         </div>
       </section>
 
-      {/* 8. INDUSTRY BENTO-GRID */}
-      <section id="industries" className="py-20 bg-[#09090c] text-white border-y border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight">
-              {isBn ? 'আপনার ব্যবসার ধরন অনুযায়ী সমাধান।' : 'What Bizora does for your industry.'}
+      {/* 8. PREMIUM INDUSTRIES SHOWCASE */}
+      <section id="industries" className="relative py-24 sm:py-28 bg-[#070a12] text-white border-y border-white/10 overflow-hidden">
+        {/* Ambient atmospheric gradients & fine grid overlay */}
+        <div className="absolute -top-40 -left-40 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff04_1px,transparent_1px),linear-gradient(to_bottom,#ffffff04_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none" />
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          
+          {/* Eyebrow, Heading, Description */}
+          <div className="text-center max-w-3xl mx-auto mb-14 sm:mb-16 space-y-4">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-cyan-400 text-xs font-bold uppercase tracking-wider shadow-xs">
+              <Sparkles className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+              <span>{isBn ? 'আপনার ব্যবসার জন্য নির্মিত' : 'BUILT FOR YOUR BUSINESS'}</span>
+            </div>
+
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white">
+              {isBn ? 'একটি শক্তিশালী ইআরপি। প্রতিটি ধরনের ব্যবসার জন্য।' : 'One Powerful ERP. Every Type of Business.'}
             </h2>
-            <p className="text-base sm:text-lg text-slate-400 font-medium">
+
+            <p className="text-base sm:text-lg text-slate-400 font-medium leading-relaxed">
               {isBn
-                ? 'একই শক্তিশালী প্ল্যাটফর্ম, কিন্তু প্রতিটি ব্যবসার আসল মাথাব্যথার নিখুঁত সমাধান আলাদা।'
-                : 'One unified platform, tailored to eliminate the specific friction in your industry.'}
+                ? 'বিক্রি, ইনভেন্টরি, কাস্টমার এবং দৈনিক হিসাব পরিচালনা করুন আপনার ব্যবসার ধরন অনুযায়ী কাস্টমাইজড টুলের মাধ্যমে।'
+                : 'Manage sales, inventory, customers and daily operations with tools tailored to the way your business works.'}
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              {
-                icon: '🛒',
-                trade: 'Grocery & Supermart',
-                tradeBn: 'গ্রোসারি ও সুপারশপ',
-                pain: 'Older products expire on the back shelf while newly received items sell first.',
-                painBn: 'পুরোনো মাল তাকে পড়ে মেয়াদ শেষ হয়, আর নতুন মাল আগে বিক্রি হয়ে যায়।',
-                solution: 'FEFO batch tracking, automated expiry warnings, barcode scanning, and low-stock reorder triggers.',
-                solutionBn: 'প্রতি কেনায় লট ও মেয়াদ, পুরোনো ব্যাচ আগে বিক্রি (FEFO), মেয়াদ ও কম-স্টক অ্যালার্ট।'
-              },
-              {
-                icon: '📱',
-                trade: 'Mobile & Electronics',
-                tradeBn: 'মোবাইল ও ইলেকট্রনিক্স',
-                pain: 'Uncertainty over exact serial numbers sold, warranty verification, and credit payment tracking.',
-                painBn: 'ঠিক কোন ফোনটা বিক্রি হলো, ওয়ারেন্টি আছে কি না, আর বাকির কিস্তি মেলানো কঠিন।',
-                solution: 'Serial/IMEI tracked from vendor to checkout, warranty ledger, and instalment reminder schedules.',
-                solutionBn: 'কেনা থেকে বিক্রি পর্যন্ত সিরিয়াল নম্বর, ওয়ারেন্টি ভিউ ও বাকিতে বিক্রিতে কিস্তির শিডিউল।'
-              },
-              {
-                icon: '👗',
-                trade: 'Fashion & Boutique',
-                tradeBn: 'ফ্যাশন ও বুটিক',
-                pain: 'Managing thousands of individual color and size variations becomes an operational nightmare.',
-                painBn: 'প্রতিটি সাইজ ও রঙের ভিন্নতা আলাদা প্রোডাক্ট হিসেবে সামলানো কঠিন হয়ে পড়ে।',
-                solution: 'Matrix-based product variants at POS, Boutique storefront theme, and live inventory sync.',
-                solutionBn: 'টিলে সাইজ ও রঙের ম্যাট্রিক্স ভ্যারিয়েন্ট, বুটিক স্টোর থিম ও লাইভ অনলাইন শপ।'
-              },
-              {
-                icon: '☕',
-                trade: 'Restaurant & Cafe',
-                tradeBn: 'রেস্টুরেন্ট ও ক্যাফে',
-                pain: 'Orders get mixed up between cashier counters, kitchen stations, and table servers.',
-                painBn: 'কাউন্টার আর রান্নাঘরের মাঝে অর্ডার গুলিয়ে যায় এবং সার্ভিং দেরি হয়।',
-                solution: 'Live Kitchen Display System (KDS), thermal food ticket printing, and split billing.',
-                solutionBn: 'ক্যাশিয়ার থেকে কিচেনে অর্ডার পাঠানো, স্টেশনভিত্তিক লাইভ টিকিট ও থার্মাল প্রিন্ট।'
-              },
-              {
-                icon: '⚙️',
-                trade: 'Small Manufacturer',
-                tradeBn: 'ছোট উৎপাদক ও ফ্যাক্টরি',
-                pain: 'Exact unit costs remain unknown when raw materials turn into finished merchandise.',
-                painBn: 'কাঁচামাল থেকে তৈরি পণ্যের আসল উৎপাদন খরচ সঠিকভাবে জানা থাকে না।',
-                solution: 'Bill of Materials (BOM), production runs, raw material reservation, and variance audits.',
-                solutionBn: 'বিল অব ম্যাটেরিয়ালস, প্রোডাকশন রান, কাঁচামাল রিজার্ভ ও খরচের পার্থক্য অডিট।'
-              },
-              {
-                icon: '🏢',
-                trade: 'Multi-Branch Retail',
-                tradeBn: 'একাধিক শাখা ও চেইন স্টোর',
-                pain: 'Every branch runs on separate notebooks, leaving management blind to global stock.',
-                painBn: 'প্রতিটি শাখা আলাদা খাতা, ফলে ব্যবসার পূর্ণাঙ্গ চিত্র কোনো মালিক দেখতে পান না।',
-                solution: 'Unified owner login, inter-branch stock transfers, and 1 consolidated financial statement.',
-                solutionBn: 'এক লগইনে একাধিক স্টোর, শাখাগুলোর মধ্যে ট্রান্সফার ও একটি একত্র রিপোর্ট।'
-              }
-            ].map((ind, idx) => (
-              <div key={idx} className="bg-[#141418] border border-white/10 rounded-2xl p-6 flex flex-col justify-between hover:border-amber-400/50 transition-colors text-left space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="text-3xl p-2 rounded-xl bg-white/5 border border-white/10">{ind.icon}</div>
-                  <h3 className="text-lg font-black text-white">{isBn ? ind.tradeBn : ind.trade}</h3>
+          {/* Responsive Industry Cards Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5" role="tablist" aria-label="Supported Industries">
+            {INDUSTRIES.map((ind, idx) => {
+              const isSelected = selectedIndustryIndex === idx;
+              const IconComp = ind.icon;
+
+              return (
+                <button
+                  key={ind.id}
+                  type="button"
+                  onClick={() => setSelectedIndustryIndex(idx)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setSelectedIndustryIndex(idx);
+                    }
+                  }}
+                  role="tab"
+                  aria-selected={isSelected}
+                  className={`group relative text-left p-5 sm:p-6 rounded-2xl sm:rounded-3xl transition-all duration-300 cursor-pointer flex flex-col justify-between focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#070a12] ${
+                    isSelected
+                      ? 'bg-gradient-to-b from-white/[0.09] to-white/[0.03] border-cyan-400/60 shadow-xl shadow-cyan-950/40 ring-1 ring-cyan-400/40 -translate-y-1'
+                      : 'bg-white/[0.03] border border-white/10 hover:border-white/25 hover:bg-white/[0.05] hover:-translate-y-0.5'
+                  }`}
+                >
+                  {/* Top Bar: Icon + Badge Pill */}
+                  <div>
+                    <div className="flex items-center justify-between gap-3 mb-4">
+                      <div className={`p-3 rounded-2xl bg-gradient-to-br ${ind.accentColor} text-white shadow-md shadow-black/40 group-hover:scale-105 transition-transform shrink-0`}>
+                        <IconComp className="w-5 h-5" />
+                      </div>
+                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full ${ind.badgeBg} ${ind.badgeBorder} ${ind.badgeText} border truncate`}>
+                        {isBn ? ind.badgeBn : ind.badge}
+                      </span>
+                    </div>
+
+                    {/* Trade Name & Description */}
+                    <h3 className={`text-base sm:text-lg font-bold transition-colors mb-2 ${isSelected ? 'text-white font-black' : 'text-slate-100 group-hover:text-cyan-300'}`}>
+                      {isBn ? ind.tradeBn : ind.trade}
+                    </h3>
+                    <p className="text-xs text-slate-400 leading-relaxed line-clamp-2 mb-4">
+                      {isBn ? ind.descriptionBn : ind.description}
+                    </p>
+
+                    {/* Verified Feature Tags */}
+                    <div className="space-y-1.5 pt-3 border-t border-white/5 mb-4">
+                      {(isBn ? ind.featuresBn : ind.features).slice(0, 3).map((feat, fIdx) => (
+                        <div key={fIdx} className="flex items-center gap-2 text-[11px] text-slate-300">
+                          <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-cyan-400' : 'text-slate-500 group-hover:text-cyan-400'}`} />
+                          <span className="truncate">{feat}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Card Footer: Explore Action */}
+                  <div className="flex items-center justify-between pt-2 border-t border-white/5 text-xs font-bold">
+                    <span className={`transition-colors ${isSelected ? 'text-cyan-400 font-black' : 'text-slate-400 group-hover:text-white'}`}>
+                      {isSelected ? (isBn ? 'বর্তমানে নির্বাচিত' : 'Currently Viewing') : (isBn ? 'ওয়ার্কফ্লো দেখুন' : 'Explore Workflow')}
+                    </span>
+                    <div className={`p-1.5 rounded-full transition-all ${isSelected ? 'bg-cyan-500/20 text-cyan-400' : 'bg-white/5 text-slate-400 group-hover:bg-white/10 group-hover:text-white group-hover:translate-x-0.5'}`}>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Interactive Deep-Dive Workflow Showcase */}
+          {(() => {
+            const activeInd = INDUSTRIES[selectedIndustryIndex] || INDUSTRIES[0];
+            const ActiveIcon = activeInd.icon;
+
+            return (
+              <div className="mt-10 sm:mt-12 rounded-3xl bg-gradient-to-b from-slate-900/90 via-[#0a0f1d]/90 to-[#070b14]/90 backdrop-blur-2xl border border-cyan-500/30 p-6 sm:p-8 lg:p-10 shadow-2xl relative overflow-hidden">
+                <div className="absolute -right-20 -top-20 w-80 h-80 bg-gradient-to-br from-cyan-500/10 to-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+
+                {/* Showcase Header */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-8 border-b border-white/10">
+                  <div className="flex items-center gap-3.5">
+                    <div className={`p-3.5 rounded-2xl bg-gradient-to-br ${activeInd.accentColor} text-white shadow-lg shadow-black/40`}>
+                      <ActiveIcon className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        <h3 className="text-xl sm:text-2xl font-black text-white">
+                          {isBn ? activeInd.tradeBn : activeInd.trade}
+                        </h3>
+                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${activeInd.badgeBg} ${activeInd.badgeBorder} ${activeInd.badgeText} border`}>
+                          {isBn ? activeInd.badgeBn : activeInd.badge}
+                        </span>
+                      </div>
+                      <p className="text-xs sm:text-sm text-slate-400 mt-1">
+                        {isBn ? activeInd.workflowTitleBn : activeInd.workflowTitle}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-xs font-bold shrink-0 self-start md:self-auto">
+                    <Zap className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>{isBn ? activeInd.statBadgeBn : activeInd.statBadge}</span>
+                  </div>
                 </div>
 
-                <div className="p-3 rounded-xl bg-rose-500/10 border-l-4 border-rose-500 text-rose-200 text-xs">
-                  <div className="font-bold uppercase tracking-wider text-[10px] text-rose-400 mb-1">{isBn ? 'প্রধান সমস্যা:' : 'Core Headache:'}</div>
-                  {isBn ? ind.painBn : ind.pain}
-                </div>
+                {/* Showcase Grid: Left = Workflow Steps, Right = Live Capabilities & CTA */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 pt-8">
+                  
+                  {/* Left Column (7 cols): 3 Chronological Workflow Steps */}
+                  <div className="lg:col-span-7 space-y-6">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+                      <span>{isBn ? 'বাস্তব কাজের প্রবাহ (Daily Operational Workflow)' : 'Step-by-Step Daily Workflow in Bizora'}</span>
+                    </h4>
 
-                <div className="p-3.5 rounded-xl bg-amber-400/10 border border-amber-400/25 text-amber-200 text-xs">
-                  <div className="font-bold uppercase tracking-wider text-[10px] text-amber-400 mb-1">{isBn ? 'Bizora সমাধান:' : 'Bizora Solution:'}</div>
-                  {isBn ? ind.solutionBn : ind.solution}
+                    <div className="space-y-4">
+                      {activeInd.steps.map((step, sIdx) => (
+                        <div
+                          key={sIdx}
+                          className="flex items-start gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-colors"
+                        >
+                          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/30 text-cyan-300 flex items-center justify-center text-xs font-black shrink-0 mt-0.5">
+                            {step.num}
+                          </div>
+                          <div className="space-y-1">
+                            <h5 className="text-sm font-bold text-white">
+                              {isBn ? step.titleBn : step.title}
+                            </h5>
+                            <p className="text-xs text-slate-400 leading-relaxed">
+                              {isBn ? step.descBn : step.desc}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Right Column (5 cols): Live Preview Terminal & Action */}
+                  <div className="lg:col-span-5 flex flex-col justify-between gap-6">
+                    
+                    {/* Live Preview Terminal Box */}
+                    <div className="rounded-2xl bg-slate-950/80 border border-white/10 p-5 space-y-4 shadow-inner">
+                      <div className="flex items-center justify-between text-xs pb-3 border-b border-white/10">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-rose-500/80" />
+                          <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
+                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
+                          <span className="font-mono text-[11px] text-slate-400 ml-2">
+                            {isBn ? activeInd.previewCard.titleBn : activeInd.previewCard.title}
+                          </span>
+                        </div>
+                        <span className="flex items-center gap-1.5 text-[10px] text-emerald-400 font-bold uppercase tracking-wider">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                          Live
+                        </span>
+                      </div>
+
+                      {/* Real KPI Metrics */}
+                      <div className="grid grid-cols-3 gap-2.5 text-center">
+                        {activeInd.previewCard.stats.map((st, stIdx) => (
+                          <div key={stIdx} className="p-2.5 rounded-xl bg-white/[0.03] border border-white/5 space-y-1">
+                            <div className="text-xs sm:text-sm font-black text-white truncate">
+                              {st.val}
+                            </div>
+                            <div className="text-[10px] text-slate-400 truncate">
+                              {isBn ? st.labelBn : st.label}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Verified Trade Capability Badges */}
+                      <div className="space-y-2 pt-2">
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                          {isBn ? 'অন্তর্ভুক্ত মডিউলসমূহ:' : 'Included ERP Modules:'}
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {(isBn ? activeInd.featuresBn : activeInd.features).map((feat, fIdx) => (
+                            <span
+                              key={fIdx}
+                              className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-slate-300"
+                            >
+                              {feat}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Action Block with Functional Buttons */}
+                    <div className="space-y-3 pt-2">
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={(e) => handlePortalClick('shop', e)}
+                          className="flex-1 px-6 py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-extrabold text-sm shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-95 cursor-pointer"
+                        >
+                          <span>{isBn ? '১৪ দিনের ফ্রি ট্রায়াল শুরু করুন' : 'Start 14-Day Free Trial'}</span>
+                          <ArrowRight className="w-4 h-4" />
+                        </button>
+                        
+                        <a
+                          href="#plans"
+                          className="px-5 py-3.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-200 border border-white/10 font-bold text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer text-center"
+                        >
+                          <span>{isBn ? 'মূল্য দেখুন' : 'View Plans'}</span>
+                          <ArrowUpRight className="w-4 h-4 text-slate-400" />
+                        </a>
+                      </div>
+
+                      {/* Trust Markers */}
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] text-slate-400 pt-1">
+                        <span className="flex items-center gap-1.5 text-emerald-400 font-medium">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          {isBn ? 'ক্রেডিট কার্ড ছাড়া শুরু করুন' : 'No credit card required'}
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                          {isBn ? '২ মিনিটে ইনস্ট্যান্ট সেটআপ' : '2-minute instant setup'}
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                          {isBn ? 'সকল প্রো ফিচার অ্যাক্সেস' : 'Full Pro access'}
+                        </span>
+                      </div>
+                    </div>
+
+                  </div>
                 </div>
               </div>
-            ))}
-          </div>
+            );
+          })()}
+
         </div>
       </section>
 
