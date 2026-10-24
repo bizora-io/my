@@ -1,10 +1,21 @@
 import React from 'react';
 import LegalLayout from './LegalLayout';
 import { RotateCcw, CheckCircle2, ShieldCheck, Clock, Download, AlertCircle } from 'lucide-react';
+import { SEOHead } from '../common/SEOHead';
 
 export const RefundPolicyPage: React.FC = () => {
   return (
     <LegalLayout activeKey="refunds">
+      <SEOHead
+        title="Refund & Cancellation Policy — Bizora SaaS ERP"
+        description="Confirmed subscription renewal cancellation terms, billing cycle guidelines, and refund eligibility rules for Bizora ERP subscriptions."
+        canonicalUrl="/legal/refund-cancellation"
+        breadcrumbs={[
+          { name: 'Home', item: '/' },
+          { name: 'Legal & Trust', item: '/legal' },
+          { name: 'Refund & Cancellation', item: '/legal/refund-cancellation' },
+        ]}
+      />
       <div className="space-y-10">
         {/* Document Header */}
         <div className="border-b border-white/10 pb-6">

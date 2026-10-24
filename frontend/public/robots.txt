@@ -1,0 +1,72 @@
+# =========================================================================
+# Bizora ERP - Search Engine Robots Policy
+# Website: https://bizora-app-io.vercel.app/
+# =========================================================================
+
+User-agent: *
+
+# Allow Public Showcase, Brand & Trust Center
+Allow: /$
+Allow: /landing
+Allow: /legal$
+Allow: /legal/
+Allow: /legal/*
+Allow: /google8227131675a18a01.html
+Allow: /assets/
+Allow: /favicon*
+Allow: /site.webmanifest
+Allow: /sitemap.xml
+
+# Disallow SaaS Admin Portal (Restricted Multi-Tenant Administrative Zone)
+Disallow: /admin
+Disallow: /admin/
+Disallow: /admin/*
+
+# Disallow Backend APIs & Internal Data Endpoints
+Disallow: /api/
+Disallow: /api/*
+
+# Disallow Private Tenant ERP Dashboards & Operational Views
+Disallow: /sale
+Disallow: /purchase
+Disallow: /quick-sale
+Disallow: /sales-return
+Disallow: /purchase-return
+Disallow: /quotations
+Disallow: /cashbox
+Disallow: /sale-ledger
+Disallow: /purchase-ledger
+Disallow: /due-ledger
+Disallow: /installments
+Disallow: /kitchen
+Disallow: /purchase-orders
+Disallow: /hr-structure
+Disallow: /expense-ledger
+Disallow: /income-ledger
+Disallow: /products
+Disallow: /product-lots
+Disallow: /stock-reconcile
+Disallow: /customers
+Disallow: /suppliers
+Disallow: /transfer
+Disallow: /stores
+Disallow: /employees
+Disallow: /access
+Disallow: /communication
+Disallow: /marketing
+Disallow: /journal
+Disallow: /payments
+Disallow: /reports
+Disallow: /consolidation
+Disallow: /shop
+Disallow: /support
+Disallow: /bin
+Disallow: /subscription
+Disallow: /printer
+Disallow: /ai-chat
+Disallow: /assistant
+Disallow: /settings
+Disallow: /*?*portal=
+
+# Authoritative XML Sitemap Reference
+Sitemap: https://bizora-app-io.vercel.app/sitemap.xml

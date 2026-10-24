@@ -1,5 +1,6 @@
 import React from 'react';
 import LegalLayout from './LegalLayout';
+import { SEOHead } from '../common/SEOHead';
 import { 
   ShieldCheck, 
   FileText, 
@@ -70,6 +71,15 @@ export const LegalOverviewPage: React.FC = () => {
 
   return (
     <LegalLayout activeKey="overview">
+      <SEOHead
+        title="Legal & Trust Center — Bizora SaaS ERP"
+        description="Official legal documentation, security standards, privacy policies, and compliance terms governing Bizora Cloud ERP."
+        canonicalUrl="/legal"
+        breadcrumbs={[
+          { name: 'Home', item: '/' },
+          { name: 'Legal & Trust Center', item: '/legal' },
+        ]}
+      />
       <div className="space-y-12">
         {/* Hero Section */}
         <div className="text-center max-w-3xl mx-auto space-y-4">

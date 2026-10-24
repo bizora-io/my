@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { ShoppingCart, Package, CheckCircle, X } from 'lucide-react';
+import { SEOHead } from './common/SEOHead';
 
 /**
  * Public customer-facing storefront — loads theme + catalog from API.
@@ -98,6 +99,12 @@ const StorefrontPublic: React.FC = () => {
 
   return (
     <div className={`min-h-screen ${isDark ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-900'}`}>
+      <SEOHead
+        title={shop?.name ? `${shop.name} — Online Store` : 'Online Store — Powered by Bizora'}
+        description={shop?.tagline || `Browse the official online catalog for ${shop?.name || 'this store'}. Safe shopping powered by Bizora.`}
+        canonicalUrl={`/s/${slug || ''}`}
+        ogType="website"
+      />
       {/* Header */}
       <header
         className="sticky top-0 z-20 border-b backdrop-blur-md"

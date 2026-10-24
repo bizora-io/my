@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import LegalLayout from './LegalLayout';
 import { Cookie, Settings2, CheckCircle2, Shield, Info, SlidersHorizontal } from 'lucide-react';
+import { SEOHead } from '../common/SEOHead';
 
 export const CookiePolicyPage: React.FC = () => {
   const [prefStatus, setPrefStatus] = useState<string | null>(null);
@@ -16,6 +17,16 @@ export const CookiePolicyPage: React.FC = () => {
 
   return (
     <LegalLayout activeKey="cookies">
+      <SEOHead
+        title="Cookie & Tracking Policy — Bizora SaaS ERP"
+        description="Understand how Bizora uses essential authentication cookies, local session storage, and security tokens to protect tenant accounts."
+        canonicalUrl="/legal/cookie-policy"
+        breadcrumbs={[
+          { name: 'Home', item: '/' },
+          { name: 'Legal & Trust', item: '/legal' },
+          { name: 'Cookie Policy', item: '/legal/cookie-policy' },
+        ]}
+      />
       <div className="space-y-10">
         {/* Document Header */}
         <div className="border-b border-white/10 pb-6">

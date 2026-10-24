@@ -2,6 +2,7 @@ import React from 'react';
 import { Auth } from '@shared/components/Auth';
 import { PortalType, PORTAL_CONFIGS, getPortalUrl, setDevPortal } from '../../lib/domainRouter';
 import { Store, Users, ShoppingBag, Shield, ArrowLeft, ExternalLink, Globe } from 'lucide-react';
+import { SEOHead } from '../common/SEOHead';
 
 interface PortalLoginProps {
   portal: 'shop' | 'employee' | 'customer' | 'admin';
@@ -32,6 +33,11 @@ export const PortalLogin: React.FC<PortalLoginProps> = ({ portal, onSwitchPortal
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-between">
+      <SEOHead
+        title={`Sign In — ${config.name} — Bizora`}
+        description="Secure authenticated access to Bizora ERP."
+        noIndex={true}
+      />
       {/* Top Portal Banner with Context */}
       <div className="bg-slate-900 text-white border-b border-slate-800 px-4 py-2.5 text-xs">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">

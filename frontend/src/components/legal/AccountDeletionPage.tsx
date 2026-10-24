@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import LegalLayout from './LegalLayout';
 import { Trash2, AlertTriangle, CheckCircle2, ShieldAlert, ArrowRight, Clock, HelpCircle, Loader2 } from 'lucide-react';
 import { apiFetch } from '../../lib/apiClient';
+import { SEOHead } from '../common/SEOHead';
 
 export const AccountDeletionPage: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -85,6 +86,16 @@ export const AccountDeletionPage: React.FC = () => {
 
   return (
     <LegalLayout activeKey="deletion">
+      <SEOHead
+        title="Account & Data Deletion Policy — Bizora SaaS ERP"
+        description="Verified procedures for account termination, tenant data deletion requests, statutory record retention, and export options."
+        canonicalUrl="/legal/account-data-deletion"
+        breadcrumbs={[
+          { name: 'Home', item: '/' },
+          { name: 'Legal & Trust', item: '/legal' },
+          { name: 'Account & Data Deletion', item: '/legal/account-data-deletion' },
+        ]}
+      />
       <div className="space-y-10">
         {/* Document Header */}
         <div className="border-b border-white/10 pb-6">

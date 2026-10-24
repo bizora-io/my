@@ -15,6 +15,7 @@ import { getPlanFeaturesOverview, formatFeatureForDisplay, DisplayFeature } from
 import { PlanDetailsModal } from './PlanDetailsModal';
 import { LegalModal, LegalDocType } from '../legal/LegalModal';
 import CookieBanner from '../legal/CookieBanner';
+import { SEOHead } from '../common/SEOHead';
 
 interface LandingPageProps {
   onNavigatePortal?: (portal: PortalType) => void;
@@ -364,8 +365,62 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) =>
     }
   };
 
+  const landingFAQSchema = useMemo(() => ({
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: 'Does Bizora work without internet?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Yes. All sales, barcode scanning, and receipts run seamlessly offline. Once connectivity is restored, all offline transactions automatically sync to the cloud database with conflict resolution.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'Can my staff use it without prior technical training?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Yes. Bizora provides pre-configured role templates (Cashier, Stock Manager, Manager). Each person only sees what they are authorized to do, keeping screens intuitive and uncluttered.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'Can I manage multiple branch stores under one account?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Yes. You can manage multiple branch stores under one central owner account, perform stock transfers between locations, and review unified financial reports.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'How does VAT calculation handle customer returns?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Bizora automatically nets output and input VAT against partial and full returns, ensuring you only report and pay legitimate tax obligations.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'How secure is my business data?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Your data is protected with 2FA, argon2id/bcrypt password hashing, automated cloud backups, audit logging, and strict multi-tenant isolation.',
+        },
+      },
+    ],
+  }), []);
+
   return (
     <div className={`min-h-screen bg-[#09090b] text-slate-100 font-sans selection:bg-amber-400 selection:text-black overflow-x-hidden ${themeDark ? 'dark' : ''}`}>
+      <SEOHead
+        title={isBn ? "Bizora — ক্লাউড ইআরপি, পিওএস এবং ইনভেন্টরি সফটওয়্যার" : "Bizora — Smart Cloud ERP, POS & Inventory Management Software"}
+        description="All-in-one business management software for modern retail and SMEs. High-speed barcode POS, FEFO batch inventory, double-entry accounting, VAT invoicing, and multi-branch operations."
+        canonicalUrl="https://bizora-app-io.vercel.app/"
+        keywords="Bizora, SaaS ERP, POS software, inventory management, retail billing software, multi-branch ERP, accounting software, FEFO stock, e-commerce POS, cloud ERP Bangladesh"
+        structuredData={landingFAQSchema}
+      />
       
       {/* 1. STICKY GLASS HEADER (Clean, Professional, Zero Admin Links) */}
       <header className="sticky top-0 z-50 bg-[#09090b]/85 backdrop-blur-xl border-b border-white/10 text-white">

@@ -63,6 +63,7 @@ const LandingPage = lazy(() => import('./components/landing/LandingPage'));
 const PortalLogin = lazy(() => import('./components/portal/PortalLogin'));
 const LegalRouter = lazy(() => import('./components/legal/LegalRouter'));
 import { CookieBanner } from './components/legal/CookieBanner';
+import { SEOHead } from './components/common/SEOHead';
 import { detectCurrentPortal, PortalType } from './lib/domainRouter';
 import { Auth } from './components/Auth';
 import { CustomerPortal } from './components/CustomerPortal';
@@ -2202,6 +2203,11 @@ const AppContent: React.FC = () => {
 
   return (
     <Router>
+      <SEOHead
+        title="Bizora ERP Dashboard — Business Management"
+        description="Bizora Cloud ERP authenticated business management portal."
+        noIndex={true}
+      />
       <OnboardingProvider>
         <InactivityTimer />
         <OnboardingTour />

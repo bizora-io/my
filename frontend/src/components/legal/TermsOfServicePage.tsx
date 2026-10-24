@@ -1,10 +1,21 @@
 import React from 'react';
 import LegalLayout from './LegalLayout';
 import { FileText, CheckCircle2, AlertTriangle, Scale, Clock, ShieldCheck } from 'lucide-react';
+import { SEOHead } from '../common/SEOHead';
 
 export const TermsOfServicePage: React.FC = () => {
   return (
     <LegalLayout activeKey="terms">
+      <SEOHead
+        title="Terms of Service — Bizora SaaS ERP"
+        description="Review terms, user responsibilities, subscription billing rules, acceptable use, and service commitments for Bizora ERP."
+        canonicalUrl="/legal/terms-of-service"
+        breadcrumbs={[
+          { name: 'Home', item: '/' },
+          { name: 'Legal & Trust', item: '/legal' },
+          { name: 'Terms of Service', item: '/legal/terms-of-service' },
+        ]}
+      />
       <div className="space-y-10">
         {/* Document Header */}
         <div className="border-b border-white/10 pb-6">

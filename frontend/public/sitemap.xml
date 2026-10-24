@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  
+  <!-- Bizora ERP Home Landing Page -->
+  <url>
+    <loc>https://bizora-app-io.vercel.app/</loc>
+    <lastmod>2026-10-24</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://bizora-app-io.vercel.app/assets/bizora-logo.png</image:loc>
+      <image:title>Bizora - Smart Cloud ERP, POS and Inventory Management</image:title>
+      <image:caption>Complete cloud ERP software with point of sale, FEFO inventory, automated accounting and e-commerce.</image:caption>
+    </image:image>
+  </url>
+
+  <!-- Legal & Trust Center Overview -->
+  <url>
+    <loc>https://bizora-app-io.vercel.app/legal</loc>
+    <lastmod>2026-10-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Privacy Policy -->
+  <url>
+    <loc>https://bizora-app-io.vercel.app/legal/privacy-policy</loc>
+    <lastmod>2026-10-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Terms of Service -->
+  <url>
+    <loc>https://bizora-app-io.vercel.app/legal/terms-of-service</loc>
+    <lastmod>2026-10-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Cookie Policy -->
+  <url>
+    <loc>https://bizora-app-io.vercel.app/legal/cookie-policy</loc>
+    <lastmod>2026-10-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <!-- Refund & Cancellation Policy -->
+  <url>
+    <loc>https://bizora-app-io.vercel.app/legal/refund-cancellation</loc>
+    <lastmod>2026-10-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Data Security & Processing Agreement -->
+  <url>
+    <loc>https://bizora-app-io.vercel.app/legal/data-security-processing</loc>
+    <lastmod>2026-10-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Account & Data Deletion Policy -->
+  <url>
+    <loc>https://bizora-app-io.vercel.app/legal/account-data-deletion</loc>
+    <lastmod>2026-10-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+</urlset>

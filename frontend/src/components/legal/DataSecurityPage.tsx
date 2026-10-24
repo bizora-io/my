@@ -1,10 +1,21 @@
 import React from 'react';
 import LegalLayout from './LegalLayout';
 import { Lock, ShieldCheck, Server, Key, EyeOff, RefreshCw, AlertTriangle, FileCode } from 'lucide-react';
+import { SEOHead } from '../common/SEOHead';
 
 export const DataSecurityPage: React.FC = () => {
   return (
     <LegalLayout activeKey="security">
+      <SEOHead
+        title="Data Security & Processing Agreement — Bizora SaaS ERP"
+        description="Enterprise security controls, multi-tenant database isolation, encryption protocols, and administrative safeguards at Bizora."
+        canonicalUrl="/legal/data-security-processing"
+        breadcrumbs={[
+          { name: 'Home', item: '/' },
+          { name: 'Legal & Trust', item: '/legal' },
+          { name: 'Data Security & Processing', item: '/legal/data-security-processing' },
+        ]}
+      />
       <div className="space-y-10">
         {/* Document Header */}
         <div className="border-b border-white/10 pb-6">

@@ -1,10 +1,21 @@
 import React from 'react';
 import LegalLayout from './LegalLayout';
 import { Shield, Lock, Server, CheckCircle2, AlertCircle, FileText, Mail } from 'lucide-react';
+import { SEOHead } from '../common/SEOHead';
 
 export const PrivacyPolicyPage: React.FC = () => {
   return (
     <LegalLayout activeKey="privacy">
+      <SEOHead
+        title="Privacy Policy — Bizora SaaS ERP"
+        description="Learn how Bizora collects, stores, processes, and protects your business records, personal credentials, and customer transaction data."
+        canonicalUrl="/legal/privacy-policy"
+        breadcrumbs={[
+          { name: 'Home', item: '/' },
+          { name: 'Legal & Trust', item: '/legal' },
+          { name: 'Privacy Policy', item: '/legal/privacy-policy' },
+        ]}
+      />
       <div className="space-y-10">
         {/* Document Header */}
         <div className="border-b border-white/10 pb-6">
