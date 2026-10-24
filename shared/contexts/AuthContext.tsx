@@ -231,23 +231,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('bizora_registered_users', JSON.stringify(registeredUsers));
   }, [registeredUsers]);
 
-  // Keep the active shopowner/user session synchronized with changes to registeredUsers (e.g. from SaaS Admin Panel)
+  // Synchronize registeredUsers cache with active authoritative user
   useEffect(() => {
-    if (user && (user.role === UserRole.SHOP_OWNER || user.isImpersonated)) {
-      const latestUser = registeredUsers.find(u => u.id === user.id);
-      if (latestUser) {
-        const { password, ...sessionUser } = latestUser as any;
-        const updatedSessionUser = {
-          ...sessionUser,
-          isImpersonated: user.isImpersonated
-        };
-        if (JSON.stringify(updatedSessionUser) !== JSON.stringify(user)) {
-          setUser(updatedSessionUser);
-          localStorage.setItem('nexus_user', JSON.stringify(updatedSessionUser));
+    if (user && user.id && (user.role === UserRole.SHOP_OWNER || user.role === UserRole.ADMIN)) {
+      setRegisteredUsers(prev => {
+        const idx = prev.findIndex(u => u.id === user.id);
+        if (idx === -1) return prev;
+        const current = prev[idx];
+        if (
+          current.plan !== user.plan ||
+          current.subscriptionStatus !== user.subscriptionStatus ||
+          current.subscriptionRenewsAt !== user.subscriptionRenewsAt ||
+          current.isPremium !== user.isPremium ||
+          current.storageLimit !== user.storageLimit ||
+          current.branchLimit !== user.branchLimit ||
+          current.employeeLimit !== user.employeeLimit
+        ) {
+          const next = [...prev];
+          next[idx] = {
+            ...current,
+            plan: user.plan,
+            subscriptionStatus: user.subscriptionStatus,
+            subscriptionRenewsAt: user.subscriptionRenewsAt,
+            isPremium: user.isPremium,
+            storageLimit: user.storageLimit,
+            branchLimit: user.branchLimit,
+            employeeLimit: user.employeeLimit,
+            features: user.features || current.features,
+            enabledFeatures: user.enabledFeatures || current.enabledFeatures,
+          };
+          localStorage.setItem('bizora_registered_users', JSON.stringify(next));
+          return next;
         }
-      }
+        return prev;
+      });
     }
-  }, [registeredUsers, user]);
+  }, [user?.id, user?.plan, user?.subscriptionStatus, user?.subscriptionRenewsAt, user?.isPremium, user?.storageLimit, user?.branchLimit, user?.employeeLimit, user?.features, user?.enabledFeatures]);
 
   useEffect(() => {
     setSessions([]);
@@ -1338,24 +1357,79 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const body = await res.json();
       const remote = body.user;
       if (!remote || !remote.id) return;
+
+      const rawStatus = remote.subscriptionStatus || 'Active';
+      const normStatus: 'Active' | 'Trial' | 'Expired' | 'Grace' =
+        String(rawStatus).toLowerCase() === 'trial'
+          ? 'Trial'
+          : String(rawStatus).toLowerCase() === 'expired'
+            ? 'Expired'
+            : String(rawStatus).toLowerCase() === 'grace'
+              ? 'Grace'
+              : 'Active';
+
       setUser((prev) => {
         if (!prev || prev.id !== remote.id) return prev;
-        // Merge subscription / trial fields from server (SaaS overrides)
-        const merged = {
+        // Merge subscription / trial fields from server (authoritative Firestore overrides)
+        const merged: User = {
           ...prev,
           plan: remote.plan ?? prev.plan,
-          subscriptionStatus: remote.subscriptionStatus ?? prev.subscriptionStatus,
+          subscriptionStatus: normStatus,
           subscriptionRenewsAt: remote.subscriptionRenewsAt ?? prev.subscriptionRenewsAt,
           subscriptionEnforce: remote.subscriptionEnforce ?? prev.subscriptionEnforce,
           trialLimits: remote.trialLimits ?? prev.trialLimits,
           trialUsage: remote.trialUsage ?? prev.trialUsage,
           trialStartedAt: remote.trialStartedAt ?? prev.trialStartedAt,
           features: remote.features ?? prev.features,
+          enabledFeatures: remote.enabledFeatures ?? prev.enabledFeatures,
           isPremium: remote.isPremium ?? prev.isPremium,
           accountStatus: remote.accountStatus ?? prev.accountStatus,
+          storageLimit: remote.storageLimit ?? prev.storageLimit,
+          employeeLimit: remote.employeeLimit ?? prev.employeeLimit,
+          branchLimit: remote.branchLimit ?? prev.branchLimit,
+          userLimit: remote.userLimit ?? prev.userLimit,
         };
+
+        // If user has multi-business list, synchronize active business subscription settings
+        if (Array.isArray(merged.businesses) && merged.businesses.length > 0) {
+          merged.businesses = merged.businesses.map(b => {
+            if (b.id === remote.id || b.name === merged.businessName) {
+              return {
+                ...b,
+                plan: merged.plan,
+                settings: {
+                  ...(b.settings || {}),
+                  subscription: {
+                    status: normStatus,
+                    plan: merged.plan,
+                    renewsAt: merged.subscriptionRenewsAt,
+                  }
+                }
+              };
+            }
+            return b;
+          });
+        }
+
         localStorage.setItem('nexus_user', JSON.stringify(merged));
         return merged;
+      });
+
+      // Synchronize registeredUsers cache so admin views and local storage reflect the new plan
+      setRegisteredUsers(prev => {
+        const idx = prev.findIndex(u => u.id === remote.id);
+        if (idx === -1) return prev;
+        const current = prev[idx];
+        const next = [...prev];
+        next[idx] = {
+          ...current,
+          plan: remote.plan ?? current.plan,
+          subscriptionStatus: normStatus,
+          subscriptionRenewsAt: remote.subscriptionRenewsAt ?? current.subscriptionRenewsAt,
+          isPremium: remote.isPremium ?? current.isPremium,
+        };
+        localStorage.setItem('bizora_registered_users', JSON.stringify(next));
+        return next;
       });
     } catch (e) {
       console.warn('refreshSessionFromServer failed', e);
@@ -1749,13 +1823,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     
     if (request.type === 'subscription') {
-      const requestedPlan = request.details?.plan || 'Nexus Pro';
+      const requestedPlan = request.details?.plan || request.plan || 'Nexus Pro';
       const isEnt = requestedPlan === 'Enterprise';
       const isPro = requestedPlan === 'Nexus Pro' || requestedPlan === 'Pro';
+      const renewDays = request.billingCycle === 'yearly' ? 365 : 30;
       
       const updatedFields: Partial<User> = {
         plan: requestedPlan,
         isPremium: isEnt || isPro,
+        subscriptionStatus: 'Active',
+        subscriptionRenewsAt: new Date(Date.now() + renewDays * 86400000).toISOString(),
         storageLimit: isEnt ? 2048 : isPro ? 500 : 100,
         employeeLimit: isEnt ? 30 : isPro ? 10 : 3,
         branchLimit: isEnt ? 10 : isPro ? 3 : 1,

@@ -255,24 +255,30 @@ export const CustomerPortal: React.FC = () => {
         return;
       }
       try {
-        await apiFetch('/api/auth/phone-verify/request', {
+        const res = await apiFetch('/api/auth/phone-verify/request', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ mobile: mobileForm.newMobile }),
         });
+        const body = await res.json().catch(() => ({}));
+        if (body.verificationToken) {
+          sessionStorage.setItem('bizora_customer_verify_token', body.verificationToken);
+        }
       } catch (err) { console.warn('Phone verify request failed:', err); }
       // Go to Step 2 (OTP)
       setMobileForm(prev => ({ ...prev, step: 2 }));
     } else {
       try {
+        const verificationToken = sessionStorage.getItem('bizora_customer_verify_token') || undefined;
         const res = await apiFetch('/api/auth/phone-verify/confirm', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ mobile: mobileForm.newMobile, otp: mobileForm.otp }),
+          body: JSON.stringify({ mobile: mobileForm.newMobile, otp: mobileForm.otp, verificationToken }),
         });
         const { valid } = await res.json();
         if (!valid) {
           alert('Invalid or expired OTP code.');
           return;
         }
+        sessionStorage.removeItem('bizora_customer_verify_token');
       } catch (err) {
         alert('Could not reach the server to verify the code.');
         return;

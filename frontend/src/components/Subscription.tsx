@@ -701,8 +701,17 @@ const Subscription: React.FC = () => {
       ========================================================================== */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 max-w-7xl mx-auto px-4">
         {plans.filter((p: any) => p.status !== 'inactive').map((plan: any) => {
-          const isCurrent = String(user?.plan || '').toLowerCase() === String(plan.name || '').toLowerCase() ||
-                            (String(plan.id).toLowerCase() === 'basic' && !user?.plan);
+          const userPlanNorm = String(user?.plan || '').toLowerCase().trim();
+          const planNameNorm = String(plan.name || '').toLowerCase().trim();
+          const planIdNorm = String(plan.id || '').toLowerCase().trim();
+          const isCurrent =
+            userPlanNorm === planNameNorm ||
+            userPlanNorm === planIdNorm ||
+            (userPlanNorm.includes('pro') && (planNameNorm.includes('pro') || planIdNorm === 'pro')) ||
+            (userPlanNorm.includes('enterprise') && (planNameNorm.includes('enterprise') || planIdNorm === 'enterprise')) ||
+            (userPlanNorm.includes('basic') && (planNameNorm.includes('basic') || planIdNorm === 'basic')) ||
+            (!user?.plan && planIdNorm === 'basic');
+
           const isPopular = Boolean(plan.isPopular || plan.id === 'pro' || plan.code === 'pro');
           const pricing = getPlanPrice(plan);
           const hasPending = saasRequests?.some((r: any) => 

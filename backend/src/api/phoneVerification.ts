@@ -15,10 +15,24 @@ import {
 const router = express.Router();
 
 function normalizeMobile(mobile: string): string {
-  let digits = (mobile || "").replace(/\D/g, "").replace(/^0+/, "");
+  let digits = (mobile || "").replace(/\D/g, "");
+  // Strip redundant leading zeroes
+  digits = digits.replace(/^0+/, "");
+  // If starts with 880880 (double country code from UI + code prefix)
+  if (digits.startsWith("880880")) {
+    digits = digits.slice(3);
+  }
+  // If starts with 88001 (country code + local 0)
+  if (digits.startsWith("88001") && digits.length === 14) {
+    digits = "880" + digits.slice(4);
+  }
   // Standardize Bangladesh numbers: 10 digits starting with 1 -> prepend 880
   if (digits.length === 10 && digits.startsWith("1")) {
     digits = "880" + digits;
+  }
+  // Standardize 11 digits starting with 01 -> replace leading 0 with 880
+  if (digits.length === 11 && digits.startsWith("01")) {
+    digits = "880" + digits.slice(1);
   }
   return digits;
 }
@@ -36,12 +50,21 @@ function signVerificationToken(payload: { docId: string; codeHash: string; expir
 
 function verifyVerificationToken(token: string): { docId: string; codeHash: string; expiresAt: number; mobile: string } | null {
   try {
-    const [dataB64, sig] = token.split(".");
+    if (!token || typeof token !== "string") return null;
+    const parts = token.split(".");
+    if (parts.length !== 2) return null;
+    const [dataB64, sig] = parts;
     if (!dataB64 || !sig) return null;
     const secret = getOtpSecret();
     const dataStr = Buffer.from(dataB64, "base64url").toString("utf8");
     const expectedSig = crypto.createHmac("sha256", secret).update(dataStr).digest("hex");
-    if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expectedSig))) return null;
+    
+    // Constant-time comparison safe against buffer length mismatch
+    const sigBuf = Buffer.from(sig);
+    const expBuf = Buffer.from(expectedSig);
+    if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
+      return null;
+    }
     const payload = JSON.parse(dataStr);
     if (Date.now() > Number(payload.expiresAt || 0)) return null;
     return payload;
@@ -193,7 +216,19 @@ router.post("/confirm", async (req, res) => {
       const payload = verifyVerificationToken(verificationToken);
       if (payload) {
         const payloadNorm = normalizeMobile(payload.mobile);
-        if (payloadNorm === docId || payload.docId === docId || payload.mobile === mobile) {
+        const inputNorm = normalizeMobile(mobile);
+        const payloadRaw = (payload.mobile || "").replace(/\D/g, "");
+        const inputRaw = (mobile || "").replace(/\D/g, "");
+
+        const mobileMatches =
+          payloadNorm === inputNorm ||
+          payloadNorm === docId ||
+          payload.docId === docId ||
+          payload.mobile === mobile ||
+          payloadRaw === inputRaw ||
+          (payloadRaw.length >= 10 && inputRaw.length >= 10 && (payloadRaw.endsWith(inputRaw.slice(-10)) || inputRaw.endsWith(payloadRaw.slice(-10))));
+
+        if (mobileMatches) {
           const valid = await verifyOtp(String(otp), payload.codeHash);
           if (valid) {
             await verificationsCollection().doc(docId).delete().catch(() => {});

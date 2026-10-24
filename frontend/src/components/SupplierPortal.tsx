@@ -357,10 +357,14 @@ export const SupplierPortal: React.FC = () => {
       return;
     }
     try {
-      await apiFetch('/api/auth/phone-verify/request', {
+      const res = await apiFetch('/api/auth/phone-verify/request', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mobile: newPhone }),
       });
+      const body = await res.json().catch(() => ({}));
+      if (body.verificationToken) {
+        sessionStorage.setItem('bizora_supplier_verify_token', body.verificationToken);
+      }
     } catch (err) { console.warn('Phone verify request failed:', err); }
     setShowOtpField(true);
     setSuccessMessage('A verification code has been sent to the new number.');
@@ -369,15 +373,17 @@ export const SupplierPortal: React.FC = () => {
   const handleVerifyPhoneChange = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const verificationToken = sessionStorage.getItem('bizora_supplier_verify_token') || undefined;
       const res = await apiFetch('/api/auth/phone-verify/confirm', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mobile: newPhone, otp: phoneOtp }),
+        body: JSON.stringify({ mobile: newPhone, otp: phoneOtp, verificationToken }),
       });
       const { valid } = await res.json();
       if (!valid) {
         alert('Invalid or expired OTP code.');
         return;
       }
+      sessionStorage.removeItem('bizora_supplier_verify_token');
     } catch (err) {
       alert('Could not reach the server to verify the code.');
       return;

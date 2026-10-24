@@ -522,6 +522,10 @@ export const Auth: React.FC<AuthProps> = ({ initialRole, portalMode, lockRole = 
       }
       if (body.verificationToken) {
         setVerificationToken(body.verificationToken);
+        try {
+          sessionStorage.setItem('bizora_phone_verify_token', body.verificationToken);
+          sessionStorage.setItem('bizora_phone_verify_mobile', fullMobile);
+        } catch { /* storage quota or private mode */ }
       }
       if (body.devCode) {
         setOtp(body.devCode);
@@ -567,13 +571,18 @@ export const Auth: React.FC<AuthProps> = ({ initialRole, portalMode, lockRole = 
     } else {
       // Backend confirmation
       try {
+        const effectiveToken =
+          verificationToken ||
+          (typeof window !== 'undefined' ? sessionStorage.getItem('bizora_phone_verify_token') : null) ||
+          undefined;
+
         const res = await apiFetch('/api/auth/phone-verify/confirm', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             mobile: fullMobile,
             otp: otp.trim(),
-            verificationToken: verificationToken || undefined,
+            verificationToken: effectiveToken,
           }),
         });
         const body = await res.json().catch(() => ({} as any));
@@ -582,6 +591,10 @@ export const Auth: React.FC<AuthProps> = ({ initialRole, portalMode, lockRole = 
           alert(body.error || 'Invalid or expired verification code.');
           return;
         }
+        try {
+          sessionStorage.removeItem('bizora_phone_verify_token');
+          sessionStorage.removeItem('bizora_phone_verify_mobile');
+        } catch { /* ignore */ }
       } catch {
         setLoading(false);
         alert('Could not reach the server to verify the code.');
