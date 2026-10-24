@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Cookie, Shield, Check, X, Settings2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 export interface CookiePreferences {
   essential: boolean;
@@ -88,12 +87,12 @@ export const CookieBanner: React.FC = () => {
               We use strictly necessary cookies to keep your ERP session authenticated and secure, plus optional analytics to improve performance. We never sell your business data.
             </p>
             <div className="mt-2">
-              <Link
-                to="/legal/cookie-policy"
+              <a
+                href="#/legal/cookie-policy"
                 className="text-cyan-400 hover:text-cyan-300 underline font-semibold transition-colors"
               >
                 Read our Cookie Policy
-              </Link>
+              </a>
             </div>
           </div>
           <button

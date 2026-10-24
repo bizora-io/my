@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
 import { 
   Shield, 
   FileText, 
@@ -7,12 +6,9 @@ import {
   RotateCcw, 
   Lock, 
   Trash2, 
-  ArrowLeft, 
   Home, 
   Globe, 
-  Scale, 
-  ChevronRight,
-  ExternalLink
+  Scale
 } from 'lucide-react';
 
 interface LegalLayoutProps {
@@ -21,8 +17,8 @@ interface LegalLayoutProps {
 }
 
 export const LegalLayout: React.FC<LegalLayoutProps> = ({ children, activeKey }) => {
-  const location = useLocation();
   const [isBn, setIsBn] = useState(false);
+  const currentPath = typeof window !== 'undefined' ? (window.location.hash || window.location.pathname).toLowerCase() : '';
 
   const NAV_ITEMS = [
     {
@@ -76,7 +72,7 @@ export const LegalLayout: React.FC<LegalLayoutProps> = ({ children, activeKey })
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
           
           {/* Logo & Brand */}
-          <Link to="/" className="flex items-center gap-3 group">
+          <a href="#/legal" className="flex items-center gap-3 group">
             <img 
               src="/assets/bizora-emblem.png" 
               alt="Bizora Logo" 
@@ -90,7 +86,7 @@ export const LegalLayout: React.FC<LegalLayoutProps> = ({ children, activeKey })
                 Trust & Legal Center
               </span>
             </div>
-          </Link>
+          </a>
 
           {/* Quick Actions */}
           <div className="flex items-center gap-3">
@@ -103,13 +99,13 @@ export const LegalLayout: React.FC<LegalLayoutProps> = ({ children, activeKey })
               <span>{isBn ? 'English' : 'বাংলা'}</span>
             </button>
 
-            <Link
-              to="/"
+            <a
+              href="#/"
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs sm:text-sm font-semibold transition-all border border-white/10"
             >
               <Home className="w-3.5 h-3.5" />
               <span>{isBn ? 'হোমপেজ' : 'Back to Home'}</span>
-            </Link>
+            </a>
           </div>
         </div>
 
@@ -118,11 +114,11 @@ export const LegalLayout: React.FC<LegalLayoutProps> = ({ children, activeKey })
           <nav className="flex items-center gap-1 sm:gap-2 min-w-max">
             {NAV_ITEMS.map((item) => {
               const Icon = item.icon;
-              const isActive = activeKey === item.key || location.pathname === item.to;
+              const isActive = activeKey === item.key || currentPath.includes(item.to.toLowerCase());
               return (
-                <Link
+                <a
                   key={item.key}
-                  to={item.to}
+                  href={`#${item.to}`}
                   className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap ${
                     isActive
                       ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 font-bold'
@@ -131,7 +127,7 @@ export const LegalLayout: React.FC<LegalLayoutProps> = ({ children, activeKey })
                 >
                   <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
                   <span>{item.label}</span>
-                </Link>
+                </a>
               );
             })}
           </nav>
@@ -153,12 +149,12 @@ export const LegalLayout: React.FC<LegalLayoutProps> = ({ children, activeKey })
             <span>© {new Date().getFullYear()} All rights reserved.</span>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-4 text-xs">
-            <Link to="/legal/privacy-policy" className="hover:text-white transition-colors">Privacy</Link>
-            <Link to="/legal/terms-of-service" className="hover:text-white transition-colors">Terms</Link>
-            <Link to="/legal/cookie-policy" className="hover:text-white transition-colors">Cookies</Link>
-            <Link to="/legal/refund-cancellation" className="hover:text-white transition-colors">Refunds</Link>
-            <Link to="/legal/data-security-processing" className="hover:text-white transition-colors">Security</Link>
-            <Link to="/legal/account-data-deletion" className="hover:text-white transition-colors">Data Deletion</Link>
+            <a href="#/legal/privacy-policy" className="hover:text-white transition-colors">Privacy</a>
+            <a href="#/legal/terms-of-service" className="hover:text-white transition-colors">Terms</a>
+            <a href="#/legal/cookie-policy" className="hover:text-white transition-colors">Cookies</a>
+            <a href="#/legal/refund-cancellation" className="hover:text-white transition-colors">Refunds</a>
+            <a href="#/legal/data-security-processing" className="hover:text-white transition-colors">Security</a>
+            <a href="#/legal/account-data-deletion" className="hover:text-white transition-colors">Data Deletion</a>
           </div>
         </div>
       </footer>
@@ -166,4 +162,3 @@ export const LegalLayout: React.FC<LegalLayoutProps> = ({ children, activeKey })
   );
 };
 export default LegalLayout;
-

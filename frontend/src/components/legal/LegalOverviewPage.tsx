@@ -1,5 +1,4 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import LegalLayout from './LegalLayout';
 import { 
   ShieldCheck, 
@@ -132,9 +131,9 @@ export const LegalOverviewPage: React.FC = () => {
             {POLICIES.map((p) => {
               const Icon = p.icon;
               return (
-                <Link
+                <a
                   key={p.to}
-                  to={p.to}
+                  href={`#${p.to}`}
                   className="group p-6 rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/10 hover:border-blue-500/40 transition-all flex flex-col justify-between gap-4"
                 >
                   <div className="space-y-3">
@@ -158,7 +157,7 @@ export const LegalOverviewPage: React.FC = () => {
                     <span>Review document</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </div>
-                </Link>
+                </a>
               );
             })}
           </div>
