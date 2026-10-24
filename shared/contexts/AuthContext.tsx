@@ -11,6 +11,7 @@ import {
   registerWithFirebaseEmail,
   sendEmailVerificationToCurrent,
   reloadAndCheckEmailVerified,
+  handleRedirectAuthResult,
 } from '../lib/firebaseAuthService';
 
 export interface BusinessSettings {
@@ -311,6 +312,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } catch {
           setUser(null);
         }
+      }
+
+      // Handle redirect result if user completed OAuth via redirect on mobile
+      try {
+        const redirectRes = await handleRedirectAuthResult();
+        if (redirectRes && redirectRes.success && redirectRes.user) {
+          handleFirebaseSessionResult(redirectRes);
+        }
+      } catch {
+        /* ignore redirect check error */
       }
     })();
   }, []);

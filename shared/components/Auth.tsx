@@ -327,7 +327,15 @@ export const Auth: React.FC<AuthProps> = ({ initialRole, portalMode, lockRole = 
         setBtnSuccess(true);
       }
     } catch (err: any) {
-      setLoginError(err?.message || 'Google Sign-In failed.');
+      if (err?.code === 'auth/unauthorized-domain' || err?.message?.includes('unauthorized-domain')) {
+        setLoginError(
+          `Firebase Error: Current domain "${typeof window !== 'undefined' ? window.location.hostname : ''}" is not authorized. Please navigate to https://bizora-app-io.vercel.app or add this domain in Firebase Console > Authentication > Settings > Authorized domains.`
+        );
+      } else if (err?.code === 'auth/popup-closed-by-user') {
+        setLoginError('Google Sign-In popup was closed before completing authorization.');
+      } else {
+        setLoginError(err?.message || 'Google Sign-In failed.');
+      }
     } finally {
       setLoading(false);
     }
@@ -694,8 +702,8 @@ export const Auth: React.FC<AuthProps> = ({ initialRole, portalMode, lockRole = 
         {isDark ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-indigo-600" />}
       </button>
 
-      {/* Global Hidden Container for Firebase Phone Auth reCAPTCHA */}
-      <div id="recaptcha-container" style={{ display: 'none' }} />
+      {/* Global Container for Firebase Phone Auth reCAPTCHA */}
+      <div id="recaptcha-container" />
 
       {/* Main Glassmorphic Card Container */}
       <main
@@ -711,13 +719,11 @@ export const Auth: React.FC<AuthProps> = ({ initialRole, portalMode, lockRole = 
         <section className="auth-pane pane-in" aria-label="Sign in">
           {/* Brand & Portal Header */}
           <div className="auth-brand">
-            <svg width="32" height="32" viewBox="0 0 32 32">
-              <rect width="32" height="32" rx="9" fill="#0e9f8e" />
-              <rect x="7" y="7" width="8" height="8" rx="2" fill="#fff" />
-              <rect x="17" y="7" width="8" height="8" rx="2" fill="#fff" opacity="0.6" />
-              <rect x="7" y="17" width="8" height="8" rx="2" fill="#fff" opacity="0.6" />
-              <rect x="17" y="17" width="8" height="8" rx="2" fill="#ffb547" />
-            </svg>
+            <img
+              src="/assets/bizora-emblem.png"
+              alt="Bizora"
+              style={{ width: 34, height: 34, objectFit: 'contain' }}
+            />
             <span>Bizora</span>
             <small>ERP</small>
             {lockRole && (
@@ -1210,13 +1216,11 @@ export const Auth: React.FC<AuthProps> = ({ initialRole, portalMode, lockRole = 
         <section className="auth-pane pane-up" aria-label="Create workspace">
           {/* Brand */}
           <div className="auth-brand">
-            <svg width="32" height="32" viewBox="0 0 32 32">
-              <rect width="32" height="32" rx="9" fill="#0e9f8e" />
-              <rect x="7" y="7" width="8" height="8" rx="2" fill="#fff" />
-              <rect x="17" y="7" width="8" height="8" rx="2" fill="#fff" opacity="0.6" />
-              <rect x="7" y="17" width="8" height="8" rx="2" fill="#fff" opacity="0.6" />
-              <rect x="17" y="17" width="8" height="8" rx="2" fill="#ffb547" />
-            </svg>
+            <img
+              src="/assets/bizora-emblem.png"
+              alt="Bizora"
+              style={{ width: 34, height: 34, objectFit: 'contain' }}
+            />
             <span>Bizora</span>
             <small>ERP</small>
           </div>
@@ -1696,6 +1700,31 @@ export const Auth: React.FC<AuthProps> = ({ initialRole, portalMode, lockRole = 
           </ul>
         </div>
       )}
+
+      {/* Legal & Trust Links */}
+      <footer
+        className="auth-legal-footer"
+        style={{
+          marginTop: 20,
+          marginBottom: 10,
+          fontSize: 11,
+          color: 'var(--auth-muted)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: 14,
+          flexWrap: 'wrap',
+          zIndex: 10,
+        }}
+      >
+        <a href="#/legal/privacy-policy" style={{ color: 'inherit', textDecoration: 'underline' }}>Privacy Policy</a>
+        <span>·</span>
+        <a href="#/legal/terms-of-service" style={{ color: 'inherit', textDecoration: 'underline' }}>Terms of Service</a>
+        <span>·</span>
+        <a href="#/legal/cookie-policy" style={{ color: 'inherit', textDecoration: 'underline' }}>Cookie Policy</a>
+        <span>·</span>
+        <a href="#/legal" style={{ color: 'inherit', textDecoration: 'underline' }}>Trust Center</a>
+      </footer>
     </div>
   );
 };

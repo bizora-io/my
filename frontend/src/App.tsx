@@ -61,6 +61,8 @@ const ExpenseLedger = lazy(() => import('./components/Ledgers').then(m => ({ def
 const NotFound = lazy(() => import('./components/NotFound'));
 const LandingPage = lazy(() => import('./components/landing/LandingPage'));
 const PortalLogin = lazy(() => import('./components/portal/PortalLogin'));
+const LegalRouter = lazy(() => import('./components/legal/LegalRouter'));
+import { CookieBanner } from './components/legal/CookieBanner';
 import { detectCurrentPortal, PortalType } from './lib/domainRouter';
 import { Auth } from './components/Auth';
 import { CustomerPortal } from './components/CustomerPortal';
@@ -1267,7 +1269,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   const isPOSPage = ['/sale', '/purchase', '/quick-sale', '/sales-return', '/purchase-return'].includes(location.pathname);
 
-  if (isPublicStorefront) return <>{children}</>;
+  if (isPublicStorefront || location.pathname.startsWith('/legal')) return <>{children}</>;
 
   return (
     <div className="flex flex-col h-[100dvh] w-full bg-slate-50 overflow-hidden font-sans">
@@ -1592,9 +1594,14 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.06)_0%,transparent_28%,transparent_100%)]" />
 
         <div className={`relative z-10 h-16 flex items-center ${sidebarOpen ? 'justify-between px-4' : 'justify-center'} border-b border-white/10 bg-white/5 backdrop-blur-md`}>
-           <Link to="/" className="flex items-center gap-3 group transition-transform active:scale-95" title="Bizora Dashboard">
-               <div className="w-8 h-8 bg-indigo-600 group-hover:bg-indigo-500 rounded-lg flex items-center justify-center font-bold text-white text-lg shadow-lg shadow-indigo-500/30 transition-colors">B</div>
-               {sidebarOpen && <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-white via-indigo-100 to-violet-200 bg-clip-text text-transparent animate-[fadeIn_0.4s_ease-out] group-hover:text-indigo-200 transition-colors">Bizora</h1>}
+           <Link to="/" className="flex items-center gap-2.5 group transition-transform active:scale-95" title="Bizora Dashboard">
+               <img src="/assets/bizora-emblem.png" alt="Bizora" className="w-8 h-8 object-contain shrink-0 group-hover:scale-105 transition-transform" />
+               {sidebarOpen && (
+                 <div className="flex flex-col">
+                   <h1 className="text-lg font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-200 bg-clip-text text-transparent leading-none">Bizora</h1>
+                   <span className="text-[9px] font-semibold text-cyan-400 tracking-wider uppercase mt-0.5">Cloud ERP</span>
+                 </div>
+               )}
            </Link>
            {sidebarOpen && (
                <button onClick={() => setSidebarOpen(false)} className="text-slate-500 hover:text-white transition-colors">
@@ -1817,7 +1824,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 >
                     <Menu className="w-5 h-5"/>
                 </button>
-                <Link to="/" className="w-8 h-8 bg-indigo-600 hover:bg-indigo-700 active:scale-95 rounded-lg flex items-center justify-center font-bold text-white shadow-sm shrink-0 transition-all" title="Bizora Dashboard">B</Link>
+                <Link to="/" className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-transform active:scale-95" title="Bizora Dashboard">
+                  <img src="/assets/bizora-emblem.png" alt="Bizora" className="w-8 h-8 object-contain drop-shadow-sm" />
+                </Link>
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5 min-w-0">
                     <h2 className="text-sm font-bold text-slate-800 truncate">{getPageTitle(location.pathname)}</h2>
@@ -1999,8 +2008,10 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 <div className="flex flex-wrap items-center gap-4 text-slate-500">
                   <Link to="/support" className="hover:text-indigo-600 transition-colors">Help &amp; Support</Link>
                   <Link to="/training" className="hover:text-indigo-600 transition-colors">User Guide</Link>
+                  <a href="#/legal/privacy-policy" className="hover:text-indigo-600 transition-colors">Privacy</a>
+                  <a href="#/legal/terms-of-service" className="hover:text-indigo-600 transition-colors">Terms</a>
+                  <a href="#/legal" className="hover:text-indigo-600 transition-colors">Trust Center</a>
                   <a href="mailto:support@bizora.app" className="hover:text-indigo-600 transition-colors">support@bizora.app</a>
-                  <a href="tel:+8801700000000" className="hover:text-indigo-600 transition-colors">+880 1700-000000</a>
                 </div>
               </footer>
             )}
@@ -2113,6 +2124,22 @@ const AppContent: React.FC = () => {
     }
   }, [isAuthenticated, user?.businessName, user?.businesses, setCurrency]);
 
+  const isLegalRoute = typeof window !== 'undefined' && (
+    window.location.hash.toLowerCase().includes('/legal') ||
+    window.location.pathname.toLowerCase().includes('/legal')
+  );
+
+  if (isLegalRoute) {
+    return (
+      <Router>
+        <Suspense fallback={<PageLoader />}>
+          <LegalRouter />
+          <CookieBanner />
+        </Suspense>
+      </Router>
+    );
+  }
+
   if (!isAuthenticated) {
     if (activePortal === 'landing') {
       return (
@@ -2185,6 +2212,8 @@ const AppContent: React.FC = () => {
           <Route path="/s/:slug" element={<StorefrontPublic />} />
           <Route path="/store/:slug" element={<StorefrontPublic />} />
           <Route path="/landing" element={<LandingPage />} />
+          <Route path="/legal" element={<LegalRouter />} />
+          <Route path="/legal/*" element={<LegalRouter />} />
           {/* The Admin (SaaS) panel is now a separate app - see /admin project.
               SaaS users are bounced there instead of routing in-app. */}
           <Route path="/admin" element={<ExternalAdminRedirect />} />

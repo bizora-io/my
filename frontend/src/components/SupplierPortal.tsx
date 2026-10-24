@@ -431,10 +431,8 @@ export const SupplierPortal: React.FC = () => {
       {/* Sidebar navigation */}
       <aside className={`w-64 bg-white border-r border-slate-200 p-6 flex flex-col fixed h-full z-50 transition-transform duration-300 lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
         <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
-              <Globe className="w-5 h-5 text-white" />
-            </div>
+          <div className="flex items-center gap-2.5">
+            <img src="/assets/bizora-emblem.png" alt="Bizora" className="w-8 h-8 object-contain drop-shadow" />
             <h2 className="text-xl font-black text-slate-800">Bizora Portal</h2>
           </div>
           <button className="lg:hidden text-slate-500 hover:text-slate-800" onClick={() => setIsSidebarOpen(false)}>

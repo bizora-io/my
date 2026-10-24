@@ -192,6 +192,12 @@ export async function signInWithGoogle(
     const result = await signInWithPopup(auth, provider);
     firebaseUser = result.user;
   } catch (err: any) {
+    if (err?.code === 'auth/unauthorized-domain' || err?.message?.includes('unauthorized-domain')) {
+      const currentHost = typeof window !== 'undefined' ? window.location.hostname : 'current domain';
+      throw new Error(
+        `Google Sign-In Domain Error: "${currentHost}" is not authorized in Firebase Authentication. Please visit the official production URL (https://bizora-app-io.vercel.app) or add "${currentHost}" to Firebase Console -> Authentication -> Settings -> Authorized domains.`
+      );
+    }
     // If popup was blocked or unsupported, fallback to redirect flow
     if (err?.code === 'auth/popup-blocked' || err?.code === 'auth/cancelled-popup-request') {
       await signInWithRedirect(auth, provider);
@@ -207,6 +213,28 @@ export async function signInWithGoogle(
     name: metadata?.name || firebaseUser.displayName || undefined,
     ...metadata,
   });
+}
+
+/**
+ * Handle OAuth redirect result if user completed sign-in via redirect (especially mobile web).
+ */
+export async function handleRedirectAuthResult(): Promise<FirebaseBizoraAuthResult | null> {
+  if (!auth) return null;
+  try {
+    const result = await getRedirectResult(auth);
+    if (!result || !result.user) return null;
+    const idToken = await result.user.getIdToken();
+    return await exchangeFirebaseTokenWithBackend({
+      idToken,
+      targetRole: 'SHOP_OWNER',
+      name: result.user.displayName || undefined,
+    });
+  } catch (err: any) {
+    if (err?.code !== 'auth/popup-closed-by-user') {
+      console.warn('[firebaseAuth] Redirect auth result error:', err?.message || err);
+    }
+    return null;
+  }
 }
 
 /**

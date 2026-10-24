@@ -11,3 +11,4 @@ if (fs.existsSync(frontendDist)) {
 } else {
   console.warn(`[prepare-dist] frontend/dist not found at ${frontendDist}`);
 }
+

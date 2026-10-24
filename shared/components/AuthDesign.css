@@ -1234,6 +1234,34 @@
   }
 }
 
+@media (max-width: 480px) {
+  .bizora-auth-viewport {
+    padding: 60px 10px 20px;
+  }
+  .auth-card {
+    border-radius: 18px;
+  }
+  .auth-pane {
+    padding: 24px 14px;
+  }
+  .auth-pane h1 {
+    font-size: 1.45rem;
+  }
+  .auth-role-tabs {
+    gap: 4px;
+  }
+  .auth-role-tab {
+    padding: 6px 10px;
+    font-size: 0.76rem;
+  }
+  .auth-country-menu {
+    left: 10px !important;
+    right: 10px !important;
+    width: auto !important;
+    max-width: calc(100vw - 20px) !important;
+  }
+}
+
 @keyframes authFadeIn {
   from {
     opacity: 0;

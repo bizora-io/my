@@ -22,6 +22,7 @@ import twoFactorRouter from "./src/api/twoFactor.js";
 import businessSettingsRouter from "./src/api/businessSettings.js";
 import suppliersRouter, { supplierAuthRouter } from "./src/api/suppliers.js";
 import phoneVerificationRouter from "./src/api/phoneVerification.js";
+import privacyRouter from "./src/api/privacy.js";
 import customerAuthRouter from "./src/api/customerAuth.js";
 import businessAdminRouter from "./src/api/businessAdmin.js";
 import platformConfigRouter from "./src/api/platformConfig.js";
@@ -274,6 +275,7 @@ async function startServer() {
   app.use("/api/suppliers", suppliersRouter);
   app.use("/api/auth", supplierAuthRouter);
   app.use("/api/auth/phone-verify", phoneVerificationRouter);
+  app.use("/api/privacy", privacyRouter);
   app.use("/api/auth", customerAuthRouter);
   app.use("/api/financial-accounts", financialAccountsRouter);
   app.use("/api/online-orders", onlineOrdersRouter);

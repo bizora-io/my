@@ -335,7 +335,7 @@ export const CustomerPortal: React.FC = () => {
       <header className="border-b border-slate-800 bg-slate-950/70 backdrop-blur sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center font-bold text-white text-xl shadow-lg shadow-indigo-500/20">B</div>
+            <img src="/assets/bizora-emblem.png" alt="Bizora" className="w-10 h-10 object-contain drop-shadow" />
             <div>
               <span className="text-lg font-bold tracking-tight text-white">Bizora Customer Portal</span>
               <span className="ml-2 text-[10px] bg-slate-800 text-indigo-400 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Secured Access</span>

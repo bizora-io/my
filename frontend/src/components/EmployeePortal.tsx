@@ -305,9 +305,7 @@ export const EmployeePortal: React.FC = () => {
             <header className="bg-slate-900 text-white sticky top-0 z-40 shadow-md">
                 <div className="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-indigo-600 rounded-lg">
-                            <Briefcase className="w-6 h-6 text-white" />
-                        </div>
+                        <img src="/assets/bizora-emblem.png" alt="Bizora" className="w-10 h-10 object-contain drop-shadow" />
                         <div>
                             <span className="font-bold tracking-tight text-lg">BIZORA <span className="text-xs bg-indigo-500 px-2 py-0.5 rounded text-white ml-2">Employee Portal</span></span>
                             <p className="text-[10px] text-slate-400 font-mono">Global Employee ID: {user?.mobile}</p>

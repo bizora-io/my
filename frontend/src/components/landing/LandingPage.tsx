@@ -14,6 +14,7 @@ import { apiFetch } from '../../lib/apiClient';
 import { getPlanFeaturesOverview, formatFeatureForDisplay, DisplayFeature } from '../../lib/featureDisplayMapping';
 import { PlanDetailsModal } from './PlanDetailsModal';
 import { LegalModal, LegalDocType } from '../legal/LegalModal';
+import CookieBanner from '../legal/CookieBanner';
 
 interface LandingPageProps {
   onNavigatePortal?: (portal: PortalType) => void;
@@ -369,11 +370,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) =>
       {/* 1. STICKY GLASS HEADER (Clean, Professional, Zero Admin Links) */}
       <header className="sticky top-0 z-50 bg-[#09090b]/85 backdrop-blur-xl border-b border-white/10 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
-          <a href="#top" className="flex items-center gap-3 font-extrabold text-2xl tracking-tight text-white group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-300 text-black flex items-center justify-center font-black text-xl shadow-lg shadow-amber-400/25 group-hover:scale-105 transition-transform">
-              B
+          <a href="#top" className="flex items-center gap-2.5 group">
+            <img 
+              src="/assets/bizora-emblem.png" 
+              alt="Bizora Logo" 
+              className="h-10 w-10 object-contain group-hover:scale-105 transition-transform drop-shadow" 
+            />
+            <div className="flex flex-col">
+              <span className="font-extrabold text-2xl tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-200 bg-clip-text text-transparent leading-none">
+                Bizora
+              </span>
+              <span className="text-[9px] font-semibold text-cyan-400 tracking-wider uppercase mt-0.5">
+                Smart Business
+              </span>
             </div>
-            <span className="bg-gradient-to-r from-white via-slate-100 to-slate-300 bg-clip-text text-transparent">Bizora</span>
           </a>
 
           {/* Navigation Links */}
@@ -2019,8 +2029,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) =>
             {/* Brand column */}
             <div className="space-y-4">
               <a href="#top" className="flex items-center gap-3 font-extrabold text-xl text-white">
-                <div className="w-8 h-8 rounded-lg bg-amber-400 text-black flex items-center justify-center font-black">B</div>
-                <span>Bizora</span>
+                <img src="/assets/bizora-emblem.png" alt="Bizora" className="w-8 h-8 object-contain" />
+                <div className="flex flex-col">
+                  <span className="leading-none">Bizora</span>
+                  <span className="text-[9px] text-cyan-400 font-normal tracking-wide mt-0.5">Smart Business. Better Tomorrow.</span>
+                </div>
               </a>
               <p className="text-xs leading-relaxed text-slate-400">
                 {isBn
@@ -2145,6 +2158,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) =>
         onClose={() => setLegalModalOpen(false)}
         isBn={isBn}
       />
+
+      {/* Cookie Consent Banner */}
+      <CookieBanner />
 
     </div>
   );

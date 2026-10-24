@@ -83,9 +83,7 @@ export const Auth: React.FC = () => {
         <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_20%_20%,#4f46e5_0%,transparent_45%),radial-gradient(circle_at_80%_80%,#0ea5e9_0%,transparent_40%)]" />
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-10">
-            <div className="w-11 h-11 rounded-2xl bg-indigo-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-              <Shield className="w-6 h-6 text-white" />
-            </div>
+            <img src="/assets/bizora-emblem.png" alt="Bizora" className="w-11 h-11 object-contain drop-shadow" />
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-300">Bizora Control</p>
               <h1 className="text-xl font-black tracking-tight">SaaS Admin</h1>
@@ -118,9 +116,7 @@ export const Auth: React.FC = () => {
       <div className="flex-1 flex items-center justify-center p-6 sm:p-10">
         <div className="w-full max-w-md">
           <div className="lg:hidden flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center">
-              <Shield className="w-5 h-5" />
-            </div>
+            <img src="/assets/bizora-emblem.png" alt="Bizora" className="w-10 h-10 object-contain drop-shadow" />
             <div>
               <p className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Bizora</p>
               <p className="font-bold">Admin sign-in</p>

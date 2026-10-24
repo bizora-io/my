@@ -129,7 +129,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             <aside className="hidden lg:flex flex-col w-64 bg-[#0f172a] text-white border-r border-slate-800 z-30">
                 <div className="h-16 flex items-center justify-between px-4 border-b border-slate-800/50">
                     <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center font-bold text-white text-lg shadow-lg shadow-indigo-500/30">B</div>
+                        <img src="/assets/bizora-emblem.png" alt="Bizora" className="w-8 h-8 object-contain drop-shadow" />
                         <h1 className="text-lg font-bold tracking-tight text-slate-100">Bizora Admin</h1>
                     </div>
                 </div>
