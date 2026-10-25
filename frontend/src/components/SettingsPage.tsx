@@ -5,6 +5,7 @@ import { readAutoBackupConfig, writeAutoBackupConfig } from '@shared/lib/autoBac
 import { isEncryptedBlob, decryptBackupPayload } from '@shared/lib/backupCrypto';
 
 import WebhooksSettings from './WebhooksSettings';
+import { useSound } from '../contexts/SoundContext';
 import React, { useState, useRef, useEffect } from 'react';
 import { useSettings, InvoiceConfig, CURRENCY_SYMBOLS, ThemeMode } from '../contexts/SettingsContext';
 import { useAuth, Business, BusinessSettings as BusinessSettingsType } from '../contexts/AuthContext';
@@ -16,7 +17,7 @@ import {
     Layout, Image as ImageIcon, PenTool, Eye, Globe, History, Laptop, LogOut, 
     Trash2, Bell, Plus, MapPin, Clock, Phone, Globe as WebsiteIcon, Settings, 
     MessageSquare, Mail as MailIcon, ChevronRight, Building2, Store, Map as MapIcon,
-    DollarSign, Percent, Database, Download, Upload, AlertTriangle, RotateCcw
+    DollarSign, Percent, Database, Download, Upload, AlertTriangle, RotateCcw, Volume2, VolumeX, Play
 } from 'lucide-react';
 import InvoiceTemplate from './InvoiceTemplate';
 import { apiFetch, authFetch } from '../lib/apiClient';
@@ -181,6 +182,7 @@ const SettingsPage: React.FC = () => {
     } = useAuth();
     const { stores, addStore, updateStore, deleteStore } = useStores();
     const { getAllData, importData, resetData } = useData();
+    const { soundEnabled, soundVolume, toggleSound, setSoundVolume, previewSound } = useSound();
     const [activeTab, setActiveTab] = useState<'profile' | 'appearance' | 'business' | 'templates' | 'security' | 'audit' | 'data' | 'users' | 'subscription' | 'webhooks'>('profile');
     const [businessSubTab, setBusinessSubTab] = useState<'general' | 'stores' | 'tax' | 'hours' | 'notifications'>('general');
     const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -846,6 +848,98 @@ const SettingsPage: React.FC = () => {
                                                 Preview Button
                                             </button>
                                         </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Audio & Sound Effects */}
+                        <div className="border-t border-slate-100 dark:border-slate-800 pt-8 mt-8">
+                            <div className="flex justify-between items-center mb-6">
+                                <div>
+                                    <h3 className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                        <Volume2 className="w-5 h-5 text-indigo-600 dark:text-indigo-400" /> {t('Audio & Sound Effects')}
+                                    </h3>
+                                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{t('Configure acoustic feedback for POS sales, notifications, and store activities.')}</p>
+                                </div>
+                            </div>
+
+                            <div className="bg-slate-50 dark:bg-slate-800/60 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-6">
+                                {/* Sound Enabled Toggle */}
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="font-bold text-sm text-slate-800 dark:text-slate-200">{t('System Sounds')}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">{t('Play audio tones on checkout completion, new alerts, and status changes')}</p>
+                                    </div>
+                                    <button 
+                                        type="button"
+                                        onClick={toggleSound}
+                                        className={`w-12 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors ${soundEnabled ? 'bg-indigo-600 justify-end' : 'bg-slate-300 dark:bg-slate-700 justify-start'}`}
+                                        aria-label={soundEnabled ? 'Disable system sounds' : 'Enable system sounds'}
+                                    >
+                                        <div className="bg-white w-4 h-4 rounded-full shadow-md transform transition-transform"></div>
+                                    </button>
+                                </div>
+
+                                {/* Volume Slider */}
+                                <div>
+                                    <div className="flex justify-between items-center mb-2">
+                                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                                            {soundEnabled ? <Volume2 className="w-4 h-4 text-slate-500" /> : <VolumeX className="w-4 h-4 text-slate-400" />}
+                                            {t('Master Volume')}
+                                        </label>
+                                        <span className="text-xs font-mono font-bold text-slate-500 dark:text-slate-400">
+                                            {Math.round(soundVolume * 100)}%
+                                        </span>
+                                    </div>
+                                    <input 
+                                        type="range"
+                                        min="0"
+                                        max="1"
+                                        step="0.05"
+                                        value={soundVolume}
+                                        disabled={!soundEnabled}
+                                        onChange={(e) => setSoundVolume(parseFloat(e.target.value))}
+                                        className="w-full accent-indigo-600 disabled:opacity-40 cursor-pointer"
+                                    />
+                                </div>
+
+                                {/* Test Sound Previews */}
+                                <div>
+                                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-3">{t('Test Sound Effects')}</p>
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                                        <button
+                                            type="button"
+                                            disabled={!soundEnabled}
+                                            onClick={() => previewSound('sale')}
+                                            className="px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-center gap-1.5 disabled:opacity-40 shadow-2xs"
+                                        >
+                                            <Play className="w-3 h-3 text-emerald-600" /> {t('Sale Success')}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            disabled={!soundEnabled}
+                                            onClick={() => previewSound('notification')}
+                                            className="px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-center gap-1.5 disabled:opacity-40 shadow-2xs"
+                                        >
+                                            <Play className="w-3 h-3 text-indigo-600" /> {t('Notification')}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            disabled={!soundEnabled}
+                                            onClick={() => previewSound('order')}
+                                            className="px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-center gap-1.5 disabled:opacity-40 shadow-2xs"
+                                        >
+                                            <Play className="w-3 h-3 text-sky-600" /> {t('Online Order')}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            disabled={!soundEnabled}
+                                            onClick={() => previewSound('action')}
+                                            className="px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-center gap-1.5 disabled:opacity-40 shadow-2xs"
+                                        >
+                                            <Play className="w-3 h-3 text-amber-600" /> {t('Quick Action')}
+                                        </button>
                                     </div>
                                 </div>
                             </div>

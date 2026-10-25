@@ -19,10 +19,12 @@ import {
 import InvoiceTemplate from './InvoiceTemplate';
 import BarcodeScanner from './BarcodeScanner';
 import { policyFromSettings, daysUntilExpiry, statusFromDays, lotsFromProduct } from '../lib/fefoPolicy';
+import { useSound } from '../contexts/SoundContext';
 
 const Sell: React.FC = () => {
   const { t, formatMoney, currencySymbol, language } = useSettings();
   const { user, logActivity } = useAuth();
+  const { playSaleSuccess, playActionSuccess } = useSound();
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [customerHistory, setCustomerHistory] = useState<LedgerEntry[]>([]);
   const { transactions, products, customers, staff, updateProductStock, updateProduct, addEntity, addTransaction, promoCodes, financialAccounts, addKitchenOrder, updateKitchenOrderStatus, kitchenOrders, validateCoupon, recordCouponUsage, loyaltyConfig, redeemLoyaltyPoints, redeemGiftCard, refreshProducts, lastProductsSyncAt, productsRealtimeActive , updateEntity } = useData();
@@ -1027,6 +1029,7 @@ const Sell: React.FC = () => {
       });
       transaction.items = saleItems as any;
       addTransaction(transaction);
+      playSaleSuccess();
 
       if (sentKotIds.length > 0) sentKotIds.forEach(id => updateKitchenOrderStatus(id, 'Preparing'));
 

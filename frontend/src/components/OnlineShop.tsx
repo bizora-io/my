@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSettings } from '../contexts/SettingsContext';
 import { useData, OnlineOrder } from '../contexts/DataContext';
+import { useSound } from '../contexts/SoundContext';
 import { authFetch } from '../lib/apiClient';
 import {
   Globe,
@@ -29,6 +30,7 @@ import {
 
 const OnlineShop: React.FC = () => {
   const { t, formatMoney } = useSettings();
+  const { playSaleSuccess, playActionSuccess } = useSound();
   const {
     onlineOrders,
     updateOnlineOrder,
@@ -170,6 +172,8 @@ const OnlineShop: React.FC = () => {
         fulfilledTransactionId: data.transactionId,
       } as any);
 
+      playSaleSuccess();
+
       alert(
         data.alreadyFulfilled
           ? 'Order was already fulfilled.'
@@ -268,6 +272,7 @@ const OnlineShop: React.FC = () => {
       }
 
       setSaveSuccessMsg('Website configuration saved successfully!');
+      playActionSuccess();
       setTimeout(() => setSaveSuccessMsg(''), 4000);
     } catch (err: any) {
       alert(err.message || 'Error saving settings');

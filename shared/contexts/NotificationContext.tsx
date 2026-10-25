@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authFetch, hasAuthToken } from '../lib/apiClient';
+import soundService from '../services/soundService';
 
 export type NotificationType = 'info' | 'success' | 'warning' | 'error';
 export type NotificationCategory = 'general' | 'sales' | 'inventory' | 'finance' | 'subscription' | 'support' | 'announcements' | 'system';
@@ -33,6 +34,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [userId, setUserId] = useState<string>('');
   const [userRole, setUserRole] = useState<string>('');
+  const isInitialLoadRef = React.useRef(true);
 
   // Periodically synchronize user context to ensure swift switching during impersonation
   useEffect(() => {
@@ -67,6 +69,15 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         if (res.ok) {
           const data = await res.json();
           if (Array.isArray(data.notifications)) {
+            if (isInitialLoadRef.current) {
+              isInitialLoadRef.current = false;
+              data.notifications.forEach((n: Notification) => soundService.playNotificationOnce(n.id));
+            } else {
+              const newUnread = data.notifications.find((n: Notification) => !n.read && !notifications.some(existing => existing.id === n.id));
+              if (newUnread) {
+                soundService.playNotificationOnce(newUnread.id);
+              }
+            }
             setNotifications(data.notifications);
             localStorage.setItem(`nexus_notifications_${userId}`, JSON.stringify(data.notifications));
             return;
@@ -147,6 +158,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       saveLocal(updated);
       return updated;
     });
+
+    soundService.playNotificationOnce(newNotif.id);
 
     if (hasAuthToken()) {
       authFetch('/api/notifications', {

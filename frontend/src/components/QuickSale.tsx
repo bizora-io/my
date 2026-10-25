@@ -23,6 +23,7 @@ import {
   Receipt
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useSound } from '../contexts/SoundContext';
 
 type PaymentMode = 'Cash' | 'Bank' | 'Mobile' | 'Due';
 type ProfitInputMode = 'amount' | 'margin' | 'markup' | 'cost';
@@ -47,6 +48,7 @@ interface CompletedSaleSummary {
 const QuickSale: React.FC = () => {
   const { t, currencySymbol, language, formatMoney } = useSettings();
   const { addTransaction, financialAccounts, customers } = useData();
+  const { playSaleSuccess, playActionSuccess } = useSound();
   const navigate = useNavigate();
 
   // Calculator states
@@ -380,6 +382,7 @@ const QuickSale: React.FC = () => {
       };
 
       addTransaction(newTx);
+      playSaleSuccess();
 
       const resolvedAcc = financialAccounts.find(a => a.id === selectedAccountId);
 

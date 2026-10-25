@@ -11,10 +11,12 @@ import {
 } from 'lucide-react';
 import InvoiceTemplate from './InvoiceTemplate';
 import { normalizeSerialUnits } from '@shared/lib/serialUnits';
+import { useSound } from '../contexts/SoundContext';
 
 const Buy: React.FC = () => {
   const { t, currencySymbol, formatMoney , language } = useSettings();
   const { user } = useAuth();
+  const { playActionSuccess } = useSound();
   const { products, suppliers, transactions, updateProductStock, processPurchase, updateProduct, addEntity, registerSupplier, addTransaction, financialAccounts } = useData();
   
   const activeBusiness = useMemo(() => 
@@ -455,6 +457,7 @@ const Buy: React.FC = () => {
       };
 
       addTransaction(transaction);
+      playActionSuccess();
       setGeneratedInvoice(transaction);
       setShowInvoice(true);
       setDuplicateMatch(null);
