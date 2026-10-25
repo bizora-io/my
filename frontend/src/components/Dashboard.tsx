@@ -485,7 +485,7 @@ const Dashboard: React.FC = () => {
   }, [products, fefoPolicy]);
 
   return (
-    <div className="space-y-6 lg:space-y-8 relative pb-24 lg:pb-12 text-slate-800 dark:text-slate-100">
+    <div className="space-y-6 lg:space-y-8 relative pb-6 lg:pb-6 text-slate-800 dark:text-slate-100">
       {/* System Status Popups */}
       {backupStatus === 'success' && (
         <div className="fixed top-20 right-6 bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-800 p-4 rounded-xl shadow-xl flex items-center gap-3 z-50 animate-in slide-in-from-right duration-500">

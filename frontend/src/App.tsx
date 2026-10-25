@@ -752,10 +752,18 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [offlineQueueCount, setOfflineQueueCount] = useState(0);
   const [syncingQueue, setSyncingQueue] = useState(false);
   const [offlineConflictCount, setOfflineConflictCount] = useState(0);
-  const [dismissLowStock, setDismissLowStock] = useState(false);
-  const [dismissTransferPending, setDismissTransferPending] = useState(false);
-  const [dismissDueReminders, setDismissDueReminders] = useState(false);
-  const [dismissExpiryAlerts, setDismissExpiryAlerts] = useState(false);
+  const [dismissLowStock, setDismissLowStock] = useState(() => {
+    try { return sessionStorage.getItem('bizora_dismiss_lowstock') === '1'; } catch { return false; }
+  });
+  const [dismissTransferPending, setDismissTransferPending] = useState(() => {
+    try { return sessionStorage.getItem('bizora_dismiss_transfer') === '1'; } catch { return false; }
+  });
+  const [dismissDueReminders, setDismissDueReminders] = useState(() => {
+    try { return sessionStorage.getItem('bizora_dismiss_due') === '1'; } catch { return false; }
+  });
+  const [dismissExpiryAlerts, setDismissExpiryAlerts] = useState(() => {
+    try { return sessionStorage.getItem('bizora_dismiss_expiry') === '1'; } catch { return false; }
+  });
 
 
 
@@ -1519,7 +1527,10 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             </span>
             <div className="flex gap-2 shrink-0">
               <a href="#/products" className="px-3 py-1 rounded-lg bg-white/20 hover:bg-white/30 font-bold">{language === 'bn' ? 'ইনভেন্টরি' : 'Inventory'}</a>
-              <button type="button" onClick={() => setDismissExpiryAlerts(true)} className="px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 font-bold">{language === 'bn' ? 'বন্ধ' : 'Dismiss'}</button>
+              <button type="button" onClick={() => {
+                setDismissExpiryAlerts(true);
+                try { sessionStorage.setItem('bizora_dismiss_expiry', '1'); } catch {}
+              }} className="px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 font-bold">{language === 'bn' ? 'বন্ধ' : 'Dismiss'}</button>
             </div>
           </div>
         );
@@ -1538,7 +1549,10 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             </span>
             <div className="flex gap-2 shrink-0">
               <a href="#/installments" className="px-3 py-1 rounded-lg bg-white/20 hover:bg-white/30 font-bold">{language === 'bn' ? 'আদায়' : 'Collect'}</a>
-              <button type="button" onClick={() => setDismissDueReminders(true)} className="px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 font-bold">{language === 'bn' ? 'বন্ধ' : 'Dismiss'}</button>
+              <button type="button" onClick={() => {
+                setDismissDueReminders(true);
+                try { sessionStorage.setItem('bizora_dismiss_due', '1'); } catch {}
+              }} className="px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 font-bold">{language === 'bn' ? 'বন্ধ' : 'Dismiss'}</button>
             </div>
           </div>
         );
@@ -1553,7 +1567,10 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           </span>
           <div className="flex gap-2 shrink-0">
             <a href="#/transfer" className="px-3 py-1 rounded-lg bg-white/20 hover:bg-white/30 font-bold">{language === 'bn' ? 'রিভিউ' : 'Review'}</a>
-            <button type="button" onClick={() => setDismissTransferPending(true)} className="px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 font-bold">{language === 'bn' ? 'বন্ধ' : 'Dismiss'}</button>
+            <button type="button" onClick={() => {
+              setDismissTransferPending(true);
+              try { sessionStorage.setItem('bizora_dismiss_transfer', '1'); } catch {}
+            }} className="px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 font-bold">{language === 'bn' ? 'বন্ধ' : 'Dismiss'}</button>
           </div>
         </div>
       )}
@@ -1570,7 +1587,10 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           </span>
           <div className="flex gap-2 shrink-0">
             <a href="#/products" className="px-3 py-1 rounded-lg bg-white/20 hover:bg-white/30 font-bold">{language === 'bn' ? 'ইনভেন্টরি দেখুন' : 'View inventory'}</a>
-            <button type="button" onClick={() => setDismissLowStock(true)} className="px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 font-bold">{language === 'bn' ? 'বন্ধ' : 'Dismiss'}</button>
+            <button type="button" onClick={() => {
+              setDismissLowStock(true);
+              try { sessionStorage.setItem('bizora_dismiss_lowstock', '1'); } catch {}
+            }} className="px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 font-bold">{language === 'bn' ? 'বন্ধ' : 'Dismiss'}</button>
           </div>
         </div>
       )}
@@ -1928,7 +1948,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       <div className="flex-1 flex flex-col h-full min-w-0 bg-slate-50 relative border-l border-slate-200 dark:border-slate-800 shadow-sm max-w-full overflow-x-hidden">
         
         {/* Header */}
-        <header className="h-16 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-3 sm:px-4 lg:px-6 sticky top-0 z-[60] max-w-full overflow-hidden">
+        <header className="h-16 shrink-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-3 sm:px-4 lg:px-6 sticky top-0 z-[60] max-w-full overflow-visible">
           <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1 mr-2">
             {!sidebarOpen && (
                 <button onClick={() => setSidebarOpen(true)} className="hidden lg:flex p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-colors">
@@ -2110,7 +2130,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </header>
 
         {/* Scrollable View */}
-        <main ref={mainScrollRef} className={`flex-1 overflow-y-auto overflow-x-hidden scroll-smooth bg-slate-50 relative ${isPOSPage ? 'p-0 pb-28 lg:pb-0' : 'p-3 sm:p-4 lg:p-8 pb-32 lg:pb-8 animate-in fade-in duration-500'}`}>
+        <main ref={mainScrollRef} className={`flex-1 overflow-y-auto overflow-x-hidden scroll-smooth bg-slate-50 relative ${isPOSPage ? 'p-0 pb-24 lg:pb-0' : 'p-3 sm:p-4 lg:p-8 pb-24 lg:pb-8 animate-in fade-in duration-500'}`}>
           {!isPOSPage && (
             <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:16px_16px] opacity-30 dark:hidden"></div>
           )}

@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { 
   Bell, X, CheckCheck, Trash2, Info, AlertTriangle, 
   CheckCircle, AlertCircle, ShoppingBag, Package, Wallet, 
   HeadphonesIcon, Shield, Sparkles, ChevronRight, Megaphone,
-  Volume2, VolumeX
+  Volume2, VolumeX, Loader2, RefreshCw, Inbox
 } from 'lucide-react';
 import { useNotifications, Notification } from '../contexts/NotificationContext';
 import { useSound } from '../contexts/SoundContext';
@@ -136,18 +137,31 @@ const getDateBucket = (dateParam: Date | string): 'Today' | 'Yesterday' | 'Earli
 };
 
 const NotificationCenter: React.FC = () => {
-  const { notifications, unreadCount, markAsRead, markAllAsRead, removeNotification, clearAll } = useNotifications();
+  const { 
+    notifications, 
+    unreadCount, 
+    isLoading, 
+    error, 
+    refreshNotifications, 
+    markAsRead, 
+    markAllAsRead, 
+    removeNotification, 
+    clearAll 
+  } = useNotifications();
   const { soundEnabled, toggleSound, previewSound } = useSound();
   const [isOpen, setIsOpen] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
   const [activeFilter, setActiveFilter] = useState<'all' | 'unread' | 'announcements' | 'subscription' | 'sales' | 'inventory' | 'finance' | 'system'>('all');
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
-  // Close dropdown when clicking outside on desktop & mobile touch
+  // Desktop outside-click dismisser (Mobile uses backdrop click)
   useEffect(() => {
     const handleOutside = (event: MouseEvent | TouchEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
+      if (window.innerWidth >= 768) {
+        if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+          setIsOpen(false);
+        }
       }
     };
     if (isOpen) {
@@ -174,14 +188,22 @@ const NotificationCenter: React.FC = () => {
   // Lock body scroll on mobile drawer
   useEffect(() => {
     if (isOpen && window.innerWidth < 768) {
+      const originalOverflow = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
     }
-    return () => {
-      document.body.style.overflow = '';
-    };
   }, [isOpen]);
+
+  const handleRetry = async () => {
+    setIsRetrying(true);
+    try {
+      await refreshNotifications();
+    } finally {
+      setIsRetrying(false);
+    }
+  };
 
   const filteredNotifications = useMemo(() => {
     return notifications.filter(n => {
@@ -288,22 +310,108 @@ const NotificationCenter: React.FC = () => {
     );
   };
 
+  // Loading skeleton state
+  const renderLoadingSkeleton = () => (
+    <div className="p-4 space-y-4 animate-pulse">
+      {[1, 2, 3].map(i => (
+        <div key={i} className="flex items-start gap-3">
+          <div className="w-8 h-8 rounded-xl bg-slate-200 dark:bg-slate-800 shrink-0" />
+          <div className="flex-1 space-y-2">
+            <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded w-1/3" />
+            <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded w-4/5" />
+            <div className="h-2 bg-slate-100 dark:bg-slate-800/60 rounded w-1/4" />
+          </div>
+        </div>
+      ))}
+      <div className="text-center pt-2 text-xs font-medium text-slate-400 dark:text-slate-500 flex items-center justify-center gap-1.5">
+        <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-500" />
+        <span>Loading notifications...</span>
+      </div>
+    </div>
+  );
+
+  // Error state with retry
+  const renderErrorState = () => (
+    <div className="p-8 text-center flex flex-col items-center justify-center">
+      <div className="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-950/60 border border-rose-100 dark:border-rose-900 flex items-center justify-center text-rose-500 mb-3">
+        <AlertCircle className="w-6 h-6" />
+      </div>
+      <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
+        Failed to load notifications
+      </p>
+      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-[240px] leading-relaxed">
+        {error || 'Unable to connect to the notification server. Check your connection and try again.'}
+      </p>
+      <button
+        type="button"
+        disabled={isRetrying}
+        onClick={handleRetry}
+        className="mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
+      >
+        <RefreshCw className={`w-3.5 h-3.5 ${isRetrying ? 'animate-spin' : ''}`} />
+        <span>{isRetrying ? 'Retrying...' : 'Retry'}</span>
+      </button>
+    </div>
+  );
+
+  // Empty state
+  const renderEmptyState = () => (
+    <div className="p-10 text-center flex flex-col items-center justify-center text-slate-400 dark:text-slate-500">
+      <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-300 dark:text-slate-600 mb-3">
+        <Sparkles className="w-6 h-6" />
+      </div>
+      <p className="text-sm font-bold text-slate-700 dark:text-slate-200">
+        {activeFilter === 'unread' ? 'All caught up!' : 'No notifications'}
+      </p>
+      <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 max-w-[240px] leading-relaxed">
+        {activeFilter === 'unread' 
+          ? 'You have read all notifications in this view.' 
+          : 'New transactions, stock alerts, and platform updates will show up here.'}
+      </p>
+    </div>
+  );
+
+  // Cached error banner when notifications exist but refresh had error
+  const renderCachedErrorBanner = () => {
+    if (!error || notifications.length === 0) return null;
+    return (
+      <div className="px-3 py-1.5 bg-amber-50 dark:bg-amber-950/70 border-b border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-[11px] font-medium flex items-center justify-between gap-2">
+        <span className="truncate flex items-center gap-1">
+          <AlertTriangle className="w-3 h-3 text-amber-600 shrink-0" />
+          Offline: Showing cached alerts
+        </span>
+        <button
+          type="button"
+          onClick={handleRetry}
+          disabled={isRetrying}
+          className="underline hover:no-underline font-bold shrink-0 text-amber-900 dark:text-amber-200 flex items-center gap-1"
+        >
+          <RefreshCw className={`w-2.5 h-2.5 ${isRetrying ? 'animate-spin' : ''}`} />
+          Retry
+        </button>
+      </div>
+    );
+  };
+
   return (
-    <div className="relative" ref={dropdownRef}>
-      {/* Bell Trigger */}
+    <div className="relative shrink-0" ref={dropdownRef}>
+      {/* Bell Trigger Button */}
       <button 
         type="button"
         id="notification-bell-btn"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsOpen(prev => !prev);
+        }}
         aria-label="Open notifications"
         aria-expanded={isOpen}
-        className={`p-2.5 rounded-xl border transition-all duration-200 relative ${
+        className={`p-2.5 rounded-xl border transition-all duration-200 relative flex items-center justify-center ${
           isOpen 
             ? 'bg-indigo-50 border-indigo-200 text-indigo-600 dark:bg-indigo-950/70 dark:border-indigo-800 dark:text-indigo-300 shadow-xs' 
             : 'bg-white border-slate-200/90 text-slate-600 hover:bg-slate-50 hover:border-slate-300 hover:text-slate-800 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white shadow-2xs'
         }`}
       >
-        <Bell className="w-4 h-4" />
+        <Bell className="w-4 h-4 shrink-0" />
         {unreadCount > 0 && (
           <span className="absolute -top-1 -right-1 flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-rose-600 text-white text-[9px] font-black shadow-xs ring-2 ring-white dark:ring-slate-900 animate-in zoom-in">
             {unreadCount > 99 ? '99+' : unreadCount}
@@ -311,12 +419,12 @@ const NotificationCenter: React.FC = () => {
         )}
       </button>
 
-      {/* --- DESKTOP DROPDOWN --- */}
+      {/* --- DESKTOP DROPDOWN (md:block) --- */}
       {isOpen && (
-        <div className="hidden md:block absolute right-0 mt-2.5 w-[420px] max-h-[580px] bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-[0_20px_50px_rgba(15,23,42,0.18)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.6)] border border-slate-200/90 dark:border-slate-800 z-50 overflow-hidden flex flex-col animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="hidden md:block absolute right-0 mt-2.5 w-[420px] max-h-[580px] bg-white dark:bg-slate-900 rounded-2xl shadow-[0_20px_50px_rgba(15,23,42,0.18)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.6)] border border-slate-200/90 dark:border-slate-800 z-50 overflow-hidden flex flex-col animate-in fade-in slide-in-from-top-2 duration-200">
           
           {/* Header */}
-          <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-white/80 dark:bg-slate-900/80">
+          <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900 shrink-0">
             <div className="flex items-center gap-2">
               <h3 className="font-extrabold text-slate-900 dark:text-white text-sm tracking-tight">Notifications</h3>
               {unreadCount > 0 && (
@@ -339,7 +447,7 @@ const NotificationCenter: React.FC = () => {
                     ? 'text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/50' 
                     : 'text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'
                 }`}
-                title={soundEnabled ? 'Mute audio notification sounds' : 'Enable audio notification sounds'}
+                title={soundEnabled ? 'Mute notification sound' : 'Enable notification sound'}
                 aria-label={soundEnabled ? 'Mute audio' : 'Enable audio'}
               >
                 {soundEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
@@ -371,7 +479,7 @@ const NotificationCenter: React.FC = () => {
           </div>
 
           {/* Category Filter Pills */}
-          <div className="px-3 py-2 bg-slate-50/80 dark:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+          <div className="px-3 py-2 bg-slate-50/80 dark:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800 flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0">
             {[
               { id: 'all', label: 'All' },
               { id: 'unread', label: `Unread ${unreadCount > 0 ? `(${unreadCount})` : ''}` },
@@ -397,22 +505,16 @@ const NotificationCenter: React.FC = () => {
             ))}
           </div>
 
+          {renderCachedErrorBanner()}
+
           {/* Notifications Scrollable List */}
-          <div className="flex-1 overflow-y-auto max-h-[440px] custom-scrollbar divide-y divide-slate-100 dark:divide-slate-800/80">
-            {filteredNotifications.length === 0 ? (
-              <div className="p-10 text-center flex flex-col items-center justify-center text-slate-400 dark:text-slate-500">
-                <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-300 dark:text-slate-600 mb-3">
-                  <Sparkles className="w-6 h-6" />
-                </div>
-                <p className="text-sm font-bold text-slate-700 dark:text-slate-200">
-                  {activeFilter === 'unread' ? 'All caught up!' : 'No notifications'}
-                </p>
-                <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 max-w-[220px]">
-                  {activeFilter === 'unread' 
-                    ? 'You have read all notifications in this view.' 
-                    : 'New transactions, stock alerts, and updates will show up here.'}
-                </p>
-              </div>
+          <div className="flex-1 overflow-y-auto max-h-[420px] custom-scrollbar divide-y divide-slate-100 dark:divide-slate-800/80 bg-white dark:bg-slate-900">
+            {isLoading && notifications.length === 0 ? (
+              renderLoadingSkeleton()
+            ) : error && notifications.length === 0 ? (
+              renderErrorState()
+            ) : filteredNotifications.length === 0 ? (
+              renderEmptyState()
             ) : (
               (['Today', 'Yesterday', 'Earlier'] as const).map(bucket => {
                 const items = groupedNotifications[bucket];
@@ -432,25 +534,32 @@ const NotificationCenter: React.FC = () => {
         </div>
       )}
 
-      {/* --- MOBILE FULL DRAWER / BOTTOM SHEET --- */}
-      {isOpen && (
-        <div className="md:hidden fixed inset-0 z-[120]">
-          {/* Backdrop */}
+      {/* --- MOBILE FULL DRAWER / BOTTOM SHEET (VIA REACT PORTAL TO DOCUMENT.BODY) --- */}
+      {isOpen && typeof document !== 'undefined' && createPortal(
+        <div 
+          className="md:hidden fixed inset-0 z-[9999] flex flex-col justify-end"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Notification Center"
+        >
+          {/* Backdrop covering whole viewport */}
           <div 
-            className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity animate-in fade-in"
+            className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
             onClick={() => setIsOpen(false)}
+            aria-hidden="true"
           />
 
           {/* Sliding Bottom Sheet */}
           <div 
-            className="fixed inset-x-0 bottom-0 max-h-[85vh] bg-white dark:bg-slate-900 rounded-t-3xl shadow-2xl flex flex-col border-t border-slate-200 dark:border-slate-800 z-10 animate-in slide-in-from-bottom duration-300"
+            className="relative z-10 w-full max-h-[85vh] bg-white dark:bg-slate-900 rounded-t-3xl shadow-2xl flex flex-col border-t border-slate-200 dark:border-slate-800 animate-in slide-in-from-bottom duration-300"
             style={{ paddingBottom: 'max(1.25rem, env(safe-area-inset-bottom, 0px))' }}
+            onClick={(e) => e.stopPropagation()}
           >
             {/* Grab handle */}
             <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto my-2.5 shrink-0" />
 
             {/* Mobile Header */}
-            <div className="px-4 pb-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
+            <div className="px-4 pb-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0 bg-white dark:bg-slate-900">
               <div className="flex items-center gap-2">
                 <h3 className="font-extrabold text-slate-900 dark:text-white text-base">Notifications</h3>
                 {unreadCount > 0 && (
@@ -502,7 +611,7 @@ const NotificationCenter: React.FC = () => {
                   type="button"
                   onClick={() => setIsOpen(false)}
                   className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 bg-slate-100 dark:bg-slate-800 rounded-full"
-                  aria-label="Close"
+                  aria-label="Close notifications"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -534,22 +643,16 @@ const NotificationCenter: React.FC = () => {
               ))}
             </div>
 
-            {/* Mobile List Content with generous pb-24 padding for smooth scrolling above gestures */}
-            <div className="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/80 custom-scrollbar pb-24">
-              {filteredNotifications.length === 0 ? (
-                <div className="p-12 text-center flex flex-col items-center justify-center text-slate-400 dark:text-slate-500">
-                  <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-300 dark:text-slate-600 mb-3">
-                    <Sparkles className="w-6 h-6" />
-                  </div>
-                  <p className="text-sm font-bold text-slate-700 dark:text-slate-200">
-                    {activeFilter === 'unread' ? 'All caught up!' : 'No notifications'}
-                  </p>
-                  <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 max-w-[240px]">
-                    {activeFilter === 'unread' 
-                      ? 'You have read all notifications.' 
-                      : 'New sales, stock alerts, and updates will show up here.'}
-                  </p>
-                </div>
+            {renderCachedErrorBanner()}
+
+            {/* Mobile List Content with generous pb-28 padding so items scroll above floating docks */}
+            <div className="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/80 custom-scrollbar pb-28 bg-white dark:bg-slate-900">
+              {isLoading && notifications.length === 0 ? (
+                renderLoadingSkeleton()
+              ) : error && notifications.length === 0 ? (
+                renderErrorState()
+              ) : filteredNotifications.length === 0 ? (
+                renderEmptyState()
               ) : (
                 (['Today', 'Yesterday', 'Earlier'] as const).map(bucket => {
                   const items = groupedNotifications[bucket];
@@ -567,7 +670,8 @@ const NotificationCenter: React.FC = () => {
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

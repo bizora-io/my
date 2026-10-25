@@ -20,6 +20,8 @@ export interface Notification {
 interface NotificationContextType {
   notifications: Notification[];
   unreadCount: number;
+  isLoading: boolean;
+  error: string | null;
   addNotification: (title: string, message: string, type?: NotificationType, target?: string, category?: NotificationCategory) => void;
   markAsRead: (id: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
@@ -32,6 +34,8 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
 
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string>('');
   const [userRole, setUserRole] = useState<string>('');
   const isInitialLoadRef = React.useRef(true);
@@ -61,7 +65,15 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   // Load from backend API if online + authenticated, fallback to localStorage
   const refreshNotifications = useCallback(async () => {
-    if (!userId) return;
+    if (!userId) {
+      setNotifications([]);
+      setIsLoading(false);
+      setError(null);
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
 
     if (hasAuthToken()) {
       try {
@@ -80,11 +92,14 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             }
             setNotifications(data.notifications);
             localStorage.setItem(`nexus_notifications_${userId}`, JSON.stringify(data.notifications));
+            setIsLoading(false);
             return;
           }
+        } else {
+          setError('Failed to fetch notifications from server');
         }
-      } catch (err) {
-        // Fallback to localStorage on network issue
+      } catch (err: any) {
+        setError(err?.message || 'Network error fetching notifications');
       }
     }
 
@@ -123,6 +138,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       setNotifications(defaults);
       localStorage.setItem(`nexus_notifications_${userId}`, JSON.stringify(defaults));
     }
+    setIsLoading(false);
   }, [userId, userRole]);
 
   useEffect(() => {
@@ -235,6 +251,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     <NotificationContext.Provider value={{
       notifications,
       unreadCount,
+      isLoading,
+      error,
       addNotification,
       markAsRead,
       markAllAsRead,
