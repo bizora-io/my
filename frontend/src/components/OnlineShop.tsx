@@ -367,7 +367,7 @@ const OnlineShop: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-full overflow-hidden">
       {/* Top Banner */}
       <div className="flex items-center gap-3 flex-wrap justify-between bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
         <div className="flex items-center gap-3.5">

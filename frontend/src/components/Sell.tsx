@@ -1260,10 +1260,10 @@ const Sell: React.FC = () => {
 
             {/* RIGHT: CHECKOUT VIEW */}
             {/* Added md:z-auto to prevent high z-index on desktop */}
-            <div className={`fixed inset-0 z-[70] bg-white flex flex-col transition-transform duration-300 transform md:relative md:translate-x-0 md:w-[420px] md:border-l md:border-slate-200 md:shadow-xl md:z-0 ${activeView === 'checkout' ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}`}>
+            <div className={`fixed inset-0 z-[70] bg-white dark:bg-slate-900 flex flex-col transition-transform duration-300 transform md:relative md:translate-x-0 md:w-[420px] md:border-l md:border-slate-200 dark:md:border-slate-800 md:shadow-xl md:z-0 ${activeView === 'checkout' ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}`}>
                 
                 {/* Checkout Header */}
-                <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-white shadow-sm z-10 shrink-0">
+                <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-900 shadow-sm z-10 shrink-0">
                     <button onClick={() => setActiveView('products')} className="md:hidden p-2 -ml-2 text-slate-500 active:bg-slate-50 rounded-lg">
                         <ChevronLeft className="w-6 h-6" />
                     </button>
@@ -1990,7 +1990,7 @@ const Sell: React.FC = () => {
                 </div>
 
                 {/* STEP 5: Sticky Summary Footer */}
-                <div id="checkout-summary-section" className="p-4 bg-white border-t border-slate-200 shadow-[0_-4px_10px_-2px_rgba(0,0,0,0.05)] pb-safe z-10 shrink-0">
+                <div id="checkout-summary-section" className="p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 shadow-[0_-4px_10px_-2px_rgba(0,0,0,0.05)] z-10 shrink-0" style={{ paddingBottom: 'max(1.25rem, env(safe-area-inset-bottom, 0px))' }}>
                     {nearExpiryCartAlerts.length > 0 && (
                         <div className="mb-2.5 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs text-amber-900 flex gap-2">
                             <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-amber-600 mt-0.5" />

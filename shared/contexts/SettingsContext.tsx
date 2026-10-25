@@ -494,16 +494,33 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     if (isDark) {
         root.classList.add('dark');
-        // Dark Mode Overrides for Slate (Backgrounds/Text)
+        // Dark Mode Overrides for Slate (Backgrounds/Text) - Premium obsidian & slate
         css += `
-            body, .bg-slate-50, .bg-slate-100 { background-color: #0f172a !important; color: #f1f5f9 !important; }
-            .bg-white { background-color: #1e293b !important; color: #f8fafc !important; border-color: #334155 !important; }
+            body, .bg-slate-50, .bg-slate-100 { background-color: #0b0f19 !important; color: #f1f5f9 !important; }
+            .bg-white { background-color: #111827 !important; color: #f8fafc !important; border-color: #1f293d !important; }
             .text-slate-900, .text-slate-800, .text-slate-700 { color: #f8fafc !important; }
-            .text-slate-600, .text-slate-500, .text-slate-400 { color: #94a3b8 !important; }
-            .border-slate-200, .border-slate-300, .border-slate-100 { border-color: #334155 !important; }
-            input, select, textarea { background-color: #334155 !important; color: white !important; border-color: #475569 !important; }
-            /* Specific fix for inputs with white bg in code */
-            .bg-white input { background-color: transparent !important; }
+            .text-slate-600, .text-slate-500 { color: #94a3b8 !important; }
+            .text-slate-400 { color: #64748b !important; }
+            .border-slate-200, .border-slate-300, .border-slate-100 { border-color: #1f293d !important; }
+            input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="button"]):not([type="submit"]), select, textarea {
+                background-color: #1a2234 !important;
+                color: #f8fafc !important;
+                border-color: #2e3a4e !important;
+            }
+            input::placeholder, textarea::placeholder {
+                color: #64748b !important;
+            }
+            thead, thead tr, thead th {
+                background-color: #141c2e !important;
+                color: #94a3b8 !important;
+                border-color: #1f293d !important;
+            }
+            tbody tr {
+                border-color: #1f293d !important;
+            }
+            tbody tr:hover {
+                background-color: rgba(30, 41, 59, 0.45) !important;
+            }
         `;
     } else {
         root.classList.remove('dark');

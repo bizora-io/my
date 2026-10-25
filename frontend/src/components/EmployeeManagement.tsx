@@ -507,6 +507,7 @@ const EmployeeManagement: React.FC = () => {
                 </div>
                 <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
                     <div className="p-4 border-b bg-slate-50 font-bold text-sm text-slate-800">Leave requests</div>
+                    <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead className="text-left text-slate-500 border-b text-xs">
                             <tr>
@@ -564,6 +565,7 @@ const EmployeeManagement: React.FC = () => {
                             ))}
                         </tbody>
                     </table>
+                    </div>
                 </div>
             </div>
         );

@@ -524,26 +524,26 @@ const StockReport: React.FC = () => {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 max-w-full overflow-hidden">
             {/* Header & Tabs */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 w-full min-w-0">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-800">{t('Stock Report')}</h1>
-                    <p className="text-slate-500 text-sm">Inventory health and movement history</p>
+                    <h1 className="text-2xl font-bold text-slate-800 dark:text-white">{t('Stock Report')}</h1>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm">Inventory health and movement history</p>
                 </div>
                 
                 {/* Tabs */}
-                <div className="flex bg-slate-100 p-1 rounded-lg overflow-x-auto">
+                <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl overflow-x-auto max-w-full min-w-0 w-full md:w-auto scrollbar-none">
                     <button 
                         onClick={() => setActiveTab('all')}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap ${activeTab === 'all' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}
+                        className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap shrink-0 ${activeTab === 'all' ? 'bg-white dark:bg-slate-900 shadow-xs text-slate-800 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
                     >
                         <Package className="w-4 h-4" />
                         All Products
                     </button>
                     <button 
                         onClick={() => setActiveTab('stock')}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap ${activeTab === 'stock' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}
+                        className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap shrink-0 ${activeTab === 'stock' ? 'bg-white dark:bg-slate-900 shadow-xs text-slate-800 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
                     >
                         <AlertCircle className="w-4 h-4" />
                         Low Stock 
@@ -551,21 +551,21 @@ const StockReport: React.FC = () => {
                     </button>
                     <button 
                         onClick={() => setActiveTab('history')}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap ${activeTab === 'history' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}
+                        className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap shrink-0 ${activeTab === 'history' ? 'bg-white dark:bg-slate-900 shadow-xs text-slate-800 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
                     >
                         <History className="w-4 h-4" />
                         Movement History
                     </button>
                     <button 
                         onClick={() => setActiveTab('stocktake')}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap ${activeTab === 'stocktake' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}
+                        className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap shrink-0 ${activeTab === 'stocktake' ? 'bg-white dark:bg-slate-900 shadow-xs text-slate-800 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
                     >
                         <Layers className="w-4 h-4" />
                         Stock Take
                     </button>
                     <button 
                         onClick={() => setActiveTab('expired')}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap ${activeTab === 'expired' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}
+                        className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap shrink-0 ${activeTab === 'expired' ? 'bg-white dark:bg-slate-900 shadow-xs text-slate-800 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
                     >
                         <Clock className="w-4 h-4" />
                         Expired 
@@ -573,7 +573,7 @@ const StockReport: React.FC = () => {
                     </button>
                     <button 
                         onClick={() => setActiveTab('warranty')}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap ${activeTab === 'warranty' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}
+                        className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap shrink-0 ${activeTab === 'warranty' ? 'bg-white dark:bg-slate-900 shadow-xs text-slate-800 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
                     >
                         <ShieldCheck className="w-4 h-4" />
                         Warranty
@@ -581,7 +581,7 @@ const StockReport: React.FC = () => {
                     <button
                         type="button"
                         onClick={() => setActiveTab('serials')}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap ${activeTab === 'serials' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}
+                        className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap shrink-0 ${activeTab === 'serials' ? 'bg-white dark:bg-slate-900 shadow-xs text-slate-800 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
                     >
                         <Hash className="w-4 h-4" /> Serials
                     </button>

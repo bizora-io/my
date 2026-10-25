@@ -465,7 +465,7 @@ const Marketing: React.FC = () => {
                             Issue Card
                         </button>
                     </div>
-                    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                    <div className="bg-white rounded-xl border border-slate-200 overflow-x-auto">
                         <table className="w-full text-sm">
                             <thead className="bg-slate-50 text-slate-500 text-left">
                                 <tr>
@@ -531,7 +531,7 @@ const Marketing: React.FC = () => {
                             </div>
                         </div>
                     </div>
-                    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                    <div className="bg-white rounded-xl border border-slate-200 overflow-x-auto">
                         <div className="p-4 border-b border-slate-100 bg-slate-50">
                             <h3 className="font-bold text-slate-800 text-sm">Customer referral codes</h3>
                         </div>

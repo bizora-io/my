@@ -201,6 +201,7 @@ const OnlinePayments: React.FC = () => {
             <RefreshCw className="w-3 h-3" /> Refresh
           </button>
         </div>
+        <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="text-left text-slate-500 border-b text-xs">
             <tr>
@@ -242,6 +243,7 @@ const OnlinePayments: React.FC = () => {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
     </>

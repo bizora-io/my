@@ -618,9 +618,9 @@ const Buy: React.FC = () => {
         </div>
 
         {/* Right Pane: Cart & Invoice */}
-        <div className={`fixed inset-0 z-[70] bg-white flex flex-col transition-transform duration-300 transform md:relative md:translate-x-0 md:w-[420px] md:border-l md:border-slate-200 md:shadow-xl md:z-0 ${activeView === 'cart' ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}`}>
+        <div className={`fixed inset-0 z-[70] bg-white dark:bg-slate-900 flex flex-col transition-transform duration-300 transform md:relative md:translate-x-0 md:w-[420px] md:border-l md:border-slate-200 dark:md:border-slate-800 md:shadow-xl md:z-0 ${activeView === 'cart' ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}`}>
             {/* Invoice Header */}
-            <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-white shadow-sm z-10 shrink-0">
+            <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-900 shadow-sm z-10 shrink-0">
                 <button onClick={() => setActiveView('products')} className="md:hidden p-2 -ml-2 text-slate-500 active:bg-slate-50 rounded-lg">
                     <ChevronLeft className="w-6 h-6" />
                 </button>
@@ -978,7 +978,7 @@ const Buy: React.FC = () => {
             </div>
 
             {/* STEP 5: Sticky Summary Footer */}
-            <div className="p-4 bg-white border-t border-slate-200 shadow-[0_-4px_10px_-2px_rgba(0,0,0,0.05)] pb-safe z-10 shrink-0">
+            <div id="buy-summary-section" className="p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 shadow-[0_-4px_10px_-2px_rgba(0,0,0,0.05)] z-10 shrink-0" style={{ paddingBottom: 'max(1.25rem, env(safe-area-inset-bottom, 0px))' }}>
                 <div className="space-y-1.5 mb-3 text-xs">
                     <div className="flex justify-between text-slate-500">
                         <span>{t('Subtotal')}</span>

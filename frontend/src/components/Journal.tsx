@@ -766,6 +766,7 @@ const Journal: React.FC = () => {
             <Scale className="w-4 h-4 text-indigo-600" />
             <h3 className="font-bold text-slate-800 text-sm">Trial balance (from journal only)</h3>
           </div>
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="text-left text-slate-500 border-b bg-white">
               <tr>
@@ -803,6 +804,7 @@ const Journal: React.FC = () => {
               </tr>
             </tfoot>
           </table>
+          </div>
           <p className="px-4 py-3 text-xs text-slate-400 border-t">From posted journal entries (including auto-post from POS). Click a row for account ledger.</p>
         </div>
       )}
@@ -893,6 +895,7 @@ const Journal: React.FC = () => {
           {!glAccountId ? (
             <p className="p-8 text-center text-slate-400 text-sm">Choose an account or click one on Trial balance.</p>
           ) : (
+            <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="text-left text-slate-500 border-b bg-white">
                 <tr>
@@ -920,6 +923,7 @@ const Journal: React.FC = () => {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </div>
       )}

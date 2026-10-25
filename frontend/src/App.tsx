@@ -432,13 +432,13 @@ const BusinessSwitcher = () => {
     if (!user?.businesses || user.businesses.length <= 1) return null;
 
     return (
-        <div className="relative group">
-            <button className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg transition-colors border border-slate-200">
-                <Briefcase className="w-4 h-4 text-indigo-600" />
-                <span className="text-xs font-bold whitespace-nowrap max-w-[60px] sm:max-w-[120px] truncate">
+        <div className="relative group shrink-0">
+            <button className="flex items-center gap-1.5 sm:gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-2 sm:px-3 py-1.5 rounded-lg transition-colors border border-slate-200 dark:border-slate-700">
+                <Briefcase className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-600 shrink-0" />
+                <span className="text-xs font-bold whitespace-nowrap max-w-[50px] sm:max-w-[120px] truncate">
                     {user.businessName}
                 </span>
-                <ChevronDown className="w-3 h-3" />
+                <ChevronDown className="w-3 h-3 shrink-0" />
             </button>
             
             <div className="absolute top-full right-0 mt-1 w-64 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden hidden group-hover:block z-[70] animate-in fade-in slide-in-from-top-2">
@@ -474,13 +474,13 @@ const StoreSwitcher = () => {
     const { t } = useSettings();
     
     return (
-        <div className="relative group">
-            <button className="flex items-center gap-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg transition-colors border border-indigo-200">
-                <Store className="w-4 h-4" />
-                <span className="text-xs font-bold whitespace-nowrap max-w-[80px] sm:max-w-[150px] truncate">
+        <div className="relative group shrink-0">
+            <button className="flex items-center gap-1.5 sm:gap-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 px-2 sm:px-3 py-1.5 rounded-lg transition-colors border border-indigo-200 dark:border-indigo-800">
+                <Store className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                <span className="text-xs font-bold whitespace-nowrap max-w-[60px] sm:max-w-[150px] truncate">
                     {activeStore === 'HEAD_OFFICE' ? t('Head Office (All)') : activeStore.name}
                 </span>
-                <ChevronDown className="w-3 h-3" />
+                <ChevronDown className="w-3 h-3 shrink-0" />
             </button>
             
             <div className="absolute top-full right-0 mt-1 w-56 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden hidden group-hover:block z-[70] animate-in fade-in slide-in-from-top-2">
@@ -1806,11 +1806,11 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       )}
 
       {/* --- MAIN CONTENT --- */}
-      <div className="flex-1 flex flex-col h-full min-w-0 bg-slate-50 relative border-l border-slate-200 shadow-sm">
+      <div className="flex-1 flex flex-col h-full min-w-0 bg-slate-50 relative border-l border-slate-200 dark:border-slate-800 shadow-sm max-w-full overflow-x-hidden">
         
         {/* Header */}
-        <header className="h-16 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-4 lg:px-6 sticky top-0 z-[60]">
-          <div className="flex items-center gap-4">
+        <header className="h-16 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-3 sm:px-4 lg:px-6 sticky top-0 z-[60] max-w-full overflow-hidden">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1 mr-2">
             {!sidebarOpen && (
                 <button onClick={() => setSidebarOpen(true)} className="hidden lg:flex p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-colors">
                     <Menu className="w-5 h-5"/>
@@ -1877,7 +1877,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             )}
           </div>
 
-          <div className="flex items-center gap-2 lg:gap-4">
+          <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-4 shrink-0">
             {/* If admin, show UX Simulator here */}
             {location.pathname === '/admin' && (
               <div className="flex bg-slate-100 border border-slate-200 p-1 rounded-xl items-center gap-1">
@@ -1991,9 +1991,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </header>
 
         {/* Scrollable View */}
-        <main ref={mainScrollRef} className={`flex-1 overflow-y-auto scroll-smooth bg-slate-50 relative ${isPOSPage ? 'p-0 pb-28 lg:pb-0' : 'p-4 lg:p-8 pb-32 lg:pb-8 animate-in fade-in duration-500'}`}>
+        <main ref={mainScrollRef} className={`flex-1 overflow-y-auto overflow-x-hidden scroll-smooth bg-slate-50 relative ${isPOSPage ? 'p-0 pb-28 lg:pb-0' : 'p-3 sm:p-4 lg:p-8 pb-32 lg:pb-8 animate-in fade-in duration-500'}`}>
           {!isPOSPage && (
-            <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] opacity-40"></div>
+            <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:16px_16px] opacity-30 dark:hidden"></div>
           )}
           <div className={`relative ${isPOSPage ? 'h-full' : 'max-w-[1600px] mx-auto w-full'}`}>
             {children}
@@ -2038,11 +2038,11 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             return (
               <nav
                 aria-label="Mobile Navigation"
-                className="lg:hidden fixed bottom-0 inset-x-0 z-[100] pointer-events-none"
+                className="lg:hidden fixed bottom-0 inset-x-0 z-40 pointer-events-none"
                 style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom, 0px))' }}
               >
                 <div className="pointer-events-auto mx-auto max-w-md px-3">
-                  <div className="grid grid-cols-5 items-center gap-1 rounded-2xl border border-white/60 bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl shadow-[0_16px_40px_rgba(15,23,42,0.18)] ring-1 ring-slate-900/5 px-1.5 py-1.5">
+                  <div className="grid grid-cols-5 items-center gap-1 rounded-2xl border border-white/60 dark:border-white/10 bg-white/85 dark:bg-slate-900/90 backdrop-blur-2xl shadow-[0_16px_40px_rgba(15,23,42,0.18)] dark:shadow-[0_16px_40px_rgba(0,0,0,0.5)] ring-1 ring-slate-900/5 dark:ring-white/10 px-1.5 py-1.5">
                     {primaryNav.map((item, idx) => {
                       if (item.isMenu) {
                         return (

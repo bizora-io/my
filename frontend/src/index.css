@@ -264,3 +264,57 @@ a, button, [role='button'], .tap-target { touch-action: manipulation; }
 .table-modern tr:hover td {
   background-color: rgba(248, 250, 252, 0.75);
 }
+
+/* Dark mode overrides for modern components */
+.dark .card-modern {
+  background: #111827;
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.35);
+}
+.dark .card-modern:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 24px 0 rgba(0, 0, 0, 0.5);
+}
+.dark .glass-panel {
+  background: rgba(17, 24, 39, 0.88);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 16px 40px 0 rgba(0, 0, 0, 0.5);
+}
+.dark .glass-pill {
+  background: rgba(17, 24, 39, 0.9);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+.dark .table-modern-wrapper {
+  background: #111827;
+  border-color: #1f293d;
+}
+.dark .table-modern th {
+  background-color: #141c2e;
+  color: #94a3b8;
+  border-bottom-color: #1f293d;
+}
+.dark .table-modern td {
+  color: #f1f5f9;
+  border-bottom-color: #1f293d;
+}
+.dark .table-modern tr:hover td {
+  background-color: rgba(30, 41, 59, 0.45);
+}
+.dark .input-modern {
+  background-color: #1a2234;
+  border-color: #2e3a4e;
+  color: #f8fafc;
+}
+.dark .input-modern::placeholder {
+  color: #64748b;
+}
+.dark .btn-secondary-modern {
+  background-color: #1a2234;
+  border-color: #2e3a4e;
+  color: #f1f5f9;
+}
+.dark .btn-secondary-modern:hover {
+  background-color: #222d42;
+  border-color: #3b4b66;
+  color: #ffffff;
+}

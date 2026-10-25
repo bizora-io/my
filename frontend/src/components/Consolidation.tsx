@@ -255,6 +255,7 @@ const Consolidation: React.FC = () => {
 
           <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
             <div className="px-4 py-3 bg-slate-50 border-b text-sm font-bold text-slate-700">By company</div>
+            <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="text-[10px] uppercase text-slate-400 bg-slate-50">
                 <tr>
@@ -286,6 +287,7 @@ const Consolidation: React.FC = () => {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
 
           {(report.eliminations || []).length > 0 && (

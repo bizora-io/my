@@ -406,16 +406,16 @@ const Dashboard: React.FC = () => {
               </p>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 shrink-0">
               <button 
                   onClick={() => window.location.reload()} 
-                  className="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl text-sm font-semibold hover:bg-slate-50 hover:text-slate-900 transition-colors flex items-center gap-2 shadow-xs"
+                  className="px-3 sm:px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl text-xs sm:text-sm font-semibold hover:bg-slate-50 hover:text-slate-900 transition-colors flex items-center gap-1.5 sm:gap-2 shadow-xs"
               >
                   <RotateCcw className="w-4 h-4 text-slate-400" /> {t('Refresh')}
               </button>
               
               <div id="quick-create-btn" className="relative group">
-                  <button className="px-4 py-2 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 transition-colors flex items-center gap-2 shadow-xs shadow-emerald-600/20">
+                  <button className="px-3 sm:px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs sm:text-sm font-semibold hover:bg-emerald-700 transition-colors flex items-center gap-1.5 sm:gap-2 shadow-xs shadow-emerald-600/20">
                       <div className="bg-white/20 p-0.5 rounded">
                           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
                       </div>

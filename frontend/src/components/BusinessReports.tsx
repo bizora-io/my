@@ -430,9 +430,9 @@ const BusinessReports: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-full overflow-hidden">
       {/* Top Header Card */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-4 sm:p-5 rounded-2xl shadow-2xs border border-slate-200/80 gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-4 sm:p-5 rounded-2xl shadow-2xs border border-slate-200/80 gap-4 w-full min-w-0">
         <div className="flex items-center gap-3">
           <div className="w-11 h-11 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center font-bold shadow-2xs">
             <BarChart2 className="w-6 h-6" />
@@ -444,8 +444,8 @@ const BusinessReports: React.FC = () => {
         </div>
         
         {/* Module Sub-Tabs */}
-        <div className="w-full md:w-auto overflow-hidden">
-          <div className="flex bg-slate-100/90 p-1 rounded-xl overflow-x-auto flex-nowrap gap-1">
+        <div className="w-full md:w-auto max-w-full min-w-0 overflow-hidden">
+          <div className="flex bg-slate-100/90 p-1 rounded-xl overflow-x-auto flex-nowrap gap-1 scrollbar-none">
             {[
               { id: 'overview', label: 'Overview' },
               { id: 'trends', label: 'Trends & Growth' },

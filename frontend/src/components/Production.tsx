@@ -670,7 +670,7 @@ const Production: React.FC = () => {
                         </div>
                     )}
                     <div className="grid md:grid-cols-2 gap-4">
-                        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+                        <div className="bg-white border border-slate-200 rounded-xl overflow-x-auto">
                             <div className="px-4 py-2 bg-slate-50 text-xs font-black uppercase text-slate-500">By reason</div>
                             <table className="w-full text-sm">
                                 <thead className="text-[10px] uppercase text-slate-400"><tr>
@@ -692,7 +692,7 @@ const Production: React.FC = () => {
                                 </tbody>
                             </table>
                         </div>
-                        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+                        <div className="bg-white border border-slate-200 rounded-xl overflow-x-auto">
                             <div className="px-4 py-2 bg-slate-50 text-xs font-black uppercase text-slate-500">By product</div>
                             <table className="w-full text-sm">
                                 <thead className="text-[10px] uppercase text-slate-400"><tr>
@@ -715,7 +715,7 @@ const Production: React.FC = () => {
                             </table>
                         </div>
                     </div>
-                    <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+                    <div className="bg-white border border-slate-200 rounded-xl overflow-x-auto">
                         <div className="px-4 py-2 bg-slate-50 text-xs font-black uppercase text-slate-500">Recent scrap batches</div>
                         <table className="w-full text-sm">
                             <thead className="text-[10px] uppercase text-slate-400"><tr>
@@ -801,7 +801,7 @@ const Production: React.FC = () => {
                     )}
                     <p className="text-xs text-slate-500">Efficiency = standard ÷ actual (100% = on standard). Ops ≥20% over standard listed below.</p>
                     <div className="grid md:grid-cols-2 gap-4">
-                        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+                        <div className="bg-white border border-slate-200 rounded-xl overflow-x-auto">
                             <div className="px-4 py-2 bg-slate-50 text-xs font-black uppercase text-slate-500">By work center</div>
                             <table className="w-full text-sm">
                                 <thead className="text-[10px] uppercase text-slate-400"><tr>
@@ -823,7 +823,7 @@ const Production: React.FC = () => {
                                 </tbody>
                             </table>
                         </div>
-                        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+                        <div className="bg-white border border-slate-200 rounded-xl overflow-x-auto">
                             <div className="px-4 py-2 bg-slate-50 text-xs font-black uppercase text-slate-500">Slow operations (≥20% over)</div>
                             <table className="w-full text-sm">
                                 <thead className="text-[10px] uppercase text-slate-400"><tr>
