@@ -96,6 +96,22 @@ export const TENANT_SUBCOLLECTIONS: SchemaCollection[] = [
   { name: 'holidays', scope: 'tenant', description: 'Holiday calendar' },
   { name: 'backups', scope: 'tenant', description: 'Online cloud backup snapshots (encrypted payload)' },
   { name: 'settings', scope: 'tenant', description: 'Optional split settings docs (or fields on business)' },
+  { name: 'catalogCategories', scope: 'tenant', description: 'Product category catalog master' },
+  { name: 'catalogBrands', scope: 'tenant', description: 'Product brand catalog master' },
+  { name: 'wastage', scope: 'tenant', description: 'Wastage, damage, scrap, and expired stock records' },
+  { name: 'lettersOfCredit', scope: 'tenant', description: 'Letter of credit (L/C) import/export lifecycle records' },
+  { name: 'loans', scope: 'tenant', description: 'Loans receivable and payable records with schedules' },
+  { name: 'hotelRooms', scope: 'tenant', description: 'Hotel room inventory and occupancy status' },
+  { name: 'hotelReservations', scope: 'tenant', description: 'Hotel room reservations and guest folios' },
+  { name: 'providentFund', scope: 'tenant', description: 'Provident Fund (PF) accounts and contribution ledger' },
+  { name: 'eprocurement', scope: 'tenant', description: 'E-Procurement tenders, RFQs, and vendor bids' },
+  { name: 'vehicles', scope: 'tenant', description: 'Fleet vehicle registry' },
+  { name: 'vehicleLogs', scope: 'tenant', description: 'Vehicle fuel, toll, and maintenance logs' },
+  { name: 'visitors', scope: 'tenant', description: 'Visitor pre-registration, badge check-ins and check-outs' },
+  { name: 'projects', scope: 'tenant', description: 'Projects, milestones, and budget tracking' },
+  { name: 'projectTasks', scope: 'tenant', description: 'Project task management and completion tracking' },
+  { name: 'dealerTargets', scope: 'tenant', description: 'Dealer sales targets and performance metrics' },
+  { name: 'documentAiJobs', scope: 'tenant', description: 'Document AI scan jobs, extracted receipt and invoice data' },
 ];
 
 /** Default limits written on new shop registration */

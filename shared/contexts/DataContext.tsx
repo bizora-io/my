@@ -3389,10 +3389,32 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       logAction('Production', 'Complete Batch', `Produced ${goodQty} units of ${batch.productName}`);
   };
 
+  // Helper to immediately persist settings fields to Firestore
+  const syncSettingsField = (field: string, value: any) => {
+    if (hasAuthToken() && !isSaasUserRole(user?.role)) {
+      authFetch('/api/business-settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [field]: value }),
+      }).catch(err => console.warn(`Business settings sync (${field}) failed, kept locally:`, err));
+    }
+  };
+
   // --- Category Management ---
   const addCategory = (name: string) => {
-      if (!categories.some(c => c.name.toLowerCase() === name.toLowerCase())) {
-          setCategories(prev => [...prev, { id: Date.now().toString(), name, subCategories: [] }]);
+      if (!name || !name.trim()) return;
+      if (!categories.some(c => c.name.toLowerCase() === name.trim().toLowerCase())) {
+          const newCat = { id: `cat-${Date.now()}`, name: name.trim(), subCategories: [] };
+          const next = [...categories, newCat];
+          setCategories(next);
+          syncSettingsField('categories', next);
+          if (hasAuthToken()) {
+            authFetch('/api/catalog/categories', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name: name.trim() })
+            }).catch(() => {});
+          }
           logAction('System', 'Add Category', `Created category: ${name}`);
       }
   };
@@ -3400,21 +3422,41 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const addBrand = (name: string) => {
       if (!name.trim()) return;
       if (brands.some(b => b.name.toLowerCase() === name.trim().toLowerCase())) return;
-      setBrands(prev => [...prev, { id: `brand-${Date.now()}`, name: name.trim() }]);
+      const newBrand = { id: `brand-${Date.now()}`, name: name.trim() };
+      const next = [...brands, newBrand];
+      setBrands(next);
+      syncSettingsField('brands', next);
+      if (hasAuthToken()) {
+        authFetch('/api/catalog/brands', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: name.trim() })
+        }).catch(() => {});
+      }
       logAction('System', 'Add Brand', `Created brand: ${name}`);
   };
   const deleteBrand = (id: string) => {
-      setBrands(prev => prev.filter(b => b.id !== id));
+      const next = brands.filter(b => b.id !== id);
+      setBrands(next);
+      syncSettingsField('brands', next);
+      if (hasAuthToken()) {
+        authFetch(`/api/catalog/brands/${id}?force=true`, { method: 'DELETE' }).catch(() => {});
+      }
       logAction('System', 'Delete Brand', `Deleted brand ID: ${id}`);
   };
   const addUnit = (name: string) => {
       if (!name.trim()) return;
       if (units.some(u => u.name.toLowerCase() === name.trim().toLowerCase())) return;
-      setUnits(prev => [...prev, { id: `unit-${Date.now()}`, name: name.trim() }]);
+      const newUnit = { id: `unit-${Date.now()}`, name: name.trim() };
+      const next = [...units, newUnit];
+      setUnits(next);
+      syncSettingsField('units', next);
       logAction('System', 'Add Unit', `Created unit: ${name}`);
   };
   const deleteUnit = (id: string) => {
-      setUnits(prev => prev.filter(u => u.id !== id));
+      const next = units.filter(u => u.id !== id);
+      setUnits(next);
+      syncSettingsField('units', next);
       logAction('System', 'Delete Unit', `Deleted unit ID: ${id}`);
   };
   const refreshWarehouses = async () => {
@@ -3478,46 +3520,61 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const addSubCategory = (categoryId: string, subCategoryName: string) => {
-      setCategories(prev => prev.map(c => {
+      const next = categories.map(c => {
           const subs = c.subCategories || [];
           if (c.id === categoryId && !subs.includes(subCategoryName)) {
               return { ...c, subCategories: [...subs, subCategoryName] };
           }
           return c;
-      }));
+      });
+      setCategories(next);
+      syncSettingsField('categories', next);
       logAction('System', 'Add SubCategory', `Added ${subCategoryName} to category`);
   };
 
   const deleteCategory = (id: string) => {
-      setCategories(prev => prev.filter(c => c.id !== id));
+      const next = categories.filter(c => c.id !== id);
+      setCategories(next);
+      syncSettingsField('categories', next);
+      if (hasAuthToken()) {
+        authFetch(`/api/catalog/categories/${id}?force=true`, { method: 'DELETE' }).catch(() => {});
+      }
       logAction('System', 'Delete Category', `Deleted category ID: ${id}`);
   };
 
   const deleteSubCategory = (categoryId: string, subCategoryName: string) => {
-      setCategories(prev => prev.map(c => {
+      const next = categories.map(c => {
           if (c.id === categoryId) {
               const subs = c.subCategories || [];
               return { ...c, subCategories: subs.filter(s => s !== subCategoryName) };
           }
           return c;
-      }));
+      });
+      setCategories(next);
+      syncSettingsField('categories', next);
       logAction('System', 'Delete SubCategory', `Deleted sub-category ${subCategoryName}`);
   };
 
   // --- Expense Category Management ---
   const updateExpenseCategory = (id: string, data: Partial<ExpenseCategory>) => {
-      setExpenseCategories(prev => prev.map(c => c.id === id ? { ...c, ...data } : c));
+      const next = expenseCategories.map(c => c.id === id ? { ...c, ...data } : c);
+      setExpenseCategories(next);
+      syncSettingsField('expenseCategories', next);
   };
 
   const addExpenseCategory = (name: string, monthlyBudget?: number) => {
       if (!expenseCategories.some(c => c.name.toLowerCase() === name.toLowerCase())) {
-          setExpenseCategories(prev => [...prev, { id: Date.now().toString(), name, monthlyBudget: monthlyBudget || 0 }]);
+          const next = [...expenseCategories, { id: `expcat-${Date.now()}`, name, monthlyBudget: monthlyBudget || 0 }];
+          setExpenseCategories(next);
+          syncSettingsField('expenseCategories', next);
           logAction('System', 'Add Expense Category', `Added ${name}`);
       }
   };
 
   const deleteExpenseCategory = (id: string) => {
-      setExpenseCategories(prev => prev.filter(c => c.id !== id));
+      const next = expenseCategories.filter(c => c.id !== id);
+      setExpenseCategories(next);
+      syncSettingsField('expenseCategories', next);
       logAction('System', 'Delete Expense Category', `Removed category ID: ${id}`);
   };
 

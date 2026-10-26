@@ -7,6 +7,7 @@ import { isEncryptedBlob, decryptBackupPayload } from '@shared/lib/backupCrypto'
 import WebhooksSettings from './WebhooksSettings';
 import { useSound } from '../contexts/SoundContext';
 import React, { useState, useRef, useEffect } from 'react';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import { useSettings, InvoiceConfig, CURRENCY_SYMBOLS, ThemeMode } from '../contexts/SettingsContext';
 import { useAuth, Business, BusinessSettings as BusinessSettingsType } from '../contexts/AuthContext';
 import { useStores } from '../contexts/StoreContext';
@@ -183,7 +184,22 @@ const SettingsPage: React.FC = () => {
     const { stores, addStore, updateStore, deleteStore } = useStores();
     const { getAllData, importData, resetData } = useData();
     const { soundEnabled, soundVolume, toggleSound, setSoundVolume, previewSound } = useSound();
-    const [activeTab, setActiveTab] = useState<'profile' | 'appearance' | 'business' | 'templates' | 'security' | 'audit' | 'data' | 'users' | 'subscription' | 'webhooks'>('profile');
+    const [searchParams] = useSearchParams();
+    const location = useLocation();
+    const tabParam = searchParams.get('tab') as any;
+    const isAuditRoute = location.pathname === '/audit' || location.pathname === '/audit-log';
+    const validTabs = ['profile', 'appearance', 'business', 'templates', 'security', 'audit', 'data', 'users', 'subscription', 'webhooks'];
+    const [activeTab, setActiveTab] = useState<'profile' | 'appearance' | 'business' | 'templates' | 'security' | 'audit' | 'data' | 'users' | 'subscription' | 'webhooks'>(
+      isAuditRoute ? 'audit' : (validTabs.includes(tabParam) ? tabParam : 'profile')
+    );
+
+    useEffect(() => {
+      if (isAuditRoute) {
+        setActiveTab('audit');
+      } else if (validTabs.includes(tabParam)) {
+        setActiveTab(tabParam);
+      }
+    }, [tabParam, isAuditRoute]);
     const [businessSubTab, setBusinessSubTab] = useState<'general' | 'stores' | 'tax' | 'hours' | 'notifications'>('general');
     const [showResetConfirm, setShowResetConfirm] = useState(false);
     const [confirmPassword, setConfirmPassword] = useState('');

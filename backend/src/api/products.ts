@@ -134,9 +134,6 @@ router.patch("/:id", requirePermission("inventory.edit"), async (req, res) => {
   }
 });
 
-export default router;
-
-
 router.delete("/:id", requirePermission("inventory.delete"), async (req, res) => {
   try {
     const businessId = (req as any).businessId || getActingBusinessId(req as any);
@@ -150,3 +147,195 @@ router.delete("/:id", requirePermission("inventory.delete"), async (req, res) =>
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
+// --- Product Variants Sub-routes ---
+router.get("/:id/variants", requirePermission("inventory.view"), async (req, res) => {
+  try {
+    const businessId = (req as any).businessId || getActingBusinessId(req as any);
+    const docRef = productsCollection(businessId).doc(String(req.params.id));
+    const doc = await docRef.get();
+    if (!doc.exists) return res.status(404).json({ error: "Product not found" });
+    const p = doc.data() || {};
+    res.json(Array.isArray(p.variants) ? p.variants : []);
+  } catch (error) {
+    console.error("List variants error:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.post("/:id/variants", requirePermission("inventory.edit"), async (req, res) => {
+  try {
+    const businessId = (req as any).businessId || getActingBusinessId(req as any);
+    const docRef = productsCollection(businessId).doc(String(req.params.id));
+    const doc = await docRef.get();
+    if (!doc.exists) return res.status(404).json({ error: "Product not found" });
+
+    const p = doc.data() || {};
+    const { name, sku, priceDelta = 0, stock = 0, attributes = {} } = req.body || {};
+    if (!name || !sku) return res.status(400).json({ error: "Variant name and sku are required" });
+
+    const existingVariants = Array.isArray(p.variants) ? p.variants : [];
+    if (existingVariants.some((v: any) => v.sku?.toLowerCase() === String(sku).toLowerCase())) {
+      return res.status(409).json({ error: `Variant SKU already exists: ${sku}` });
+    }
+
+    const newVariant = {
+      id: `var-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      name: String(name).trim(),
+      sku: String(sku).trim(),
+      priceDelta: Number(priceDelta) || 0,
+      stock: Number(stock) || 0,
+      attributes,
+      createdAt: new Date().toISOString(),
+    };
+
+    const nextVariants = [...existingVariants, newVariant];
+    const totalStock = nextVariants.reduce((s, v) => s + (Number(v.stock) || 0), 0);
+
+    await docRef.set(
+      {
+        variants: nextVariants,
+        stock: totalStock,
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+
+    res.status(201).json(newVariant);
+  } catch (error) {
+    console.error("Create variant error:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.patch("/:id/variants/:variantId", requirePermission("inventory.edit"), async (req, res) => {
+  try {
+    const businessId = (req as any).businessId || getActingBusinessId(req as any);
+    const docRef = productsCollection(businessId).doc(String(req.params.id));
+    const doc = await docRef.get();
+    if (!doc.exists) return res.status(404).json({ error: "Product not found" });
+
+    const p = doc.data() || {};
+    const existingVariants = Array.isArray(p.variants) ? p.variants : [];
+    const idx = existingVariants.findIndex((v: any) => v.id === req.params.variantId);
+    if (idx === -1) return res.status(404).json({ error: "Variant not found" });
+
+    const updatedVariant = { ...existingVariants[idx], ...req.body };
+    existingVariants[idx] = updatedVariant;
+    const totalStock = existingVariants.reduce((s, v) => s + (Number(v.stock) || 0), 0);
+
+    await docRef.set(
+      {
+        variants: existingVariants,
+        stock: totalStock,
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+
+    res.json(updatedVariant);
+  } catch (error) {
+    console.error("Update variant error:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.delete("/:id/variants/:variantId", requirePermission("inventory.edit"), async (req, res) => {
+  try {
+    const businessId = (req as any).businessId || getActingBusinessId(req as any);
+    const docRef = productsCollection(businessId).doc(String(req.params.id));
+    const doc = await docRef.get();
+    if (!doc.exists) return res.status(404).json({ error: "Product not found" });
+
+    const p = doc.data() || {};
+    const existingVariants = Array.isArray(p.variants) ? p.variants : [];
+    const nextVariants = existingVariants.filter((v: any) => v.id !== req.params.variantId);
+    const totalStock = nextVariants.reduce((s, v) => s + (Number(v.stock) || 0), 0);
+
+    await docRef.set(
+      {
+        variants: nextVariants,
+        stock: totalStock,
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+
+    res.json({ ok: true, deletedId: req.params.variantId });
+  } catch (error) {
+    console.error("Delete variant error:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// --- Product Serials Sub-routes ---
+router.get("/:id/serials", requirePermission("inventory.view"), async (req, res) => {
+  try {
+    const businessId = (req as any).businessId || getActingBusinessId(req as any);
+    const docRef = productsCollection(businessId).doc(String(req.params.id));
+    const doc = await docRef.get();
+    if (!doc.exists) return res.status(404).json({ error: "Product not found" });
+
+    const p = doc.data() || {};
+    const serialUnits = Array.isArray(p.serialUnits) ? p.serialUnits : [];
+    const status = req.query.status as string | undefined;
+
+    const filtered = status ? serialUnits.filter((u: any) => u.status === status) : serialUnits;
+    res.json(filtered);
+  } catch (error) {
+    console.error("List serials error:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.post("/:id/serials", requirePermission("inventory.edit"), async (req, res) => {
+  try {
+    const businessId = (req as any).businessId || getActingBusinessId(req as any);
+    const docRef = productsCollection(businessId).doc(String(req.params.id));
+    const doc = await docRef.get();
+    if (!doc.exists) return res.status(404).json({ error: "Product not found" });
+
+    const p = doc.data() || {};
+    const { serials, lotNumber } = req.body || {};
+
+    if (!Array.isArray(serials) || serials.length === 0) {
+      return res.status(400).json({ error: "Array of serials is required" });
+    }
+
+    const existingUnits = Array.isArray(p.serialUnits) ? p.serialUnits : [];
+    const existingSerialSet = new Set(existingUnits.map((u: any) => String(u.serial).trim().toLowerCase()));
+
+    const newUnits: any[] = [];
+    for (const raw of serials) {
+      const serial = String(raw).trim();
+      if (!serial) continue;
+      if (existingSerialSet.has(serial.toLowerCase())) {
+        return res.status(409).json({ error: `Serial already exists: ${serial}` });
+      }
+      existingSerialSet.add(serial.toLowerCase());
+      newUnits.push({
+        serial,
+        lotNumber: lotNumber || null,
+        status: "available",
+        addedAt: new Date().toISOString(),
+      });
+    }
+
+    const nextUnits = [...existingUnits, ...newUnits];
+    await docRef.set(
+      {
+        serialUnits: nextUnits,
+        trackSerial: true,
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+
+    res.status(201).json({ added: newUnits.length, serialUnits: nextUnits });
+  } catch (error) {
+    console.error("Add serials error:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+export default router;

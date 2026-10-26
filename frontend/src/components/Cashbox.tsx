@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import { useSettings } from '../contexts/SettingsContext';
 import { useData, LedgerEntry, FinancialAccount, resolveAccountForTender, buildSplitAccountPostings } from '../contexts/DataContext';
 import { 
@@ -24,8 +25,24 @@ const Cashbox: React.FC = () => {
   } = useData();
   
   // View State
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const tabParam = searchParams.get('tab');
+  const isReconcilePath = location.pathname === '/bank-reconcile';
   const [activeAccountId, setActiveAccountId] = useState<string>('all');
-  const [mainTab, setMainTab] = useState<'accounts' | 'reconcile' | 'ap-match'>('accounts');
+  const [mainTab, setMainTab] = useState<'accounts' | 'reconcile' | 'ap-match'>(
+    isReconcilePath || tabParam === 'reconcile' ? 'reconcile'
+      : tabParam === 'ap-match' ? 'ap-match'
+      : 'accounts'
+  );
+
+  useEffect(() => {
+    if (isReconcilePath || tabParam === 'reconcile') {
+      setMainTab('reconcile');
+    } else if (tabParam === 'ap-match' || tabParam === 'accounts') {
+      setMainTab(tabParam);
+    }
+  }, [tabParam, isReconcilePath]);
   const [searchQuery, setSearchQuery] = useState('');
   const [txTypeFilter, setTxTypeFilter] = useState<string>('all');
   

@@ -53,6 +53,19 @@ import { getDb } from "./src/lib/firebaseAdmin.js";
 import { exportPlatformSnapshot } from "./src/lib/fullTenantExport.js";
 import { encryptAtRest } from "./src/lib/backupAtRest.js";
 import assistantRouter from "./src/assistant/assistantRoutes.js";
+import catalogRouter from "./src/api/catalog.js";
+import wastageRouter from "./src/api/wastage.js";
+import lcRouter from "./src/api/lc.js";
+import loansRouter from "./src/api/loans.js";
+import hotelRouter from "./src/api/hotel.js";
+import pfRouter from "./src/api/pf.js";
+import eprocurementRouter from "./src/api/eprocurement.js";
+import vehiclesRouter from "./src/api/vehicles.js";
+import visitorsRouter from "./src/api/visitors.js";
+import projectsRouter from "./src/api/projects.js";
+import dealersRouter from "./src/api/dealers.js";
+import documentAiRouter from "./src/api/documentAi.js";
+import messagingRouter from "./src/api/messaging.js";
 
 // This server is a pure API now — the frontend and admin apps are separate
 // Vite projects (see ../frontend and ../admin) that call this API over HTTP.
@@ -300,6 +313,21 @@ async function startServer() {
   app.use("/api/admin/subscriptions", subscriptionMigrationsRouter);
   app.use("/api/invoice-templates", invoiceTemplatesRouter);
   app.use("/api/notifications", notificationsRouter);
+
+  // Cross-Check Enterprise Modules
+  app.use("/api/catalog", catalogRouter);
+  app.use("/api/wastage", wastageRouter);
+  app.use("/api/lc", lcRouter);
+  app.use("/api/loans", loansRouter);
+  app.use("/api/hotel", hotelRouter);
+  app.use("/api/pf", pfRouter);
+  app.use("/api/eprocurement", eprocurementRouter);
+  app.use("/api/vehicles", vehiclesRouter);
+  app.use("/api/visitors", visitorsRouter);
+  app.use("/api/projects", projectsRouter);
+  app.use("/api/dealers", dealersRouter);
+  app.use("/api/document-ai", documentAiRouter);
+  app.use("/api/messaging", messagingRouter);
 
   // Bizora Context-Aware ERP Assistant (also mounts at /api/ai for existing client compatibility)
   app.use("/api/assistant", assistantRouter);

@@ -12,10 +12,33 @@ import {
   BookOpen, DollarSign, Users, Box, Package, Printer, Megaphone, Globe, 
   Trash2, Menu, X, Bot, Settings, UserCircle, Video, ShieldCheck, Search, 
   ArrowRightLeft, Store, Shield, Crown, LogOut, RotateCcw, Briefcase, CheckCircle,
-  Factory, ChevronLeft, Home, Grid, MoreHorizontal, Wallet, MessageSquare, ChevronDown, Image, HeadphonesIcon, WifiOff, Cloud, Wifi, AlertCircle, Sparkles, Lightbulb, TrendingUp,
+  Factory, ChevronLeft, ChevronRight, Home, Grid, MoreHorizontal, Wallet, MessageSquare, ChevronDown, Image, HeadphonesIcon, WifiOff, Cloud, Wifi, AlertCircle, Sparkles, Lightbulb, TrendingUp,
   Award, Star, Smartphone, CreditCard, Mail, Lock, Database, Key, Server, Activity, CalendarClock, ChefHat, Bell, Tags, Building, UserCheck,
-  Sun, Moon
+  Sun, Moon, AlertTriangle, FileSpreadsheet, Landmark, Hotel as HotelIcon, PiggyBank, Truck, FolderGit2, ScanText
 } from 'lucide-react';
+import {
+  getAuthorizedNavGroups,
+  NAV_GROUPS,
+  getNavIcon,
+  getNavBreadcrumbs,
+  PATH_TO_NAV_ITEM,
+  PATH_TO_NAV_GROUP,
+  searchNavigation,
+  NavItemConfig,
+  NavGroupConfig
+} from './config/navigation';
+const Catalog = lazy(() => import('./components/Catalog'));
+const Wastage = lazy(() => import('./components/Wastage'));
+const LetterOfCredit = lazy(() => import('./components/LetterOfCredit'));
+const Loans = lazy(() => import('./components/Loans'));
+const Hotel = lazy(() => import('./components/Hotel'));
+const ProvidentFund = lazy(() => import('./components/ProvidentFund'));
+const Eprocurement = lazy(() => import('./components/Eprocurement'));
+const Vehicles = lazy(() => import('./components/Vehicles'));
+const Visitors = lazy(() => import('./components/Visitors'));
+const Projects = lazy(() => import('./components/Projects'));
+const Dealers = lazy(() => import('./components/Dealers'));
+const DocumentAi = lazy(() => import('./components/DocumentAi'));
 const Dashboard = lazy(() => import('./components/Dashboard'));
 const CustomerSupport = lazy(() => import('./components/CustomerSupport'));
 const ProductTransfer = lazy(() => import('./components/ProductTransfer'));
@@ -179,6 +202,21 @@ const ROUTE_PREFETCH: Record<string, () => Promise<unknown>> = {
   '/marketing': () => import('./components/Marketing'),
   '/communication': () => import('./components/Communication'),
   '/lots': () => import('./components/LotEnquiry'),
+  '/catalog': () => import('./components/Catalog'),
+  '/wastage': () => import('./components/Wastage'),
+  '/lc': () => import('./components/LetterOfCredit'),
+  '/loans': () => import('./components/Loans'),
+  '/hotel': () => import('./components/Hotel'),
+  '/pf': () => import('./components/ProvidentFund'),
+  '/eprocurement': () => import('./components/Eprocurement'),
+  '/vehicles': () => import('./components/Vehicles'),
+  '/visitors': () => import('./components/Visitors'),
+  '/projects': () => import('./components/Projects'),
+  '/dealers': () => import('./components/Dealers'),
+  '/document-ai': () => import('./components/DocumentAi'),
+  '/bank-reconcile': () => import('./components/Cashbox'),
+  '/audit-log': () => import('./components/SettingsPage'),
+  '/audit': () => import('./components/SettingsPage'),
 };
 
 const prefetched = new Set<string>();
@@ -233,7 +271,7 @@ const ExternalAdminRedirect: React.FC = () => {
   );
 };
 
-const DesktopSidebarItem = ({ to, icon: Icon, label, active, onClick, collapsed, isLocked }: any) => {
+const DesktopSidebarItem = ({ to, icon: Icon, label, active, onClick, collapsed, isLocked, badge, badgeColor }: any) => {
   const navigate = useNavigate();
   const warm = () => { if (!isLocked && !isAdminPath(to)) prefetchRoute(to); };
   const handleClick = (e: any) => {
@@ -261,76 +299,158 @@ const DesktopSidebarItem = ({ to, icon: Icon, label, active, onClick, collapsed,
       onMouseEnter={warm}
       onFocus={warm}
       id={linkId}
-      className={`flex items-center justify-between px-3 py-2.5 mx-2 rounded-xl group relative overflow-visible select-none transition-all duration-300 ease-out ${
+      className={`flex items-center justify-between px-3 py-2 mx-1.5 rounded-xl group relative overflow-visible select-none transition-all duration-200 ease-out ${
           isLocked
-          ? 'text-slate-500/80 hover:text-slate-400 hover:bg-white/5 cursor-not-allowed opacity-70'
+          ? 'text-slate-500/70 hover:text-slate-400 hover:bg-white/5 cursor-not-allowed opacity-75'
           : active 
-            ? 'bg-white/15 text-white font-semibold shadow-[0_0_24px_rgba(99,102,241,0.35)] ring-1 ring-white/20 backdrop-blur-md scale-[1.02]' 
-            : 'text-slate-400 hover:text-white hover:bg-white/10 hover:backdrop-blur-sm hover:translate-x-0.5'
+            ? 'bg-gradient-to-r from-indigo-600/40 to-indigo-500/20 text-white font-semibold shadow-[0_0_20px_rgba(99,102,241,0.25)] ring-1 ring-indigo-400/30 backdrop-blur-md translate-x-1' 
+            : 'text-slate-300 hover:text-white hover:bg-white/10 hover:backdrop-blur-xs hover:translate-x-0.5'
       }`}
     >
-      <div className="flex items-center gap-3 min-w-0">
-        <span className={`flex items-center justify-center w-8 h-8 rounded-lg shrink-0 transition-all duration-300 ${
+      <div className="flex items-center gap-2.5 min-w-0">
+        <span className={`flex items-center justify-center w-7 h-7 rounded-lg shrink-0 transition-all duration-200 ${
             isLocked
               ? 'bg-transparent'
               : active
-                ? 'bg-indigo-500/40 shadow-inner shadow-indigo-400/30'
-                : 'bg-white/5 group-hover:bg-white/10'
+                ? 'bg-indigo-500 text-white shadow-sm'
+                : 'bg-white/5 text-slate-400 group-hover:bg-white/15 group-hover:text-white'
           }`}>
-        <Icon 
-          className={`w-[16px] h-[16px] flex-shrink-0 transition-all duration-300 ${
-            isLocked
-              ? 'text-slate-500 group-hover:text-slate-400'
-              : active 
-                ? 'text-indigo-100 scale-110' 
-                : 'text-slate-400 group-hover:text-white'
-          }`} 
-        />
+          <Icon className="w-4 h-4 flex-shrink-0" />
         </span>
         
         {!collapsed && (
-          <span className={`font-medium text-sm tracking-wide truncate ${isLocked ? 'text-slate-500 group-hover:text-slate-400' : active ? 'text-white' : 'text-slate-300'}`}>
+          <span className={`font-medium text-xs tracking-wide truncate ${isLocked ? 'text-slate-500 group-hover:text-slate-400' : active ? 'text-white font-bold' : 'text-slate-300'}`}>
             {label}
           </span>
         )}
       </div>
 
-      {!collapsed && isLocked && (
-        <Lock className="w-3.5 h-3.5 text-slate-500 group-hover:text-slate-400 shrink-0 ml-1" />
+      {!collapsed && (
+        <div className="flex items-center gap-1 shrink-0 ml-1">
+          {badge && !isLocked && (
+            <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full ${badgeColor || 'bg-indigo-500/20 text-indigo-200'}`}>
+              {badge}
+            </span>
+          )}
+          {isLocked && (
+            <Lock className="w-3.5 h-3.5 text-slate-500 group-hover:text-slate-400" />
+          )}
+        </div>
       )}
       
       {collapsed && (
-        <div className="absolute left-16 bg-slate-900 text-slate-100 text-xs font-semibold px-2.5 py-1.5 rounded-md border border-slate-700/60 shadow-2xl pointer-events-none z-50 whitespace-nowrap opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 ease-out flex items-center gap-1.5">
+        <div className="absolute left-16 bg-slate-900 text-slate-100 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-slate-700/80 shadow-2xl pointer-events-none z-50 whitespace-nowrap opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 ease-out flex items-center gap-1.5">
           <Icon className="w-3.5 h-3.5 text-indigo-400" />
-          <span>{label} {isLocked ? '(Locked)' : ''}</span>
-          {isLocked && <Lock className="w-3 h-3 text-red-400" />}
+          <span>{label}</span>
+          {isLocked && <Lock className="w-3 h-3 text-amber-400" />}
+          {badge && !isLocked && <span className="text-[9px] px-1 py-0.2 bg-indigo-600 rounded text-white">{badge}</span>}
         </div>
       )}
     </LinkTag>
   );
 };
 
-const MobileMenuItem = ({ to, icon: Icon, label, onClick }: any) => {
+const MobileMenuItem = ({ to, icon: Icon, label, onClick, description, badge, badgeColor, active, isLocked }: any) => {
   const goesToAdminApp = isAdminPath(to);
   const LinkTag: any = goesToAdminApp ? 'a' : Link;
-  const linkProps = goesToAdminApp ? { href: `${ADMIN_APP_URL}${to}` } : { to };
-  const warm = () => { if (!goesToAdminApp) prefetchRoute(to); };
+  const linkProps = goesToAdminApp ? { href: `${ADMIN_APP_URL}${to}` } : { to: isLocked ? '#' : to };
+  const warm = () => { if (!goesToAdminApp && !isLocked) prefetchRoute(to); };
+  
+  const handleClick = (e: any) => {
+    if (isLocked) {
+      e.preventDefault();
+      e.stopPropagation();
+      alert(`The feature "${label}" is locked under your current plan. Please upgrade your subscription to unlock it!`);
+      return;
+    }
+    if (onClick) onClick(e);
+  };
+
   return (
-    <LinkTag {...linkProps} onClick={onClick} onMouseEnter={warm} onFocus={warm} onTouchStart={warm} className="flex flex-col items-center justify-center p-3 bg-white rounded-xl border border-slate-100 shadow-sm active:scale-95 transition-transform h-24">
-        <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-full mb-2">
-            <Icon className="w-6 h-6" />
+    <LinkTag 
+      {...linkProps} 
+      onClick={handleClick} 
+      onMouseEnter={warm} 
+      onFocus={warm} 
+      onTouchStart={warm} 
+      className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all select-none min-h-[50px] ${
+        active 
+          ? 'bg-indigo-50 dark:bg-indigo-950/70 border-indigo-300 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 font-bold shadow-xs' 
+          : 'bg-white dark:bg-slate-800/80 border-slate-200/80 dark:border-slate-700/60 text-slate-700 dark:text-slate-200 hover:border-indigo-200'
+      }`}
+    >
+      <div className="flex items-center gap-3 min-w-0">
+        <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+          active ? 'bg-indigo-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
+        }`}>
+          <Icon className="w-5 h-5" />
         </div>
-        <span className="text-[11px] font-bold text-slate-700 text-center leading-tight">{label}</span>
+        <div className="min-w-0 text-left">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-xs sm:text-sm font-bold truncate">{label}</span>
+            {badge && !isLocked && (
+              <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded-full ${badgeColor || 'bg-indigo-100 text-indigo-800'}`}>
+                {badge}
+              </span>
+            )}
+          </div>
+          {description && (
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[220px] sm:max-w-xs">{description}</p>
+          )}
+        </div>
+      </div>
+      <div className="shrink-0 ml-2">
+        {isLocked ? (
+          <Lock className="w-4 h-4 text-amber-500" />
+        ) : (
+          <ChevronRight className="w-4 h-4 text-slate-400" />
+        )}
+      </div>
     </LinkTag>
   );
 };
 
-const SectionHeader = ({ label, collapsed }: { label: string, collapsed?: boolean }) => {
+const SectionHeader = ({ 
+  label, 
+  collapsed, 
+  isOpen, 
+  onToggle, 
+  count 
+}: { 
+  label: string; 
+  collapsed?: boolean; 
+  isOpen?: boolean; 
+  onToggle?: () => void; 
+  count?: number; 
+}) => {
     if (collapsed) {
         return (
             <div className="px-4 py-2 flex justify-center">
                 <div className="w-6 h-[1px] bg-slate-800/60" />
             </div>
+        );
+    }
+    if (onToggle) {
+        return (
+            <button
+                type="button"
+                onClick={onToggle}
+                className="w-full flex items-center justify-between px-3 mt-4 mb-1.5 py-1 text-[10px] font-bold text-slate-400 hover:text-slate-200 uppercase tracking-wider select-none group transition-colors focus:outline-none"
+            >
+                <span className="flex items-center gap-1.5 truncate">
+                    <span className="truncate">{label}</span>
+                    {typeof count === 'number' && (
+                        <span className="text-[9px] font-semibold text-slate-500 group-hover:text-slate-300 bg-white/5 px-1.5 py-0.2 rounded-full">
+                            {count}
+                        </span>
+                    )}
+                </span>
+                <ChevronDown
+                    className={`w-3.5 h-3.5 text-slate-500 group-hover:text-slate-300 transition-transform duration-200 shrink-0 ${
+                        isOpen ? 'rotate-0' : '-rotate-90'
+                    }`}
+                />
+            </button>
         );
     }
     return (
@@ -746,6 +866,25 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const simulatedRole = (searchParams.get('simRole') as 'SUPER_ADMIN' | 'ADMIN' | 'SUPPORT') || 'SUPER_ADMIN';
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileSearchQuery, setMobileSearchQuery] = useState('');
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
+    const init: Record<string, boolean> = {};
+    NAV_GROUPS.forEach(g => { init[g.id] = true; });
+    return init;
+  });
+
+  // Auto-expand parent group when active route changes
+  useEffect(() => {
+    const activeGroup = PATH_TO_NAV_GROUP[location.pathname];
+    if (activeGroup && !openGroups[activeGroup.id]) {
+      setOpenGroups(prev => ({ ...prev, [activeGroup.id]: true }));
+    }
+  }, [location.pathname]);
+
+  const toggleGroup = (groupId: string) => {
+    setOpenGroups(prev => ({ ...prev, [groupId]: !prev[groupId] }));
+  };
+
   const [appUpdateAvailable, setAppUpdateAvailable] = useState(false);
   const mainScrollRef = useRef<HTMLElement | null>(null);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
@@ -953,58 +1092,32 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   };
 
   const getPageTitle = (path: string) => {
+    const cleanPath = path.split('?')[0];
+    const isBn = language === AppLanguage.BENGALI || language === 'bn';
+    const navItem = PATH_TO_NAV_ITEM[cleanPath];
+    if (navItem) {
+      return isBn ? navItem.labelBn : navItem.label;
+    }
+
     const routeKeyMap: Record<string, string> = {
       '/': 'Home',
       '/landing': 'Bizora | 3D Experience & Business OS',
-      '/sale': 'Sell',
-      '/purchase': 'Buy',
-      '/stock': 'Stock Report',
-      '/products': 'Product List',
-      '/stores': 'Store Management',
-      '/employees': 'Employees',
-      '/communication': 'Communication',
-      '/marketing': 'Marketing',
-      '/reports': 'Reports & Tax',
-      '/journal': 'General Journal',
-      '/payments': 'Online Payments',
-      '/shop': 'Online Shop',
-      '/support': 'Customer Support',
-      '/bin': 'Recycle Bin',
-      '/settings': 'Settings',
-      '/transfer': 'Product Transfer',
-      '/production': 'Production',
-      '/due-ledger': 'Due Ledger',
-      '/sale-ledger': 'Sale Ledger',
-      '/purchase-ledger': 'Purchase Ledger',
-      '/expense-ledger': 'Expense Ledger',
-      '/cashbox': 'Accounts & Cash',
-      '/quick-sale': 'Quick Sale',
-      '/sales-return': 'Sales Return',
-      '/purchase-return': 'Purchase Return',
-      '/lots': 'Lot Enquiry',
-      '/quotations': 'Quotations',
-      '/installments': 'Installments',
-      '/kitchen': 'Kitchen Display',
-      '/purchase-orders': 'Purchase Orders',
-      '/hr-structure': 'HR Structure',
-      '/subscription': 'Subscription',
-      '/access': 'Access Control',
-      '/customers': 'Customers',
-      '/suppliers': 'Suppliers',
-      '/product-attributes': 'Product Attributes',
-      '/consolidation': 'Consolidation',
-      '/training': 'Guide & Training',
-      '/printer': 'Printer Config',
-      '/ai-chat': 'Bizora ERP Assistant',
-      '/assistant': 'Bizora ERP Assistant'
+      '/admin': 'SaaS Administration',
+      '/legal': 'Legal & Trust Center',
+      '/legal/privacy-policy': 'Privacy Policy',
+      '/legal/terms-of-service': 'Terms of Service',
+      '/legal/cookie-policy': 'Cookie Policy',
+      '/legal/refund-policy': 'Refund & Cancellation',
+      '/legal/security': 'Data Security & Processing',
+      '/legal/account-deletion': 'Account & Data Deletion'
     };
     
-    if (routeKeyMap[path]) return t(routeKeyMap[path]);
+    if (routeKeyMap[cleanPath]) return t(routeKeyMap[cleanPath]);
 
     // Fallback for unknown routes
-    if (path === '/') return t('Home');
-    const cleanPath = path.substring(1).replace('-', ' ');
-    return cleanPath.charAt(0).toUpperCase() + cleanPath.slice(1);
+    if (cleanPath === '/') return t('Home');
+    const clean = cleanPath.substring(1).replace(/[-_]/g, ' ');
+    return clean.charAt(0).toUpperCase() + clean.slice(1);
   };
 
 
@@ -1016,45 +1129,36 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   }, [location.pathname, language, user?.businessName]);
 
   const getPageHint = (path: string): string | null => {
-    const en: Record<string, string> = {
-      '/': 'Overview · guided Sell → Buy → Stock → Journal',
-      '/sale': 'Add items · pay · FEFO lots & serials auto',
-      '/purchase': 'Receive stock · set lot, expiry, serials',
-      '/quick-sale': 'Fast checkout for walk-in sales',
-      '/stock': 'Lots · serials · stock take · adjustments',
-      '/products': 'Catalog · barcodes · serial master list',
-      '/sales-return': 'Partial return · restock · wallet credit',
-      '/purchase-return': 'Return to supplier · stock out',
-      '/journal': 'Double-entry · auto from POS · statements',
-      '/cashbox': 'Accounts · bank recon · journal adjust',
-      '/customers': 'Due · store credit · statements',
-      '/shop': 'Online storefront · orders sync here',
-      '/subscription': 'Plan status · renew if locked',
-      '/lots': 'FEFO enquiry by expiry status',
-      '/reports': 'VAT · P&L · trends — Tax tab for VAT return',
-    };
-    const bn: Record<string, string> = {
-      '/': 'সারাংশ · Sell → Buy → Stock → Journal',
-      '/sale': 'পণ্য যোগ · পেমেন্ট · FEFO লট ও সিরিয়াল',
-      '/purchase': 'স্টক গ্রহণ · লট, মেয়াদ, সিরিয়াল',
-      '/quick-sale': 'দ্রুত বিক্রি (ওয়াক-ইন)',
-      '/stock': 'লট · সিরিয়াল · স্টক টেক · অ্যাডজাস্ট',
-      '/products': 'ক্যাটালগ · বারকোড · সিরিয়াল তালিকা',
-      '/sales-return': 'আংশিক রিটার্ন · রিস্টক · স্টোর ক্রেডিট',
-      '/purchase-return': 'সাপ্লায়ার রিটার্ন · স্টক কমানো',
-      '/journal': 'ডাবল-এন্ট্রি · POS থেকে অটো · স্টেটমেন্ট',
-      '/cashbox': 'অ্যাকাউন্ট · ব্যাংক রিকন · জার্নাল',
-      '/customers': 'বাকি · স্টোর ক্রেডিট · স্টেটমেন্ট',
-      '/shop': 'অনলাইন শপ · অর্ডার অ্যাপে আসে',
-      '/subscription': 'প্ল্যান স্ট্যাটাস · লক হলে রিনিউ',
-      '/lots': 'মেয়াদ অনুসারে FEFO খোঁজ',
-      '/reports': 'VAT · P&L · ট্রেন্ড — Tax ট্যাবে VAT রিটার্ন',
-    };
-    const map = language === AppLanguage.BENGALI || language === 'bn' ? bn : en;
-    return map[path] || en[path] || null;
+    const cleanPath = path.split('?')[0];
+    const isBn = language === AppLanguage.BENGALI || language === 'bn';
+    const navItem = PATH_TO_NAV_ITEM[cleanPath];
+    if (navItem) {
+      return isBn ? navItem.descriptionBn : navItem.description;
+    }
+    return null;
   };
 
   const isSaaSUser = user?.role === UserRole.SAAS_OWNER || user?.role === UserRole.SAAS_ADMIN;
+
+  // Canonical authorized navigation groups from single source of truth
+  const authorizedNavGroups = useMemo(() => {
+    if (!user || isSaaSUser) return [];
+    return getAuthorizedNavGroups({
+      user,
+      hasPermission: (perm) => !perm || check(perm),
+      hasFeature: (feat) => !feat || hasFeature(feat),
+      isFullAccess: isFullAccessRole(user?.role) || !!user?.isImpersonated
+    });
+  }, [user?.id, user?.role, user?.permissions, user?.businessType, user?.isImpersonated]);
+
+  const allAuthorizedItems = useMemo(() => {
+    return authorizedNavGroups.flatMap(g => g.items);
+  }, [authorizedNavGroups]);
+
+  const searchResults = useMemo(() => {
+    if (!mobileSearchQuery.trim()) return [];
+    return searchNavigation(mobileSearchQuery, allAuthorizedItems);
+  }, [mobileSearchQuery, allAuthorizedItems]);
 
   // Memoized navigation sections for business (tenant) users to ensure role-based menu items are computed once per session
   const businessSections = useMemo(() => {
@@ -1071,6 +1175,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           { to: '/purchase-return', icon: RotateCcw, label: t('Purchase Return') || 'Purchase Return', permission: PERMISSIONS.POS.subFeatures.RETURNS.key },
           { to: '/quotations', icon: FileText, label: t('Quotations'), permission: PERMISSIONS.POS.subFeatures.SELL.key },
           { to: '/purchase-orders', icon: ClipboardList, label: t('Purchase Orders'), permission: PERMISSIONS.INVENTORY.subFeatures.PURCHASE.key },
+          { to: '/wastage', icon: AlertTriangle, label: t('Wastage & Damage'), permission: PERMISSIONS.INVENTORY.subFeatures.ADJUSTMENT.key },
+          { to: '/eprocurement', icon: Briefcase, label: t('E-Procurement'), permission: PERMISSIONS.INVENTORY.subFeatures.PURCHASE.key },
+          { to: '/lc', icon: FileSpreadsheet, label: t('Letter of Credit (LC)'), permission: PERMISSIONS.INVENTORY.subFeatures.PURCHASE.key },
           ...(user.businessType?.toLowerCase() === 'restaurant' ? [{ to: '/kitchen', icon: ChefHat, label: t('Kitchen Display'), permission: PERMISSIONS.POS.subFeatures.SELL.key }] : [])
         ]
       },
@@ -1083,6 +1190,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           { to: '/due-ledger', icon: BookOpen, label: t('Due Ledger'), permission: PERMISSIONS.FINANCE.subFeatures.VIEW_LEDGERS.key },
           { to: '/installments', icon: CalendarClock, label: t('Installments'), permission: PERMISSIONS.FINANCE.subFeatures.VIEW_LEDGERS.key },
           { to: '/expense-ledger', icon: DollarSign, label: t('Expense Ledger'), permission: PERMISSIONS.FINANCE.subFeatures.VIEW_LEDGERS.key },
+          { to: '/loans', icon: Landmark, label: t('Loans & Debt'), permission: PERMISSIONS.FINANCE.subFeatures.VIEW_LEDGERS.key },
+          { to: '/pf', icon: PiggyBank, label: t('Provident Fund'), permission: PERMISSIONS.HR.subFeatures.VIEW_PAYROLL.key },
           { to: '/journal', icon: BookOpen, label: t('Journal') || 'Journal', permission: PERMISSIONS.FINANCE.subFeatures.VIEW_LEDGERS.key },
         ]
       },
@@ -1094,8 +1203,14 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           { to: '/lots', icon: Package, label: t('Lot Enquiry') || 'Lots', permission: PERMISSIONS.INVENTORY.subFeatures.VIEW_STOCK.key },
           { to: '/stock', icon: Package, label: t('Stock Report'), permission: PERMISSIONS.INVENTORY.subFeatures.VIEW_STOCK.key },
           { to: '/products', icon: Box, label: t('Product List'), permission: PERMISSIONS.INVENTORY.subFeatures.VIEW_STOCK.key },
+          { to: '/catalog', icon: Tags, label: t('Catalog Master'), permission: PERMISSIONS.INVENTORY.subFeatures.VIEW_STOCK.key },
           { to: '/product-attributes', icon: Tags, label: t('Categories & Brands'), permission: PERMISSIONS.INVENTORY.subFeatures.VIEW_STOCK.key },
           { to: '/production', icon: Factory, label: t('Production'), permission: PERMISSIONS.INVENTORY.subFeatures.PRODUCTION.key },
+          { to: '/hotel', icon: HotelIcon, label: t('Hotel & Hospitality'), permission: PERMISSIONS.POS.subFeatures.SELL.key },
+          { to: '/vehicles', icon: Truck, label: t('Fleet & Vehicles'), permission: PERMISSIONS.ADMIN.subFeatures.MANAGE_STORES.key },
+          { to: '/visitors', icon: UserCheck, label: t('Visitors & Passes'), permission: PERMISSIONS.CRM.subFeatures.VIEW_CUSTOMERS.key },
+          { to: '/projects', icon: FolderGit2, label: t('Projects & Tasks'), permission: PERMISSIONS.REPORTS.subFeatures.VIEW_REPORTS.key },
+          { to: '/dealers', icon: Award, label: t('Dealer Targets'), permission: PERMISSIONS.POS.subFeatures.VIEW_SALES.key },
           { to: '/transfer', icon: ArrowRightLeft, label: t('Product Transfer'), permission: PERMISSIONS.INVENTORY.subFeatures.TRANSFER.key, requiredFeature: 'Unlimited Stores' },
           { to: '/stores', icon: Store, label: t('Store Management'), permission: PERMISSIONS.ADMIN.subFeatures.MANAGE_STORES.key },
           { to: '/employees', icon: Briefcase, label: t('Employees'), permission: PERMISSIONS.HR.subFeatures.MANAGE_STAFF.key, requiredFeature: 'Employee Management' },
@@ -1107,6 +1222,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       {
         title: t('Tools'),
         items: [
+          { to: '/document-ai', icon: ScanText, label: t('Document AI Scan'), permission: PERMISSIONS.FINANCE.subFeatures.ADD_EXPENSE.key },
           { to: '/communication', icon: MessageSquare, label: t('Communication'), permission: PERMISSIONS.CRM.subFeatures.COMMUNICATION.key, requiredFeature: 'SMS Gateway Notification System' },
           { to: '/marketing', icon: Megaphone, label: t('Marketing'), permission: PERMISSIONS.CRM.subFeatures.MARKETING.key, requiredFeature: 'SMS Gateway Notification System' },
           { to: '/reports', icon: Briefcase, label: t('Reports & Tax'), permission: PERMISSIONS.REPORTS.subFeatures.VIEW_REPORTS.key },
@@ -1287,34 +1403,46 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     }
 
     return (
-        <div className="pb-20">
-            <DesktopSidebarItem to="/" icon={LayoutDashboard} label={t('Home')} active={location.pathname === '/'} collapsed={collapsed} />
-            {businessSections.map(section => (
-                <React.Fragment key={section.title}>
-                    <SectionHeader label={section.title} collapsed={collapsed} />
-                    {section.items.map(item => {
-                        const hasQuery = item.to.includes('?');
-                        const pathPart = item.to.split('?')[0];
-                        const queryPart = hasQuery ? item.to.split('?')[1] : '';
-                        
-                        const isActive = location.pathname === pathPart && (hasQuery ? location.search.includes(queryPart) : true);
-                        const isLocked = item.requiredFeature ? !hasFeature(item.requiredFeature) : false;
-                        return (
-                            <DesktopSidebarItem 
-                                key={item.to + item.label}
-                                  to={item.to} 
-                                  icon={item.icon} 
-                                  label={item.label} 
-                                  active={isActive} 
-                                  collapsed={collapsed} 
-                                  isLocked={isLocked}
-                              />
-                          );
-                      })}
-                  </React.Fragment>
-              ))}
-          </div>
-      );
+        <div className="pb-20 space-y-1">
+            {authorizedNavGroups.map(group => {
+                const isExpanded = openGroups[group.id] !== false;
+                const groupTitle = language === 'bn' ? group.titleBn : group.title;
+                return (
+                    <div key={group.id} className="mb-2">
+                        <SectionHeader 
+                            label={groupTitle} 
+                            collapsed={collapsed} 
+                            isOpen={isExpanded}
+                            onToggle={() => toggleGroup(group.id)}
+                            count={group.items.length}
+                        />
+                        {(!collapsed ? isExpanded : true) && (
+                            <div className="space-y-0.5">
+                                {group.items.map(item => {
+                                    const IconComponent = getNavIcon(item.iconName);
+                                    const itemLabel = language === 'bn' ? item.labelBn : item.label;
+                                    const isActive = location.pathname === item.to;
+                                    return (
+                                        <DesktopSidebarItem 
+                                            key={item.id} 
+                                            to={item.to} 
+                                            icon={IconComponent} 
+                                            label={itemLabel} 
+                                            active={isActive} 
+                                            collapsed={collapsed} 
+                                            badge={item.badge}
+                                            badgeColor={item.badgeColor}
+                                            isLocked={item.isLocked}
+                                        />
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                );
+            })}
+        </div>
+    );
   };
 
 
@@ -1814,17 +1942,84 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                         {t('Logout') || 'Logout'}
                       </button>
                     </div>
-                    {isSaaSUser ? (
+                    {/* Real-time Navigation Search Filter */}
+                    <div className="relative mb-4">
+                      <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="text"
+                        value={mobileSearchQuery}
+                        onChange={(e) => setMobileSearchQuery(e.target.value)}
+                        placeholder={language === 'bn' ? 'ফিচার বা মেনু খুঁজুন...' : 'Search features or pages...'}
+                        className="w-full pl-9 pr-9 py-2.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 placeholder-slate-400"
+                      />
+                      {mobileSearchQuery && (
+                        <button
+                          type="button"
+                          onClick={() => setMobileSearchQuery('')}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+
+                    {mobileSearchQuery.trim() ? (
+                      <div className="mb-6 space-y-2">
+                        <div className="flex items-center justify-between px-1 mb-2">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                            {language === 'bn' ? 'অনুসন্ধানের ফলাফল' : 'Search Results'}
+                          </span>
+                          <span className="text-[10px] text-slate-400">
+                            {searchResults.length} {language === 'bn' ? 'টি পাওয়া গেছে' : 'found'}
+                          </span>
+                        </div>
+                        {searchResults.length > 0 ? (
+                          <div className="space-y-1.5">
+                            {searchResults.map(item => {
+                              const IconComponent = getNavIcon(item.iconName);
+                              const itemLabel = language === 'bn' ? item.labelBn : item.label;
+                              const itemDesc = language === 'bn' ? item.descriptionBn : item.description;
+                              const isActive = location.pathname === item.to;
+                              return (
+                                <MobileMenuItem
+                                  key={item.id}
+                                  to={item.to}
+                                  icon={IconComponent}
+                                  label={itemLabel}
+                                  description={itemDesc}
+                                  badge={item.badge}
+                                  badgeColor={item.badgeColor}
+                                  active={isActive}
+                                  isLocked={item.isLocked}
+                                  onClick={() => setMobileMenuOpen(false)}
+                                />
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div className="p-8 text-center bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200/80 dark:border-slate-700/60">
+                            <Search className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                            <p className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                              {language === 'bn' ? 'কোনো ফলাফল পাওয়া যায়নি' : 'No features found'}
+                            </p>
+                            <p className="text-[11px] text-slate-400 mt-1">
+                              {language === 'bn' ? `"${mobileSearchQuery}" এর জন্য কিছু খুঁজে পাওয়া যায়নি` : `No matching routes for "${mobileSearchQuery}"`}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    ) : isSaaSUser ? (
                         saasSections.map(section => (
                             <React.Fragment key={section.title}>
                                 <h3 className="text-xs font-bold text-slate-400 uppercase mb-3 px-1">{section.title}</h3>
-                                <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mb-6">
+                                <div className="space-y-1.5 mb-6">
                                     {section.items.map(item => (
                                         <MobileMenuItem 
                                             key={item.to + item.label}
                                             to={item.to} 
                                             icon={item.icon} 
                                             label={item.label} 
+                                            active={location.pathname === item.to.split('?')[0]}
                                             onClick={() => setMobileMenuOpen(false)} 
                                         />
                                     ))}
@@ -1833,27 +2028,93 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                         ))
                     ) : (
                         <>
-                            <h3 className="text-xs font-bold text-slate-400 uppercase mb-3 px-1">{t('Main')}</h3>
-                            <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mb-6">
-                                <MobileMenuItem to="/" icon={LayoutDashboard} label={t('Home')} onClick={() => setMobileMenuOpen(false)} />
+                            {/* Quick Access Shortcuts */}
+                            <div className="mb-5">
+                              <h3 className="text-[10px] font-bold text-slate-400 uppercase mb-2 px-1 tracking-wider">
+                                {language === 'bn' ? 'দ্রুত শর্টকাট' : 'Quick Actions'}
+                              </h3>
+                              <div className="grid grid-cols-4 gap-2">
+                                {[
+                                  { to: '/', label: language === 'bn' ? 'হোম' : 'Home', icon: LayoutDashboard },
+                                  { to: '/sale', label: language === 'bn' ? 'বিক্রয়' : 'Sell', icon: ShoppingBag },
+                                  { to: '/stock', label: language === 'bn' ? 'স্টক' : 'Stock', icon: Package },
+                                  { to: '/cashbox', label: language === 'bn' ? 'ক্যাশ' : 'Cash', icon: Wallet },
+                                ].map(quick => (
+                                  <Link
+                                    key={quick.to}
+                                    to={quick.to}
+                                    onClick={() => setMobileMenuOpen(false)}
+                                    className={`flex flex-col items-center justify-center p-2.5 rounded-xl border transition-all text-center ${
+                                      location.pathname === quick.to
+                                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-indigo-300'
+                                    }`}
+                                  >
+                                    <quick.icon className="w-5 h-5 mb-1" />
+                                    <span className="text-[10px] font-bold truncate max-w-full">{quick.label}</span>
+                                  </Link>
+                                ))}
+                              </div>
                             </div>
-                            
-                            {businessSections.map(section => (
-                                <React.Fragment key={section.title}>
-                                    <h3 className="text-xs font-bold text-slate-400 uppercase mb-3 px-1">{section.title}</h3>
-                                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mb-6">
-                                        {section.items.map(item => (
-                                            <MobileMenuItem 
-                                                key={item.to}
-                                                to={item.to} 
-                                                icon={item.icon} 
-                                                label={item.label} 
-                                                onClick={() => setMobileMenuOpen(false)} 
+
+                            {/* Category Accordions */}
+                            <div className="space-y-3 mb-6">
+                              {authorizedNavGroups.map(group => {
+                                const isExpanded = openGroups[group.id] !== false;
+                                const groupTitle = language === 'bn' ? group.titleBn : group.title;
+                                const GroupIcon = getNavIcon(group.iconName);
+                                const hasActive = group.items.some(i => location.pathname === i.to);
+
+                                return (
+                                  <div key={group.id} className="rounded-xl border border-slate-200/80 dark:border-slate-700/60 bg-white/60 dark:bg-slate-800/40 overflow-hidden">
+                                    <button
+                                      type="button"
+                                      onClick={() => toggleGroup(group.id)}
+                                      className={`w-full flex items-center justify-between p-3 transition-colors ${
+                                        hasActive ? 'bg-indigo-50/70 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/80'
+                                      }`}
+                                    >
+                                      <div className="flex items-center gap-2.5 min-w-0">
+                                        <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${
+                                          hasActive ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
+                                        }`}>
+                                          <GroupIcon className="w-3.5 h-3.5" />
+                                        </div>
+                                        <span className="text-xs font-bold truncate">{groupTitle}</span>
+                                        <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
+                                          {group.items.length}
+                                        </span>
+                                      </div>
+                                      <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isExpanded ? 'rotate-0' : '-rotate-90'}`} />
+                                    </button>
+                                    {isExpanded && (
+                                      <div className="p-2 space-y-1.5 border-t border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/30">
+                                        {group.items.map(item => {
+                                          const IconComponent = getNavIcon(item.iconName);
+                                          const itemLabel = language === 'bn' ? item.labelBn : item.label;
+                                          const itemDesc = language === 'bn' ? item.descriptionBn : item.description;
+                                          const isActive = location.pathname === item.to;
+                                          return (
+                                            <MobileMenuItem
+                                              key={item.id}
+                                              to={item.to}
+                                              icon={IconComponent}
+                                              label={itemLabel}
+                                              description={itemDesc}
+                                              badge={item.badge}
+                                              badgeColor={item.badgeColor}
+                                              active={isActive}
+                                              isLocked={item.isLocked}
+                                              onClick={() => setMobileMenuOpen(false)}
                                             />
-                                        ))}
-                                    </div>
-                                </React.Fragment>
-                            ))}
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
                         </>
                     )}
                     
@@ -1994,14 +2255,30 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               </div>
             ) : (
               <div className="hidden lg:block min-w-0">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-bold text-slate-800 tracking-tight capitalize">{getPageTitle(location.pathname)}</h2>
+                <nav className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mb-0.5 select-none" aria-label="Breadcrumb">
+                  {getNavBreadcrumbs(location.pathname, language).map((crumb, idx, arr) => {
+                    const isLast = idx === arr.length - 1;
+                    return (
+                      <React.Fragment key={crumb.label + idx}>
+                        {crumb.to && !isLast ? (
+                          <Link to={crumb.to} className="hover:text-indigo-600 dark:hover:text-indigo-400 font-medium transition-colors">
+                            {crumb.label}
+                          </Link>
+                        ) : (
+                          <span className={isLast ? 'font-bold text-slate-800 dark:text-slate-100' : 'font-medium'}>
+                            {crumb.label}
+                          </span>
+                        )}
+                        {!isLast && <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />}
+                      </React.Fragment>
+                    );
+                  })}
                   {isEmployeeUser && (
-                    <span className="text-[9px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full bg-violet-50 text-violet-700 border border-violet-200">Staff</span>
+                    <span className="ml-1 text-[9px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full bg-violet-50 text-violet-700 border border-violet-200">Staff</span>
                   )}
-                </div>
+                </nav>
                 {getPageHint(location.pathname) && (
-                  <p className="text-[11px] text-slate-500 truncate max-w-md">{getPageHint(location.pathname)}</p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-md">{getPageHint(location.pathname)}</p>
                 )}
               </div>
             )}
@@ -2044,6 +2321,28 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     <span className="sm:hidden">{btn.label === 'Support Team' ? 'Support' : btn.label.split(' ')[0]}</span>
                   </button>
                 ))}
+              </div>
+            )}
+
+            {/* Quick Action Shortcuts (Desktop) */}
+            {!isSaaSUser && (
+              <div className="hidden xl:flex items-center gap-1.5 mr-1">
+                <Link
+                  to="/quick-sale"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/50 border border-amber-200 dark:border-amber-800 transition-all shadow-xs"
+                  title="Quick Sale (Cashier)"
+                >
+                  <Zap className="w-3.5 h-3.5 text-amber-600 fill-amber-500" />
+                  <span>{language === 'bn' ? 'দ্রুত বিক্রি' : 'Quick Sale'}</span>
+                </Link>
+                <Link
+                  to="/ai-chat"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-indigo-800 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-800 transition-all shadow-xs"
+                  title="Bizora AI Assistant"
+                >
+                  <Bot className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>{language === 'bn' ? 'এআই' : 'AI Assistant'}</span>
+                </Link>
               </div>
             )}
 
@@ -2406,6 +2705,11 @@ const AppContent: React.FC = () => {
                   <Cashbox />
                 </ProtectedRoute>
               } />
+              <Route path="/bank-reconcile" element={
+                <ProtectedRoute requiredPermission={PERMISSIONS.FINANCE.subFeatures.VIEW_CASHBOX.key}>
+                  <Cashbox />
+                </ProtectedRoute>
+              } />
               <Route path="/sale-ledger" element={
                 <ProtectedRoute requiredPermission={PERMISSIONS.FINANCE.subFeatures.VIEW_LEDGERS.key}>
                   <SaleLedger />
@@ -2571,11 +2875,89 @@ const AppContent: React.FC = () => {
                   <AIChat />
                 </ProtectedRoute>
               } />
+              <Route path="/catalog" element={
+                <ProtectedRoute requiredPermission={PERMISSIONS.INVENTORY.subFeatures.VIEW_STOCK.key}>
+                  <Catalog />
+                </ProtectedRoute>
+              } />
+              <Route path="/wastage" element={
+                <ProtectedRoute requiredPermission={PERMISSIONS.INVENTORY.subFeatures.ADJUSTMENT.key}>
+                  <Wastage />
+                </ProtectedRoute>
+              } />
+              <Route path="/lc" element={
+                <ProtectedRoute requiredPermission={PERMISSIONS.FINANCE.subFeatures.MANAGE_ACCOUNTS.key}>
+                  <LetterOfCredit />
+                </ProtectedRoute>
+              } />
+              <Route path="/loans" element={
+                <ProtectedRoute requiredPermission={PERMISSIONS.FINANCE.subFeatures.MANAGE_ACCOUNTS.key}>
+                  <Loans />
+                </ProtectedRoute>
+              } />
+              <Route path="/hotel" element={
+                <ProtectedRoute requiredPermission={PERMISSIONS.POS.subFeatures.SELL.key}>
+                  <Hotel />
+                </ProtectedRoute>
+              } />
+              <Route path="/pf" element={
+                <ProtectedRoute requiredPermission={PERMISSIONS.HR.subFeatures.VIEW_PAYROLL.key}>
+                  <ProvidentFund />
+                </ProtectedRoute>
+              } />
+              <Route path="/eprocurement" element={
+                <ProtectedRoute requiredPermission={PERMISSIONS.INVENTORY.subFeatures.PURCHASE.key}>
+                  <Eprocurement />
+                </ProtectedRoute>
+              } />
+              <Route path="/vehicles" element={
+                <ProtectedRoute requiredPermission={PERMISSIONS.ADMIN.subFeatures.SETTINGS.key}>
+                  <Vehicles />
+                </ProtectedRoute>
+              } />
+              <Route path="/visitors" element={
+                <ProtectedRoute requiredPermission={PERMISSIONS.ADMIN.subFeatures.SETTINGS.key}>
+                  <Visitors />
+                </ProtectedRoute>
+              } />
+              <Route path="/projects" element={
+                <ProtectedRoute requiredPermission={PERMISSIONS.ADMIN.subFeatures.SETTINGS.key}>
+                  <Projects />
+                </ProtectedRoute>
+              } />
+              <Route path="/dealers" element={
+                <ProtectedRoute requiredPermission={PERMISSIONS.CRM.subFeatures.VIEW_CUSTOMERS.key}>
+                  <Dealers />
+                </ProtectedRoute>
+              } />
+              <Route path="/document-ai" element={
+                <ProtectedRoute requiredPermission={PERMISSIONS.FINANCE.subFeatures.ADD_EXPENSE.key}>
+                  <DocumentAi />
+                </ProtectedRoute>
+              } />
             </>
           )}
 
           {/* Shared Routes */}
           <Route path="/settings" element={
+            <ProtectedRoute requiredPermission={
+              isSaaSUser 
+                ? PERMISSIONS.SAAS.subFeatures.SETTINGS.key 
+                : PERMISSIONS.ADMIN.subFeatures.SETTINGS.key
+            }>
+              <SettingsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/audit" element={
+            <ProtectedRoute requiredPermission={
+              isSaaSUser 
+                ? PERMISSIONS.SAAS.subFeatures.SETTINGS.key 
+                : PERMISSIONS.ADMIN.subFeatures.SETTINGS.key
+            }>
+              <SettingsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/audit-log" element={
             <ProtectedRoute requiredPermission={
               isSaaSUser 
                 ? PERMISSIONS.SAAS.subFeatures.SETTINGS.key 
