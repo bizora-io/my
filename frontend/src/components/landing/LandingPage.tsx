@@ -6,7 +6,9 @@ import {
   ExternalLink, ArrowUpRight, Crown, RefreshCw, CheckCircle2, ShieldCheck, Database,
   Boxes, Clock, CalendarClock, BookOpen, Building, Award, ChefHat, HeartPulse, Shirt,
   Laptop, Factory as FactoryIcon, Receipt, SlidersHorizontal, Scale, Eye, WifiOff,
-  AlertTriangle, ArrowRightLeft, FileCheck, Trash2
+  AlertTriangle, ArrowRightLeft, FileCheck, Trash2, Sun, Moon, Mail, Phone,
+  HeadphonesIcon, Bot, Warehouse, Coins, FileSpreadsheet, Percent, Printer, QrCode,
+  RotateCcw, Wallet, CreditCard
 } from 'lucide-react';
 import ThreeHeroScene from './ThreeHeroScene';
 import { getPortalUrl, PORTAL_CONFIGS, PortalType } from '../../lib/domainRouter';
@@ -42,6 +44,9 @@ const FALLBACK_PLANS = [
     limitStores: 1,
     limitUsers: 2,
     limitEmployees: 3,
+    limitProducts: 50,
+    limitInvoices: 100,
+    limitWarehouses: 1,
     limitStorageMb: 256,
     status: 'active',
     isPopular: false,
@@ -71,6 +76,9 @@ const FALLBACK_PLANS = [
     limitStores: 1,
     limitUsers: 5,
     limitEmployees: 10,
+    limitProducts: 1000,
+    limitInvoices: 2500,
+    limitWarehouses: 1,
     limitStorageMb: 1024,
     status: 'active',
     isPopular: false,
@@ -105,6 +113,9 @@ const FALLBACK_PLANS = [
     limitStores: 5,
     limitUsers: 25,
     limitEmployees: 50,
+    limitProducts: 10000,
+    limitInvoices: 25000,
+    limitWarehouses: 5,
     limitStorageMb: 5120,
     status: 'active',
     isPopular: true,
@@ -140,6 +151,9 @@ const FALLBACK_PLANS = [
     limitStores: 99,
     limitUsers: 999,
     limitEmployees: 500,
+    limitProducts: 100000,
+    limitInvoices: 500000,
+    limitWarehouses: 99,
     limitStorageMb: 20480,
     status: 'active',
     isPopular: false,
@@ -147,6 +161,37 @@ const FALLBACK_PLANS = [
     description: 'For large retail chains, manufacturing enterprises, and franchised networks.',
   },
 ];
+
+/** Authoritative helper to check if a plan supports a specific feature key */
+export const checkPlanFeature = (plan: any, featureKey: string, aliasKeywords: string[] = []): boolean => {
+  if (!plan) return false;
+  if (Array.isArray(plan.features)) {
+    if (plan.features.includes(featureKey)) return true;
+    for (const kw of aliasKeywords) {
+      if (plan.features.some((f: any) => typeof f === 'string' && f.toLowerCase().includes(kw.toLowerCase()))) {
+        return true;
+      }
+    }
+  }
+  // Check modules association
+  if (Array.isArray(plan.modules)) {
+    const mod = featureKey.split('.')[0];
+    if (plan.modules.includes(mod)) {
+      if (plan.id === 'pro' || plan.id === 'enterprise') return true;
+    }
+  }
+  return false;
+};
+
+/** Authoritative helper to format numeric resource limits */
+export const formatPlanLimit = (plan: any, prop: string, isBn: boolean, unit = ''): string => {
+  const val = plan?.[prop];
+  if (val === undefined || val === null || val === -1 || val >= 99999) {
+    return isBn ? 'আনলিমিটেড' : 'Unlimited';
+  }
+  if (val === 0) return isBn ? 'নেই' : 'None';
+  return isBn ? `${val.toLocaleString('bn-BD')} ${unit}`.trim() : `${val.toLocaleString()} ${unit}`.trim();
+};
 
 const INDUSTRIES = [
   {
@@ -587,13 +632,14 @@ const INDUSTRIES = [
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) => {
   const [isBn, setIsBn] = useState(false);
-  const [activeTab, setActiveTab] = useState<'pos' | 'stock' | 'accounts' | 'vat' | 'store'>('pos');
+  const [activeTab, setActiveTab] = useState<'pos' | 'stock' | 'accounts' | 'vat' | 'branches' | 'roles' | 'store' | 'assistant'>('pos');
   const [aboutTab, setAboutTab] = useState<'mission' | 'problems' | 'profiles' | 'roles' | 'security'>('mission');
   const [feedIndex, setFeedIndex] = useState(0);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [themeDark, setThemeDark] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedIndustryIndex, setSelectedIndustryIndex] = useState<number>(0);
+  const [compareMode, setCompareMode] = useState<'plans' | 'traditional'>('plans');
 
   // Dynamic Pricing & SaaS Admin Synchronization State
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
@@ -780,7 +826,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) =>
     'Bizora Assistant'
   ];
 
-  const handlePortalClick = (portal: PortalType, e: React.MouseEvent, params?: { plan?: string; billing?: string }) => {
+  const handlePortalClick = (portal: PortalType, e: React.MouseEvent, params?: { plan?: string; billing?: string; mode?: 'login' | 'register' }) => {
     if (params) {
       try {
         localStorage.setItem('bizora_selected_plan_params', JSON.stringify(params));
@@ -809,18 +855,34 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) =>
     mainEntity: [
       {
         '@type': 'Question',
-        name: 'Does Bizora work without internet?',
+        name: 'What is Bizora ERP?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Yes. All sales, barcode scanning, and receipts run seamlessly offline. Once connectivity is restored, all offline transactions automatically sync to the cloud database with conflict resolution.',
+          text: 'Bizora is an all-in-one cloud business management ERP engineered for modern retail, supermarkets, pharmacies, wholesale, and light manufacturing enterprises. It combines sub-second POS barcode billing, FEFO batch and expiry tracking, double-entry accounting journals, Net VAT compliance, and multi-channel e-commerce synchronization.',
         },
       },
       {
         '@type': 'Question',
-        name: 'Can my staff use it without prior technical training?',
+        name: 'Which modules are available in the platform?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Yes. Bizora provides pre-configured role templates (Cashier, Stock Manager, Manager). Each person only sees what they are authorized to do, keeping screens intuitive and uncluttered.',
+          text: 'Bizora includes 8 core modules: High-Speed POS & Billing, Batch Inventory with FEFO Expiry & IMEI Tracking, Cashbox & Double-Entry Accounting, Tax & Net VAT 9.1 Returns, Multi-Branch & Warehouse Transfers, Staff Shifts & Role-Based Permissions, Online E-Commerce Storefront with Courier Integrations, and Bizora AI Business Assistant with Tamper-Evident Audit Logs.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'How do I create an account and get started?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'You can start a 14-day free trial in under 2 minutes with zero credit card required. Register with your email or phone number, enter your business name and tax configuration, import products via CSV or add them manually, and start processing sales immediately.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'How are packages and subscription pricing determined?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Bizora offers transparent monthly and discounted yearly subscriptions: Trial (Free for 14 days), Basic (৳999/mo for single retail stores), Pro (৳2,499/mo with batch FEFO, online store, and couriers), and Enterprise (৳4,999/mo for multi-branch chains, manufacturing BOM, and API access).',
         },
       },
       {
@@ -828,30 +890,54 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) =>
         name: 'Can I manage multiple branch stores under one account?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Yes. You can manage multiple branch stores under one central owner account, perform stock transfers between locations, and review unified financial reports.',
+          text: 'Yes. On Pro and Enterprise plans, you can manage multiple branches and central warehouses under a single owner login, execute inter-branch stock transfers with in-transit gate passes, and generate consolidated financial balance sheets.',
         },
       },
       {
         '@type': 'Question',
-        name: 'How does VAT calculation handle customer returns?',
+        name: 'How do customer dues, credit sales, and payment receipts work?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Bizora automatically nets output and input VAT against partial and full returns, ensuring you only report and pay legitimate tax obligations.',
+          text: 'Bizora tracks customer receivable ledgers (baki khata) in real time. You can split bills between cash, cards, and mobile banking, schedule credit instalment payments, issue store credit vouchers on sales returns, and print 58mm/80mm thermal receipts.',
         },
       },
       {
         '@type': 'Question',
-        name: 'How secure is my business data?',
+        name: 'How are employees and role-based permissions managed?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Your data is protected with 2FA, argon2id/bcrypt password hashing, automated cloud backups, audit logging, and strict multi-tenant isolation.',
+          text: 'Bizora provides pre-built role templates: Shop Owner, Manager, Cashier, Stock Manager, and Accountant. Granular access control restricts staff strictly to authorized screens, protects sensitive margin and profit figures, and enforces daily cash drawer float reconciliation.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'How do data backup and offline point of sale work?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Bizora is 100% offline-resilient. When internet or WiFi drops, cashiers continue scanning barcodes and printing receipts via IndexedDB local storage. Once connected, all transactions auto-reconcile to the cloud database with cryptographic tamper protection and automatic daily backups.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'How can I contact customer support and onboarding assistance?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Our technical team assists with Excel/CSV product catalog migration, thermal printer configuration, and staff onboarding. You can contact support directly at support@bizora.app or submit support tickets directly from the merchant dashboard.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'How can I upgrade or manage my subscription plan?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'You can upgrade, downgrade, or switch between monthly and yearly billing anytime from the Subscriptions screen in your Shop Owner portal. Feature limits and additional branches unlock immediately upon plan activation.',
         },
       },
     ],
   }), []);
 
   return (
-    <div className={`min-h-screen bg-[#09090b] text-slate-100 font-sans selection:bg-amber-400 selection:text-black overflow-x-hidden ${themeDark ? 'dark' : ''}`}>
+    <div className={`min-h-screen ${themeDark ? 'bg-[#09090b] text-slate-100' : 'bg-slate-950 text-slate-100'} font-sans selection:bg-amber-400 selection:text-black overflow-x-hidden ${themeDark ? 'dark' : ''}`}>
       <SEOHead
         title={isBn ? "Bizora — ক্লাউড ইআরপি, পিওএস এবং ইনভেন্টরি সফটওয়্যার" : "Bizora — Smart Cloud ERP, POS & Inventory Management Software"}
         description="All-in-one business management software for modern retail and SMEs. High-speed barcode POS, FEFO batch inventory, double-entry accounting, VAT invoicing, and multi-branch operations."
@@ -880,63 +966,87 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) =>
           </a>
 
           {/* Navigation Links */}
-          <nav className="hidden lg:flex items-center gap-1">
-            <a href="#features" className="px-3.5 py-2 rounded-full text-sm font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-colors">
+          <nav className="hidden xl:flex items-center gap-0.5">
+            <a href="#features" className="px-3 py-1.5 rounded-full text-xs font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-colors">
               {isBn ? 'ফিচারসমূহ' : 'Features'}
             </a>
-            <a href="#how" className="px-3.5 py-2 rounded-full text-sm font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-colors">
+            <a href="#how" className="px-3 py-1.5 rounded-full text-xs font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-colors">
               {isBn ? 'কীভাবে চলে' : 'How It Works'}
             </a>
-            <a href="#os" className="px-3.5 py-2 rounded-full text-sm font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-colors">
+            <a href="#benefits" className="px-3 py-1.5 rounded-full text-xs font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-colors">
+              {isBn ? 'সুবিধাসমূহ' : 'Benefits'}
+            </a>
+            <a href="#os" className="px-3 py-1.5 rounded-full text-xs font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-colors">
               {isBn ? 'বিজনেস OS' : 'Business OS'}
             </a>
-            <a href="#about" className="px-3.5 py-2 rounded-full text-sm font-medium text-amber-300 hover:text-white hover:bg-white/10 transition-colors">
-              {isBn ? 'Bizora সম্পর্কে' : 'About Bizora'}
-            </a>
-            <a href="#industries" className="px-3.5 py-2 rounded-full text-sm font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-colors">
+            <a href="#industries" className="px-3 py-1.5 rounded-full text-xs font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-colors">
               {isBn ? 'ব্যবসার ধরন' : 'Industries'}
             </a>
-            <a href="#compare" className="px-3.5 py-2 rounded-full text-sm font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-colors">
+            <a href="#compare" className="px-3 py-1.5 rounded-full text-xs font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-colors">
               {isBn ? 'তুলনা' : 'Compare'}
             </a>
-            <a href="#plans" className="px-3.5 py-2 rounded-full text-sm font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-colors">
+            <a href="#plans" className="px-3 py-1.5 rounded-full text-xs font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-colors">
               {isBn ? 'সাবস্ক্রিপশন' : 'Pricing'}
             </a>
-            <a href="#faq" className="px-3.5 py-2 rounded-full text-sm font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-colors">
+            <a href="#about" className="px-3 py-1.5 rounded-full text-xs font-medium text-amber-300 hover:text-white hover:bg-white/10 transition-colors">
+              {isBn ? 'পরিচিতি' : 'About'}
+            </a>
+            <a href="#faq" className="px-3 py-1.5 rounded-full text-xs font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-colors">
               {isBn ? 'জিজ্ঞাসা' : 'FAQ'}
+            </a>
+            <a href="#contact" className="px-3 py-1.5 rounded-full text-xs font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-colors">
+              {isBn ? 'যোগাযোগ' : 'Contact'}
             </a>
           </nav>
 
           {/* Actions, Sign In, & Mobile Menu */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            {/* Theme Toggle */}
             <button
+              type="button"
+              onClick={() => setThemeDark(!themeDark)}
+              aria-label={themeDark ? 'Switch to light mode' : 'Switch to dark mode'}
+              className="p-2 rounded-full border border-white/20 text-slate-300 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+              title={themeDark ? (isBn ? 'লাইট মোড' : 'Light Mode') : (isBn ? 'ডার্ক মোড' : 'Dark Mode')}
+            >
+              {themeDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-cyan-400" />}
+            </button>
+
+            {/* Language Switch */}
+            <button
+              type="button"
               onClick={() => setIsBn(!isBn)}
               aria-label="Toggle language"
               className="px-2.5 sm:px-3 py-1.5 rounded-full border border-white/20 text-xs font-bold text-white hover:bg-white/10 transition-colors flex items-center gap-1.5 cursor-pointer"
             >
               <Globe className="w-3.5 h-3.5 text-amber-400" />
-              <span>{isBn ? 'English' : 'বাংলা'}</span>
+              <span>{isBn ? 'EN' : 'বাং'}</span>
             </button>
 
+            {/* Sign In CTA */}
             <button
-              onClick={(e) => handlePortalClick('shop', e)}
+              type="button"
+              onClick={(e) => handlePortalClick('shop', e, { mode: 'login' })}
               className="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border border-amber-400/50 text-amber-400 text-xs sm:text-sm font-bold hover:bg-amber-400 hover:text-black transition-all cursor-pointer"
             >
               {isBn ? 'লগইন' : 'Sign In'}
             </button>
 
-            <a
-              href="#plans"
-              className="hidden sm:inline-flex px-5 py-2 rounded-full bg-amber-400 text-black text-sm font-extrabold hover:bg-amber-300 hover:shadow-lg hover:shadow-amber-400/25 transition-all active:scale-95 cursor-pointer"
+            {/* Free Trial CTA */}
+            <button
+              type="button"
+              onClick={(e) => handlePortalClick('shop', e, { mode: 'register' })}
+              className="hidden sm:inline-flex px-4 sm:px-5 py-1.5 sm:py-2 rounded-full bg-amber-400 text-black text-xs sm:text-sm font-extrabold hover:bg-amber-300 hover:shadow-lg hover:shadow-amber-400/25 transition-all active:scale-95 cursor-pointer"
             >
               {isBn ? 'ফ্রি ট্রায়াল' : 'Get Started'}
-            </a>
+            </button>
 
             {/* Mobile Hamburger Menu Toggle */}
             <button
+              type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label="Toggle navigation menu"
-              className="lg:hidden p-2 rounded-full border border-white/20 text-slate-300 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+              className="xl:hidden p-2 rounded-full border border-white/20 text-slate-300 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
             >
               {mobileMenuOpen ? <XIcon className="w-5 h-5 text-amber-400" /> : <Menu className="w-5 h-5 text-slate-200" />}
             </button>
@@ -945,14 +1055,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) =>
 
         {/* Mobile Navigation Drawer */}
         {mobileMenuOpen && (
-          <div className="lg:hidden bg-[#0c0c0e] border-b border-white/15 px-4 py-4 space-y-4 animate-in slide-in-from-top-2 duration-200">
+          <div className="xl:hidden bg-[#0c0c0e] border-b border-white/15 px-4 py-4 space-y-4 animate-in slide-in-from-top-2 duration-200">
             {/* Quick Portal Switcher for Mobile */}
             <div className="space-y-1.5">
               <p className="text-[10px] font-bold uppercase tracking-wider text-amber-400">
-                {isBn ? 'সরাসরি পোর্টাল লগইন' : 'Direct Portal Access'}
+                {isBn ? 'সরাসরি পোর্টাল অ্যাক্সেস' : 'Direct Portal Access'}
               </p>
               <div className="grid grid-cols-3 gap-2">
                 <button
+                  type="button"
                   onClick={(e) => { setMobileMenuOpen(false); handlePortalClick('shop', e); }}
                   className="px-2 py-2.5 rounded-xl bg-white/5 border border-white/10 text-center hover:bg-amber-400/10 hover:border-amber-400/40 transition-colors cursor-pointer"
                 >
@@ -960,6 +1071,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) =>
                   <span className="block text-[11px] font-bold text-white">{isBn ? 'শপ ওনার' : 'Shop Owner'}</span>
                 </button>
                 <button
+                  type="button"
                   onClick={(e) => { setMobileMenuOpen(false); handlePortalClick('employee', e); }}
                   className="px-2 py-2.5 rounded-xl bg-white/5 border border-white/10 text-center hover:bg-blue-400/10 hover:border-blue-400/40 transition-colors cursor-pointer"
                 >
@@ -967,6 +1079,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) =>
                   <span className="block text-[11px] font-bold text-white">{isBn ? 'এমপ্লয়ী' : 'Employee'}</span>
                 </button>
                 <button
+                  type="button"
                   onClick={(e) => { setMobileMenuOpen(false); handlePortalClick('customer', e); }}
                   className="px-2 py-2.5 rounded-xl bg-white/5 border border-white/10 text-center hover:bg-purple-400/10 hover:border-purple-400/40 transition-colors cursor-pointer"
                 >
@@ -977,12 +1090,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) =>
             </div>
 
             {/* Navigation Section Links */}
-            <div className="pt-2 border-t border-white/10 grid grid-cols-2 gap-2 text-xs">
+            <div className="pt-2 border-t border-white/10 grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
               <a onClick={() => setMobileMenuOpen(false)} href="#features" className="py-2 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-slate-200">
                 {isBn ? 'ফিচারসমূহ' : 'Features'}
               </a>
-              <a onClick={() => setMobileMenuOpen(false)} href="#about" className="py-2 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-slate-200">
-                {isBn ? 'Bizora সম্পর্কে' : 'About Bizora'}
+              <a onClick={() => setMobileMenuOpen(false)} href="#how" className="py-2 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-slate-200">
+                {isBn ? 'কীভাবে চলে' : 'How It Works'}
+              </a>
+              <a onClick={() => setMobileMenuOpen(false)} href="#benefits" className="py-2 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-slate-200">
+                {isBn ? 'সুবিধাসমূহ' : 'Benefits'}
               </a>
               <a onClick={() => setMobileMenuOpen(false)} href="#os" className="py-2 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-slate-200">
                 {isBn ? 'বিজনেস OS' : 'Business OS'}
@@ -996,15 +1112,24 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) =>
               <a onClick={() => setMobileMenuOpen(false)} href="#plans" className="py-2 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-slate-200">
                 {isBn ? 'সাবস্ক্রিপশন' : 'Pricing'}
               </a>
+              <a onClick={() => setMobileMenuOpen(false)} href="#about" className="py-2 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-slate-200">
+                {isBn ? 'পরিচিতি' : 'About'}
+              </a>
+              <a onClick={() => setMobileMenuOpen(false)} href="#faq" className="py-2 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-slate-200">
+                {isBn ? 'জিজ্ঞাসা' : 'FAQ'}
+              </a>
+              <a onClick={() => setMobileMenuOpen(false)} href="#contact" className="py-2 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-slate-200">
+                {isBn ? 'যোগাযোগ' : 'Contact'}
+              </a>
             </div>
 
-            <a
-              onClick={() => setMobileMenuOpen(false)}
-              href="#plans"
-              className="block w-full text-center py-3 rounded-xl bg-amber-400 text-black text-xs font-black shadow-lg shadow-amber-400/20"
+            <button
+              type="button"
+              onClick={(e) => { setMobileMenuOpen(false); handlePortalClick('shop', e, { mode: 'register' }); }}
+              className="block w-full text-center py-3 rounded-xl bg-amber-400 text-black text-xs font-black shadow-lg shadow-amber-400/20 cursor-pointer"
             >
-              {isBn ? 'ফ্রি ট্রায়াল শুরু করুন' : 'Start 14-Day Free Trial'}
-            </a>
+              {isBn ? '১৪ দিনের ফ্রি ট্রায়াল শুরু করুন' : 'Start 14-Day Free Trial'}
+            </button>
           </div>
         )}
       </header>
@@ -1539,27 +1664,35 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) =>
           </p>
         </div>
 
-        {/* Feature Tab Navigation */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 max-w-4xl mx-auto mb-10">
+        {/* Feature Tab Navigation (8 Canonical Modules) */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 max-w-6xl mx-auto mb-10">
           {[
-            { id: 'pos', label: 'POS & Billing', labelBn: 'পিওএস ও বিলিং' },
-            { id: 'stock', label: 'Stock & Expiry (FEFO)', labelBn: 'স্টক ও মেয়াদ' },
-            { id: 'accounts', label: 'Auto Accounts & Cash', labelBn: 'হিসাব ও ক্যাশবক্স' },
-            { id: 'vat', label: 'VAT & Tax Reports', labelBn: 'ভ্যাট ও কর' },
-            { id: 'store', label: 'Online Store & Courier', labelBn: 'অনলাইন শপ ও কুরিয়ার' },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`py-3 px-4 rounded-xl text-sm font-bold transition-all cursor-pointer ${
-                activeTab === tab.id
-                  ? 'bg-amber-400 text-black shadow-lg shadow-amber-400/20 font-black'
-                  : 'bg-white/5 border border-white/10 text-slate-300 hover:border-white/30 hover:text-white'
-              }`}
-            >
-              {isBn ? tab.labelBn : tab.label}
-            </button>
-          ))}
+            { id: 'pos', label: 'POS & Till', labelBn: 'পিওএস ও বিলিং', icon: ShoppingBag },
+            { id: 'stock', label: 'FEFO Stock', labelBn: 'স্টক ও মেয়াদ', icon: Boxes },
+            { id: 'accounts', label: 'Accounts', labelBn: 'হিসাব ও ক্যাশবক্স', icon: DollarSign },
+            { id: 'vat', label: 'Net VAT', labelBn: 'ভ্যাট ও কর', icon: Receipt },
+            { id: 'branches', label: 'Branches', labelBn: 'শাখা ও ওয়্যারহাউস', icon: Warehouse },
+            { id: 'roles', label: 'Staff Roles', labelBn: 'স্টাফ ও পারমিশন', icon: Users },
+            { id: 'store', label: 'Online Store', labelBn: 'অনলাইন শপ', icon: Globe },
+            { id: 'assistant', label: 'AI & Audit', labelBn: 'সহকারী ও অডিট', icon: Bot },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`py-3 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex flex-col items-center gap-1.5 ${
+                  activeTab === tab.id
+                    ? 'bg-amber-400 text-black shadow-lg shadow-amber-400/20 font-black scale-[1.02]'
+                    : 'bg-white/5 border border-white/10 text-slate-300 hover:border-white/30 hover:text-white'
+                }`}
+              >
+                <Icon className="w-4 h-4 shrink-0" />
+                <span className="truncate">{isBn ? tab.labelBn : tab.label}</span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Active Tab Panel Content */}
@@ -1567,8 +1700,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) =>
           {activeTab === 'pos' && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center text-left">
               <div className="lg:col-span-7 space-y-4">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/10 border border-amber-400/20 text-amber-300 text-xs font-bold uppercase">
+                  <span>Module 01</span> · <span>High-Speed Checkout</span>
+                </div>
                 <h3 className="text-2xl sm:text-3xl font-black text-white">
-                  {isBn ? 'সেকেন্ডে দ্রুত বিক্রি ও প্রিন্ট' : 'Sell in seconds with smart barcode scanning'}
+                  {isBn ? 'সেকেন্ডে দ্রুত বিক্রি ও থার্মাল প্রিন্ট' : 'Sell in seconds with smart barcode scanning'}
                 </h3>
                 <p className="text-slate-300 text-base leading-relaxed">
                   {isBn
@@ -1621,6 +1757,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) =>
           {activeTab === 'stock' && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center text-left">
               <div className="lg:col-span-7 space-y-4">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-400/10 border border-emerald-400/20 text-emerald-300 text-xs font-bold uppercase">
+                  <span>Module 02</span> · <span>FEFO Batch Protection</span>
+                </div>
                 <h3 className="text-2xl sm:text-3xl font-black text-white">
                   {isBn ? 'মেয়াদোত্তীর্ণ মাল আর কখনো বিক্রি হবে না' : 'FEFO: Never sell expired stock'}
                 </h3>
@@ -1634,6 +1773,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) =>
                     isBn ? 'প্রতি ক্রয়ে লট ও মেয়াদ ট্র্যাকিং' : 'Lot and expiry dates tracked on every purchase invoice',
                     isBn ? 'কম-স্টক ও এক্সপায়ারি অ্যালার্ট সহ অটো রিঅর্ডার' : 'Low-stock alerts with predictive supplier reorder quantities',
                     isBn ? 'ফোন ও ইলেকট্রনিক্সের সিরিয়াল/IMEI নম্বর ও ওয়ারেন্টি ট্র্যাকিং' : 'Serial/IMEI lifecycle from vendor purchase to customer warranty',
+                    isBn ? 'ওজন স্কেলের EAN-13 বারকোড অটোমেটিক ডিকোডিং' : 'Weigh scale barcode decoding for fresh produce and meat',
                   ].map((bullet, idx) => (
                     <li key={idx} className="flex items-center gap-3 text-sm font-semibold text-slate-200">
                       <div className="w-5 h-5 rounded-full bg-amber-400 text-black flex items-center justify-center font-black text-xs shrink-0">✓</div>
@@ -1664,6 +1804,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) =>
           {activeTab === 'accounts' && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center text-left">
               <div className="lg:col-span-7 space-y-4">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-400/10 border border-sky-400/20 text-sky-300 text-xs font-bold uppercase">
+                  <span>Module 03</span> · <span>Double-Entry General Ledger</span>
+                </div>
                 <h3 className="text-2xl sm:text-3xl font-black text-white">
                   {isBn ? 'অটোমেটিক অ্যাকাউন্টিং ও ক্যাশবক্স' : 'Books that write themselves'}
                 </h3>
@@ -1677,6 +1820,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) =>
                     isBn ? 'ক্যাশ, বিকাশ, নগদ ও ব্যাংক স্টেটমেন্ট এক ক্লিকে রিকনসাইল' : 'Reconcile cash, bKash, Nagad, and bank accounts in one view',
                     isBn ? 'সাপ্লায়ার ও কাস্টমারের বাকি লেজার ট্র্যাক হয় স্বয়ংক্রিয়ভাবে' : 'Supplier payables and customer dues tracked with SMS reminders',
                     isBn ? 'পিরিয়ড লকে পুরোনো তারিখে ভুল এন্ট্রি বন্ধ থাকে' : 'Back-dated period locking prevents unauthorized tampering',
+                    isBn ? 'দৈনিক খরচের ভাউচার এবং ক্যাশ ড্রয়ার ফ্লোট ব্যালেন্স' : 'Daily expense vouchers with shift open/close cash float auditing',
                   ].map((bullet, idx) => (
                     <li key={idx} className="flex items-center gap-3 text-sm font-semibold text-slate-200">
                       <div className="w-5 h-5 rounded-full bg-amber-400 text-black flex items-center justify-center font-black text-xs shrink-0">✓</div>
@@ -1707,6 +1851,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) =>
           {activeTab === 'vat' && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center text-left">
               <div className="lg:col-span-7 space-y-4">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-400/10 border border-purple-400/20 text-purple-300 text-xs font-bold uppercase">
+                  <span>Module 04</span> · <span>NBR Net VAT 9.1 Compliance</span>
+                </div>
                 <h3 className="text-2xl sm:text-3xl font-black text-white">
                   {isBn ? 'মাস শেষে VAT নিয়ে কোনো দুশ্চিন্তা নেই' : 'VAT without the month-end panic'}
                 </h3>
@@ -1720,6 +1867,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) =>
                     isBn ? 'রিটার্ন বাদ দেওয়া নিখুঁত আউটপুট ও ইনপুট ভ্যাট' : 'Net output and input VAT calculation with return deductions',
                     isBn ? 'এক ক্লিকে CSV এক্সপোর্ট অথবা প্রিন্ট' : 'One-click CSV audit export and printable official tax summaries',
                     isBn ? 'সেটিংসে দেওয়া কাস্টম ট্যাক্স রেট স্বয়ংক্রিয় কার্যকর' : 'Configurable standard VAT rates tailored to local tax rules',
+                    isBn ? 'অডিট ট্রায়াল ও চালান রেজিস্টার বুক' : 'Tamper-evident invoice tax register with full audit trails',
                   ].map((bullet, idx) => (
                     <li key={idx} className="flex items-center gap-3 text-sm font-semibold text-slate-200">
                       <div className="w-5 h-5 rounded-full bg-amber-400 text-black flex items-center justify-center font-black text-xs shrink-0">✓</div>
@@ -1747,9 +1895,106 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) =>
             </div>
           )}
 
+          {activeTab === 'branches' && (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center text-left">
+              <div className="lg:col-span-7 space-y-4">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-400/10 border border-cyan-400/20 text-cyan-300 text-xs font-bold uppercase">
+                  <span>Module 05</span> · <span>Multi-Store & Warehouses</span>
+                </div>
+                <h3 className="text-2xl sm:text-3xl font-black text-white">
+                  {isBn ? 'এক লগইনে সব শাখা ও ওয়্যারহাউস নিয়ন্ত্রণ' : 'Multi-branch operations in unified sync'}
+                </h3>
+                <p className="text-slate-300 text-base leading-relaxed">
+                  {isBn
+                    ? 'সেন্ট্রাল ওয়্যারহাউস থেকে বিভিন্ন শাখায় স্টক পাঠান। গেটপাসসহ ইন-ট্রানজিট পণ্য ট্র্যাক করুন এবং সব ব্রাঞ্চের সমন্বিত ব্যালেন্স শিট দেখুন।'
+                    : 'Dispatch inventory between central depots and retail branch outlets with gate-pass transit control and consolidated P&L statements.'}
+                </p>
+                <ul className="space-y-2.5 pt-2">
+                  {[
+                    isBn ? 'শাখায় শাখায় স্টক ট্রান্সফার ও গেটপাস ট্র্যাকিং' : 'Inter-branch stock requisition & dispatch with gate passes',
+                    isBn ? 'সমন্বিত মাল্টি-স্টোর ফিনান্সিয়াল ব্যালেন্স শিট' : 'Consolidated P&L, balance sheets and inventory valuations',
+                    isBn ? 'শাখাভিত্তিক আলাদা সেলস কাউন্টার ও ক্যাশবাক্স' : 'Independent store tills, cashbox floats, and branch reporting',
+                    isBn ? 'এক ক্লিকে স্টোর সুইচিং ও সেন্ট্রাল প্রডাক্ট ক্যাটালগ' : 'Instant store switching with central catalog distribution',
+                  ].map((bullet, idx) => (
+                    <li key={idx} className="flex items-center gap-3 text-sm font-semibold text-slate-200">
+                      <div className="w-5 h-5 rounded-full bg-amber-400 text-black flex items-center justify-center font-black text-xs shrink-0">✓</div>
+                      <span>{bullet}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="lg:col-span-5 bg-black text-white p-6 rounded-2xl space-y-3 font-mono text-xs border border-white/15 shadow-xl">
+                <div className="text-amber-400 font-bold border-b border-white/15 pb-2">INTER-STORE DISPATCH #TR-402</div>
+                <div className="flex justify-between py-1">
+                  <span>Origin Warehouse</span>
+                  <span className="text-white font-bold">Central Depot</span>
+                </div>
+                <div className="flex justify-between py-1">
+                  <span>Destination Store</span>
+                  <span className="text-cyan-400 font-bold">Dhanmondi Branch</span>
+                </div>
+                <div className="border-t border-dashed border-white/20 pt-2 flex justify-between font-black text-sm text-emerald-400">
+                  <span>GATE PASS STATUS</span>
+                  <span>Dispatched (In Transit)</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'roles' && (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center text-left">
+              <div className="lg:col-span-7 space-y-4">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-400/10 border border-indigo-400/20 text-indigo-300 text-xs font-bold uppercase">
+                  <span>Module 06</span> · <span>Staff Hierarchy & RBAC</span>
+                </div>
+                <h3 className="text-2xl sm:text-3xl font-black text-white">
+                  {isBn ? 'কর্মচারী রোল ও নির্ভুল অনুমতি নিয়ন্ত্রণ' : 'Role-based access & shift security'}
+                </h3>
+                <p className="text-slate-300 text-base leading-relaxed">
+                  {isBn
+                    ? 'ক্যাশিয়ার, ম্যানেজার এবং স্টক কিপারের জন্য আলাদা অনুমতি। মালিকের ব্যক্তিগত মার্জিন ও ক্রয়মূল্য কর্মচারীদের কাছ থেকে লুকায়িত থাকে।'
+                    : 'Keep sensitive wholesale costs, purchase margins, and financial ledgers strictly hidden from counter cashiers while empowering high-speed checkout.'}
+                </p>
+                <ul className="space-y-2.5 pt-2">
+                  {[
+                    isBn ? 'ক্যাশিয়ার, ম্যানেজার, স্টক ও হিসাবের তৈরি রোল' : 'Preconfigured roles: Cashier, Stock Manager, Accountant, Manager',
+                    isBn ? 'ক্রয়মূল্য ও লাভের মার্জিন গোপন রাখার নিশ্চয়তা' : 'Hide purchase prices, wholesale costs, and net profits from staff',
+                    isBn ? 'শিফটভিত্তিক ক্যাশবাক্স খোলা ও বন্ধের হিসাব' : 'Shift opening/closing cash float audit logs per employee',
+                    isBn ? 'স্টাফ উপস্থিতি ও মাসিক বেতন খাতা' : 'Employee attendance logs, shift records, and payroll disbursements',
+                  ].map((bullet, idx) => (
+                    <li key={idx} className="flex items-center gap-3 text-sm font-semibold text-slate-200">
+                      <div className="w-5 h-5 rounded-full bg-amber-400 text-black flex items-center justify-center font-black text-xs shrink-0">✓</div>
+                      <span>{bullet}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="lg:col-span-5 bg-black text-white p-6 rounded-2xl space-y-3 font-mono text-xs border border-white/15 shadow-xl">
+                <div className="text-amber-400 font-bold border-b border-white/15 pb-2">STAFF PERMISSION MATRIX</div>
+                <div className="flex justify-between py-1">
+                  <span>Cashier Till Sales</span>
+                  <span className="text-emerald-400 font-bold">ALLOWED</span>
+                </div>
+                <div className="flex justify-between py-1">
+                  <span>View Product Profit Margins</span>
+                  <span className="text-rose-400 font-bold">BLOCKED (Owner Only)</span>
+                </div>
+                <div className="border-t border-dashed border-white/20 pt-2 flex justify-between font-black text-sm text-sky-400">
+                  <span>SHIFT FLOAT CHECK</span>
+                  <span>Balanced (৳0 Discrepancy)</span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {activeTab === 'store' && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center text-left">
               <div className="lg:col-span-7 space-y-4">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-400/10 border border-blue-400/20 text-blue-300 text-xs font-bold uppercase">
+                  <span>Module 07</span> · <span>Omnichannel Storefront</span>
+                </div>
                 <h3 className="text-2xl sm:text-3xl font-black text-white">
                   {isBn ? 'একই স্টক থেকে সরাসরি অনলাইনে বিক্রি' : 'Sell online from the exact same stock'}
                 </h3>
@@ -1763,6 +2008,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) =>
                     isBn ? '৫টি রেডি স্টোর থিম (মিনিমালিস্ট থেকে টেক হাব)' : '5 polished storefront themes tailored for boutique, tech, and retail',
                     isBn ? 'কুরিয়ার বুকিং ও ট্র্যাকিং: পাঠাও, স্টিডফাস্ট, পেপারফ্লাই, RedX' : 'Instant courier consignment booking: Pathao, Steadfast, Paperfly, RedX',
                     isBn ? 'দোকানে বিক্রি হলে অনলাইনেও তাৎক্ষণিক স্টক কমে যায়' : 'Zero double-selling: stock levels sync immediately across all channels',
+                    isBn ? 'কাস্টমার সেলফ-সার্ভিস অর্ডার ও ট্র্যাকিং পোর্টাল' : 'Customer portal with order status, tracking, and invoice downloads',
                   ].map((bullet, idx) => (
                     <li key={idx} className="flex items-center gap-3 text-sm font-semibold text-slate-200">
                       <div className="w-5 h-5 rounded-full bg-amber-400 text-black flex items-center justify-center font-black text-xs shrink-0">✓</div>
@@ -1789,53 +2035,124 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) =>
               </div>
             </div>
           )}
+
+          {activeTab === 'assistant' && (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center text-left">
+              <div className="lg:col-span-7 space-y-4">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-400/10 border border-rose-400/20 text-rose-300 text-xs font-bold uppercase">
+                  <span>Module 08</span> · <span>AI Intelligence & Security</span>
+                </div>
+                <h3 className="text-2xl sm:text-3xl font-black text-white">
+                  {isBn ? 'বিজনেস সহকারী ও নিরাপত্তা অডিট লগ' : 'Bizora Assistant & security radar'}
+                </h3>
+                <p className="text-slate-300 text-base leading-relaxed">
+                  {isBn
+                    ? 'বাংলা বা ইংরেজিতে সহজ ভাষায় আপনার ব্যবসার সেলস ও স্টক নিয়ে প্রশ্ন করুন। বিস্তারিত অডিট লগে প্রতিটি পরিবর্তন ট্র্যাক থাকে।'
+                    : 'Query your business metrics in conversational English or Bengali. Every user login, invoice creation, discount modification, and price override is preserved in tamper-evident audit logs.'}
+                </p>
+                <ul className="space-y-2.5 pt-2">
+                  {[
+                    isBn ? 'বাংলা ও ইংরেজিতে ন্যাচারাল ল্যাঙ্গুয়েজ সহকারী' : 'Ask questions in English or Bengali without complex SQL or dashboards',
+                    isBn ? 'ক্রিপ্টোগ্রাফিক ট্যাম্পার-রেজিস্ট্যান্ট অডিট লগ' : 'Tamper-evident audit logs of discounts, price edits, and voids',
+                    isBn ? 'পুরোনো তারিখের ভাউচার এডিটিং রোধে পিরিয়ড লক' : 'Accounting period locks preventing unauthorized back-dated entries',
+                    isBn ? 'টু-ফ্যাক্টর অথেন্টিকেশন ও অটোমেটিক এনক্রিপ্টেড ব্যাকআপ' : 'Two-factor auth (2FA) and isolated multi-tenant database protection',
+                  ].map((bullet, idx) => (
+                    <li key={idx} className="flex items-center gap-3 text-sm font-semibold text-slate-200">
+                      <div className="w-5 h-5 rounded-full bg-amber-400 text-black flex items-center justify-center font-black text-xs shrink-0">✓</div>
+                      <span>{bullet}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="lg:col-span-5 bg-black text-white p-6 rounded-2xl space-y-3 font-mono text-xs border border-white/15 shadow-xl">
+                <div className="text-amber-400 font-bold border-b border-white/15 pb-2">BIZORA_ASSISTANT_QUERY</div>
+                <div className="p-2.5 bg-white/5 rounded-lg text-slate-300">
+                  <span className="text-cyan-400">&gt;</span> &ldquo;What were our top 3 best-selling products this week?&rdquo;
+                </div>
+                <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-emerald-300 space-y-1">
+                  <div>1. Soybean Oil 2L (142 units)</div>
+                  <div>2. ACI Pure Salt 1kg (98 units)</div>
+                  <div>3. Ceylon Tea 400g (74 units)</div>
+                </div>
+                <div className="border-t border-dashed border-white/20 pt-2 flex justify-between font-black text-sm text-sky-400">
+                  <span>AUDIT STATUS</span>
+                  <span>100% Verified in Database</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
-      {/* 6. HOW IT WORKS (THREE-STEP WORKFLOW) */}
+      {/* 6. HOW IT WORKS (REAL 5-STEP ONBOARDING PIPELINE) */}
       <section id="how" className="py-20 bg-[#09090c] text-white border-y border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-400/10 border border-amber-400/20 text-amber-300 text-xs font-bold uppercase tracking-widest">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <span>{isBn ? 'ইনস্ট্যান্ট অনবোর্ডিং' : 'Real 5-Step Setup'}</span>
+            </div>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight">
-              {isBn ? 'তিন সহজ ধাপে শুরু করুন।' : 'Get started in three simple steps.'}
+              {isBn ? '৫টি সহজ ধাপে শুরু করুন।' : 'Up and running in 5 simple steps.'}
             </h2>
             <p className="text-base sm:text-lg text-slate-400 font-medium">
               {isBn
-                ? 'এতটাই সহজ যে আপনার যেকোনো স্টাফ ট্রেনিং ছাড়াই চালাতে পারবে।'
-                : 'Simple enough that your store team needs zero technical training.'}
+                ? 'এতটাই সহজ যে আপনার যেকোনো স্টাফ কোনো প্রযুক্তিগত প্রশিক্ষণ ছাড়াই প্রথম দিন থেকেই চালাতে পারবে।'
+                : 'Engineered for zero friction: from new sign-up to your first barcode scan in under 10 minutes.'}
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             {[
               {
                 num: '1',
-                title: 'Add your products',
-                titleBn: 'পণ্য যোগ করুন',
-                desc: 'Type them in directly or upload an Excel/CSV spreadsheet with barcodes in one click.',
-                descBn: 'নিজে যোগ করুন অথবা বারকোড সহ CSV ফাইল এক ক্লিকে ইমপোর্ট করে নিন।'
+                title: 'Create Account',
+                titleBn: 'অ্যাকাউন্ট খুলুন',
+                desc: 'Sign up in under 2 minutes with email/phone. Zero credit card required for 14-day full access.',
+                descBn: 'ইমেইল বা ফোন দিয়ে ২ মিনিটে ফ্রি রেজিস্ট্রেশন করুন। কোনো ক্রেডিট কার্ড লাগবে না।'
               },
               {
                 num: '2',
-                title: 'Record sales & purchases',
-                titleBn: 'বিক্রি ও ক্রয় লিখুন',
-                desc: 'Sell quickly at the till and receive incoming vendor deliveries with batch and expiry tracking.',
-                descBn: 'টিলে দ্রুত বিক্রি করুন, আর সাপ্লায়ারের মাল লট, মেয়াদ ও সিরিয়াল সহ গ্রহণ করুন।'
+                title: 'Set Up Business Profile',
+                titleBn: 'স্টোর ও তথ্য দিন',
+                desc: 'Add your shop name, logo, currency, default VAT rate, and receipt header details.',
+                descBn: 'দোকানের নাম, লোগো, মুদ্রা, ভ্যাট রেট ও রসিদের শিরোনাম কনফিগার করুন।'
               },
               {
                 num: '3',
-                title: 'Read your reports',
-                titleBn: 'রিপোর্ট দেখুন',
-                desc: 'Access audit-grade profit and loss, balance sheets, dues, and VAT statements in one tap.',
-                descBn: 'লাভ-ক্ষতি, ব্যালেন্স শিট, বকেয়া এবং ভ্যাট রিপোর্ট দেখুন এক ক্লিকে।'
+                title: 'Configure Catalog & Tax',
+                titleBn: 'পণ্য ও স্টক যোগ করুন',
+                desc: 'Import existing inventory via CSV/Excel or scan barcodes with opening cashbox balances.',
+                descBn: 'এক্সেল/সিএসভি থেকে পণ্য ক্যাটালগ আপলোড করুন এবং প্রাথমিক ক্যাশবক্স এন্ট্রি দিন।'
+              },
+              {
+                num: '4',
+                title: 'Record Sales & POs',
+                titleBn: 'বিক্রি ও ক্রয় লিখুন',
+                desc: 'Ring up customers at the offline-ready till and receive supplier PO deliveries with FEFO batches.',
+                descBn: 'কাউন্টারে দ্রুত বিক্রি শুরু করুন এবং সাপ্লায়ারদের পারচেজ লট ও মেয়াদে গ্রহণ করুন।'
+              },
+              {
+                num: '5',
+                title: 'Review Live Reports',
+                titleBn: 'লাইভ রিপোর্ট দেখুন',
+                desc: 'Access audit-grade profit/loss, ledger dues, and Net VAT 9.1 returns in a single tap.',
+                descBn: 'লাভ-ক্ষতি, কাস্টমার বাকি খাতা এবং এনবিআর ভ্যাট ৯.১ রিটার্ন দেখুন এক ক্লিকে।'
               }
             ].map((step, idx) => (
-              <div key={idx} className="bg-[#141417] border border-white/10 rounded-2xl p-8 relative overflow-hidden group hover:border-amber-400/50 transition-colors text-left">
-                <div className="w-12 h-12 rounded-full bg-amber-400 text-black flex items-center justify-center font-black text-xl mb-6 shadow-md shadow-amber-400/20 group-hover:scale-110 transition-transform">
-                  {step.num}
+              <div key={idx} className="bg-[#141417] border border-white/10 rounded-2xl p-6 relative overflow-hidden group hover:border-amber-400/50 transition-colors text-left flex flex-col justify-between">
+                <div>
+                  <div className="w-10 h-10 rounded-xl bg-amber-400 text-black flex items-center justify-center font-black text-lg mb-4 shadow-md shadow-amber-400/20 group-hover:scale-105 transition-transform">
+                    {step.num}
+                  </div>
+                  <h3 className="text-base font-black text-white mb-2">{isBn ? step.titleBn : step.title}</h3>
+                  <p className="text-slate-400 text-xs leading-relaxed">{isBn ? step.descBn : step.desc}</p>
                 </div>
-                <h3 className="text-xl font-black text-white mb-2">{isBn ? step.titleBn : step.title}</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">{isBn ? step.descBn : step.desc}</p>
+                <div className="mt-4 pt-3 border-t border-white/5 flex items-center gap-1.5 text-[10px] text-amber-400 font-bold uppercase tracking-wider">
+                  <CheckCircle2 className="w-3 h-3" />
+                  <span>{isBn ? 'সহজ ও দ্রুত' : 'Verified Flow'}</span>
+                </div>
               </div>
             ))}
           </div>
@@ -1844,7 +2161,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) =>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-16 pt-12 border-t border-white/10 text-center">
             <div>
               <div className="text-4xl sm:text-5xl font-black text-amber-400">35+</div>
-              <div className="text-xs sm:text-sm font-semibold text-slate-400 mt-1">{isBn ? 'স্ক্রিন, এক সমন্বিত প্ল্যাটফর্মে' : 'Enterprise Screens'}</div>
+              <div className="text-xs sm:text-sm font-semibold text-slate-400 mt-1">{isBn ? 'সমন্বিত স্ক্রিন' : 'Enterprise Screens'}</div>
             </div>
             <div>
               <div className="text-4xl sm:text-5xl font-black text-amber-400">8</div>
@@ -1852,13 +2169,97 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) =>
             </div>
             <div>
               <div className="text-4xl sm:text-5xl font-black text-amber-400">4</div>
-              <div className="text-xs sm:text-sm font-semibold text-slate-400 mt-1">{isBn ? 'কুরিয়ার পার্টনার ইন্টিগ্রেশন' : 'Courier Couplings'}</div>
+              <div className="text-xs sm:text-sm font-semibold text-slate-400 mt-1">{isBn ? 'কুরিয়ার পার্টনার' : 'Courier Couplings'}</div>
             </div>
             <div>
               <div className="text-4xl sm:text-5xl font-black text-amber-400">5</div>
               <div className="text-xs sm:text-sm font-semibold text-slate-400 mt-1">{isBn ? 'তৈরি স্টোর থিম' : 'Storefront Themes'}</div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* 6B. BUSINESS BENEFITS & CONCRETE OUTCOMES */}
+      <section id="benefits" className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-left">
+        <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-400/10 border border-emerald-400/20 text-emerald-300 text-xs font-bold uppercase tracking-widest">
+            <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+            <span>{isBn ? 'বাস্তব ব্যবসায়িক ফলাফল' : 'Measurable Business ROI'}</span>
+          </div>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white">
+            {isBn ? 'ব্যবসার আসল উন্নয়ন যা আপনি প্রতিদিন দেখতে পাবেন।' : 'Concrete Outcomes for Your Daily Operations.'}
+          </h2>
+          <p className="text-base sm:text-lg text-slate-400 font-medium">
+            {isBn
+              ? 'অনুমাননির্ভর ব্যবসা থেকে বেরিয়ে আসুন। বিজোরার সাহায্যে প্রতিটি পণ্য ও টাকার পুঙ্খানুপুঙ্খ হিসাব রাখুন।'
+              : 'Defensive engineering and automated reconciliation deliver tangible operational control without marketing hype.'}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[
+            {
+              icon: Eye,
+              color: 'text-amber-400',
+              title: 'Total Visibility into Real-Time Sales & Margins',
+              titleBn: 'বিক্রি ও মার্জিনের রিয়েল-টাইম স্বচ্ছতা',
+              desc: 'Never wait until month-end to know your profits. See gross margin, net profit, top-moving items, and branch sales live on your phone.',
+              descBn: 'মাস শেষের জন্য অপেক্ষা করতে হবে না। মোবাইলেই যেকোনো মুহূর্তের নিট লাভ, মোট বিক্রি এবং সর্বাধিক বিক্রিত পণ্য দেখুন।'
+            },
+            {
+              icon: CalendarClock,
+              color: 'text-rose-400',
+              title: 'Zero Expired Stock Waste with FEFO Discipline',
+              titleBn: 'মেয়াদোত্তীর্ণ মালের ক্ষতি থেকে ১০০% সুরক্ষা',
+              desc: 'First-Expired, First-Out algorithm ensures oldest supplier deliveries sell first. Near-expiry radar alerts you 30, 60, and 90 days before expiration.',
+              descBn: 'আগে মেয়াদ শেষ হওয়া লট আগে বিক্রি নিশ্চিত হয়। ৩০ ও ৬০ দিন আগেই সতর্কবার্তা পান যাতে ক্ষতি হওয়ার আগেই প্রমোশন দেওয়া যায়।'
+            },
+            {
+              icon: Wallet,
+              color: 'text-emerald-400',
+              title: 'Organized Customer & Supplier Dues (Baki Khata)',
+              titleBn: 'বকেয়া খাতা ও সাপ্লায়ার দেনার নির্ভুল ট্র্যাক',
+              desc: 'Track who owes what to the exact penny. Automated SMS payment reminders and instalment schedules turn sticky receivables into working capital.',
+              descBn: 'কার কাছে কত টাকা বাকি আছে তা নিমেষেই দেখুন। এসএমএস রিমাইন্ডার এবং কিস্তির শিডিউলে আটকে থাকা টাকা দ্রুত সংগ্রহ করুন।'
+            },
+            {
+              icon: Scale,
+              color: 'text-sky-400',
+              title: 'Audit-Grade Books with Zero Manual Math',
+              titleBn: 'হিসাবের খাতায় শূন্য ভুল ও ডাবল-এন্ট্রি জার্নাল',
+              desc: 'Every sale, return, supplier delivery, and expense posts debits and credits automatically. Balance sheets and cash registers match perfectly at shift close.',
+              descBn: 'প্রতিটি বিল ও ভাউচার নিজে থেকেই ডাবল-এন্ট্রিতে জমা হয়। দিন শেষে ক্যাশবাক্স ও ব্যাংক স্টেটমেন্ট সেকেন্ডে মিলিয়ে নিন।'
+            },
+            {
+              icon: Warehouse,
+              color: 'text-cyan-400',
+              title: 'Centralized Multi-Store Control from One Login',
+              titleBn: 'এক লগইনে সব শাখা ও ওয়্যারহাউস নিয়ন্ত্রণ',
+              desc: 'Expand your retail chain without operational chaos. Switch between stores, transfer goods with gate passes, and compare branch revenues.',
+              descBn: 'একাধিক দোকান খোলা এখন কোনো ঝামেলার নয়। যেকোনো দোকান থেকে অন্য দোকানে স্টক পাঠান এবং ব্রাঞ্চের পারফরম্যান্স তুলনা করুন।'
+            },
+            {
+              icon: ShieldCheck,
+              color: 'text-indigo-400',
+              title: 'Role-Based Security & Anti-Leakage Controls',
+              titleBn: 'কর্মচারী নিরাপত্তা ও ক্যাশ চুরির ঝুঁকি বন্ধ',
+              desc: 'Keep wholesale buying costs private. Cashiers can ring up bills quickly while cash drawer float limits prevent unrecorded till removals.',
+              descBn: 'ক্যাশিয়াররা নির্ভুল বিল করতে পারবে কিন্তু পণ্যের লাভ বা ক্রয়মূল্য দেখতে পারবে না। শিফটভিত্তিক ক্যাশ অডিটে টাকার গড়মিল বন্ধ থাকে।'
+            }
+          ].map((item, idx) => {
+            const Icon = item.icon;
+            return (
+              <div key={idx} className="p-7 rounded-3xl bg-[#14141a] border border-white/10 hover:border-amber-400/40 transition-all flex flex-col justify-between">
+                <div>
+                  <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-5">
+                    <Icon className={`w-6 h-6 ${item.color}`} />
+                  </div>
+                  <h3 className="text-lg font-black text-white mb-2">{isBn ? item.titleBn : item.title}</h3>
+                  <p className="text-slate-400 text-xs sm:text-sm leading-relaxed">{isBn ? item.descBn : item.desc}</p>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </section>
 
@@ -2164,62 +2565,367 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) =>
         </div>
       </section>
 
-      {/* 9. FEATURE COMPARISON MATRIX */}
+      {/* 9. AUTHORITATIVE COMPARISON MATRIX (REAL CONFIGURATION & ENTITLEMENTS) */}
       <section id="compare" className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
+        <div className="text-center max-w-3xl mx-auto mb-12 space-y-4">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-cyan-400/10 border border-cyan-400/25 text-cyan-300 text-xs font-bold uppercase tracking-widest">
+            <Scale className="w-3.5 h-3.5 text-cyan-400" />
+            <span>{isBn ? 'সঠিক ডাটাভিত্তিক প্যাকেজ তুলনা' : 'Authoritative Package Matrix'}</span>
+          </div>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white">
-            {isBn ? 'অন্যান্য সিস্টেমের সাথে মিলিয়ে দেখুন।' : 'Check it against what you use today.'}
+            {isBn ? 'আপনার ব্যবসার জন্য কোন প্যাকেজটি উপযুক্ত?' : 'Compare Bizora Packages & Capabilities.'}
           </h2>
           <p className="text-base sm:text-lg text-slate-400 font-medium">
             {isBn
-              ? 'খাতা-কলম, সাধারণ রসিদ প্রিন্টার বা জটিল এন্টারপ্রাইজ সিস্টেমের সাথে Bizora-র সরাসরি তুলনা।'
-              : 'Compare Bizora side-by-side with spreadsheets, basic POS, and heavyweight legacy ERPs.'}
+              ? 'বাস্তব ডাটাবেস সীমা ও মডিউল পারমিশন অনুযায়ী সকল Bizora প্যাকেজের স্পষ্ট তুলনা।'
+              : 'Direct side-by-side comparison of verified resource limits and operational module entitlements.'}
           </p>
+
+          {/* View Mode Switcher: Bizora Plans vs Traditional Systems */}
+          <div className="pt-2 flex items-center justify-center">
+            <div className="inline-flex items-center p-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
+              <button
+                type="button"
+                onClick={() => setCompareMode('plans')}
+                className={`px-5 py-2 rounded-full text-xs sm:text-sm font-extrabold transition-all cursor-pointer ${
+                  compareMode === 'plans'
+                    ? 'bg-amber-400 text-black shadow-lg shadow-amber-400/25 scale-[1.02]'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                {isBn ? 'সব Bizora প্যাকেজ তুলনা' : 'Compare Bizora Plans'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setCompareMode('traditional')}
+                className={`px-5 py-2 rounded-full text-xs sm:text-sm font-extrabold transition-all cursor-pointer ${
+                  compareMode === 'traditional'
+                    ? 'bg-amber-400 text-black shadow-lg shadow-amber-400/25 scale-[1.02]'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                {isBn ? 'বনাম প্রচলিত খাতা ও বেসিক POS' : 'vs Traditional Systems'}
+              </button>
+            </div>
+          </div>
         </div>
 
-        <div className="overflow-x-auto bg-[#141418] border border-white/10 rounded-2xl shadow-2xl">
-          <table className="w-full text-left border-collapse text-sm min-w-[700px]">
-            <thead>
-              <tr className="border-b border-white/10">
-                <th className="p-5 font-black text-white bg-white/5 w-2/5">{isBn ? 'ফিচার ও সক্ষমতা' : 'Capability'}</th>
-                <th className="p-5 font-black text-black bg-amber-400 text-center w-1/5">Bizora</th>
-                <th className="p-5 font-semibold text-slate-400 bg-white/5 text-center w-1/5">{isBn ? 'খাতা ও এক্সেল' : 'Spreadsheets'}</th>
-                <th className="p-5 font-semibold text-slate-400 bg-white/5 text-center w-1/5">{isBn ? 'সাধারণ POS' : 'Basic POS'}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {[
-                { title: 'Works 100% offline & syncs to cloud', titleBn: 'অফলাইনে কাজ ও স্বয়ংক্রিয় সিঙ্ক', biz: true, sp: false, pos: false },
-                { title: 'FEFO oldest-expiry selling algorithm', titleBn: 'আগে মেয়াদ শেষ হওয়া ব্যাচ আগে বিক্রি (FEFO)', biz: true, sp: false, pos: false },
-                { title: 'IMEI & Serial tracking from PO to sale', titleBn: 'ক্রয় থেকে বিক্রি পর্যন্ত সিরিয়াল ট্র্যাকিং', biz: true, sp: false, pos: false },
-                { title: 'Automated double-entry journal posting', titleBn: 'প্রতিটি বিক্রিতে অটোমেটিক হিসাব জার্নাল', biz: true, sp: false, pos: false },
-                { title: 'Net VAT calculation net of returns', titleBn: 'রিটার্ন বাদ দিয়ে সঠিক ভ্যাট রিপোর্ট', biz: true, sp: false, pos: true },
-                { title: 'Credit sale instalment schedules', titleBn: 'বাকিতে বিক্রির কিস্তি ও এসএমএস রিমাইন্ডার', biz: true, sp: false, pos: false },
-                { title: 'Online storefront on the same inventory', titleBn: 'একই স্টকে অনলাইন শপ ও রিয়েলটাইম সিঙ্ক', biz: true, sp: false, pos: false },
-                { title: 'Direct courier booking (Pathao/Steadfast)', titleBn: 'সরাসরি কুরিয়ার বুকিং ও ট্র্যাকিং', biz: true, sp: false, pos: false },
-                { title: 'Multi-branch stores with stock transfers', titleBn: 'একাধিক শাখা ও ব্রাঞ্চ স্টক ট্রান্সফার', biz: true, sp: false, pos: false },
-                { title: 'Bilingual English & Bengali toggle', titleBn: 'বাংলা ও ইংরেজি সম্পূর্ণ পরিবর্তনযোগ্য', biz: true, sp: false, pos: false },
-              ].map((row, idx) => (
-                <tr key={idx} className="hover:bg-white/[0.02] transition-colors">
-                  <td className="p-4 font-semibold text-slate-200">{isBn ? row.titleBn : row.title}</td>
-                  <td className="p-4 text-center bg-amber-400/10 font-bold text-amber-400">
-                    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-500 text-white text-xs">✓</span>
-                  </td>
-                  <td className="p-4 text-center text-slate-500">
-                    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-white/10 text-slate-400 text-xs">✕</span>
-                  </td>
-                  <td className="p-4 text-center text-slate-500">
-                    {row.pos ? (
-                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-400/20 text-amber-400 text-xs font-bold">~</span>
-                    ) : (
-                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-white/10 text-slate-400 text-xs">✕</span>
-                    )}
+        {compareMode === 'plans' ? (
+          /* REAL DYNAMIC PLAN-TO-PLAN MATRIX */
+          <div className="overflow-x-auto bg-[#141418] border border-white/10 rounded-3xl shadow-2xl">
+            <table className="w-full text-left border-collapse text-xs sm:text-sm min-w-[850px]">
+              {/* Header with Plan Names, Prices, and Action Buttons */}
+              <thead>
+                <tr className="border-b border-white/15 bg-white/[0.02]">
+                  <th className="p-5 font-black text-white w-1/4 align-bottom">
+                    <span className="text-base font-black text-slate-200 block">
+                      {isBn ? 'প্যাকেজের বৈশিষ্ট্য ও সীমা' : 'Capability / Feature'}
+                    </span>
+                    <span className="text-[11px] font-normal text-slate-400 block mt-0.5">
+                      {isBn ? 'লাইভ ডাটাবেস কনফিগারেশন' : 'Live Platform Enforced'}
+                    </span>
+                  </th>
+                  {plans.map((p) => {
+                    const monthlyPrice = Number(p.monthlyPrice ?? p.price) || 0;
+                    const yearlyPrice = Number(p.yearlyPrice) || (monthlyPrice > 0 ? monthlyPrice * 10 : 0);
+                    const isFree = monthlyPrice === 0 && yearlyPrice === 0;
+                    const priceToShow = isFree ? 0 : billingCycle === 'yearly' && yearlyPrice > 0 ? yearlyPrice : monthlyPrice;
+                    const isPopular = Boolean(p.isPopular);
+
+                    return (
+                      <th
+                        key={p.id || p.name}
+                        className={`p-5 text-center align-top transition-colors ${
+                          isPopular ? 'bg-amber-400/10 border-x border-amber-400/30' : ''
+                        }`}
+                      >
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <span className="font-black text-base text-white tracking-tight">{p.name}</span>
+                            {isPopular && (
+                              <span className="px-2 py-0.5 rounded-full bg-amber-400 text-black font-black text-[9px] uppercase tracking-wider">
+                                Popular
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xl sm:text-2xl font-black text-amber-400">
+                            {isFree ? (
+                              <span>{isBn ? 'ফ্রি' : 'Free'}</span>
+                            ) : (
+                              <span>৳ {priceToShow.toLocaleString()}</span>
+                            )}
+                            <span className="text-[10px] font-semibold text-slate-400 block mt-0.5">
+                              {isFree
+                                ? (p.trialDays ? `${p.trialDays} ${isBn ? 'দিনের ট্রায়াল' : 'Days Free'}` : 'Forever')
+                                : billingCycle === 'yearly'
+                                ? (isBn ? '/ বছর' : '/ year')
+                                : (isBn ? '/ মাস' : '/ month')}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(e) => handlePortalClick('shop', e, { plan: p.id, billing: billingCycle })}
+                            className={`w-full py-2 px-3 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+                              isPopular
+                                ? 'bg-amber-400 text-black hover:bg-amber-300 shadow-md shadow-amber-400/20'
+                                : 'bg-white/10 text-white hover:bg-white hover:text-black border border-white/10'
+                            }`}
+                          >
+                            {isFree ? (isBn ? 'ফ্রি শুরু করুন' : 'Start Trial') : (isBn ? 'প্যাকেজ নিন' : 'Choose Plan')}
+                          </button>
+                        </div>
+                      </th>
+                    );
+                  })}
+                </tr>
+              </thead>
+
+              <tbody className="divide-y divide-white/5">
+                {/* 1. RESOURCE & HARD LIMITS SECTION */}
+                <tr className="bg-white/[0.04]">
+                  <td colSpan={plans.length + 1} className="py-3 px-5 font-black text-[11px] uppercase tracking-wider text-amber-400">
+                    {isBn ? '১. রিসোর্স ও ক্যাপাসিটি সীমা' : '1. Resource & Capacity Limits'}
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+
+                {[
+                  { label: 'Store Branches', labelBn: 'দোকান / শাখা', prop: 'limitStores', unit: isBn ? 'টি' : '' },
+                  { label: 'User Logins', labelBn: 'ইউজার লগইন', prop: 'limitUsers', unit: isBn ? 'জন' : '' },
+                  { label: 'Staff / Employees', labelBn: 'স্টাফ / কর্মচারী', prop: 'limitEmployees', unit: isBn ? 'জন' : '' },
+                  { label: 'Product Catalog Items', labelBn: 'পণ্য ক্যাটালগ লিমিট', prop: 'limitProducts', unit: isBn ? 'টি' : '' },
+                  { label: 'Monthly Invoices', labelBn: 'মাসিক ইনভয়েস', prop: 'limitInvoices', unit: isBn ? 'টি' : '' },
+                  { label: 'Warehouses', labelBn: 'ওয়্যারহাউস / গুদাম', prop: 'limitWarehouses', unit: isBn ? 'টি' : '' },
+                  { label: 'Cloud Document Storage', labelBn: 'ক্লাউড স্টোরেজ', prop: 'limitStorageMb', unit: 'MB' },
+                ].map((row, rIdx) => (
+                  <tr key={rIdx} className="hover:bg-white/[0.02] transition-colors">
+                    <td className="p-4 font-semibold text-slate-200">{isBn ? row.labelBn : row.label}</td>
+                    {plans.map((p) => (
+                      <td
+                        key={p.id || p.name}
+                        className={`p-4 text-center font-bold text-slate-100 ${
+                          p.isPopular ? 'bg-amber-400/[0.03] border-x border-amber-400/20 font-black text-amber-300' : ''
+                        }`}
+                      >
+                        {formatPlanLimit(p, row.prop, isBn, row.unit)}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+
+                {/* 2. POINT OF SALE & BILLING */}
+                <tr className="bg-white/[0.04]">
+                  <td colSpan={plans.length + 1} className="py-3 px-5 font-black text-[11px] uppercase tracking-wider text-amber-400">
+                    {isBn ? '২. পয়েন্ট অব সেল (POS) ও বিলিং' : '2. Point of Sale & Billing Capabilities'}
+                  </td>
+                </tr>
+
+                {[
+                  { label: 'High-Speed Barcode Till', labelBn: 'হাই-স্পিড বারকোড স্ক্যানার টিল', key: 'pos.terminal', kw: ['pos', 'terminal'] },
+                  { label: 'Quick Sale Touch Keypad', labelBn: 'কুইক সেল টাচ কীপ্যাড টিল', key: 'pos.quick_sale', kw: ['quick'] },
+                  { label: 'Split Tender (Cash, Card, bKash/Nagad)', labelBn: 'স্প্লিট পেমেন্ট (ক্যাশ, কার্ড, বিকাশ/নগদ)', key: 'pos.terminal', kw: ['split', 'pos'] },
+                  { label: 'Thermal Receipt Printing (58/80mm)', labelBn: 'থার্মাল রসিদ প্রিন্টিং (৫৮/৮০ মিমি)', key: 'pos.terminal', kw: ['receipt', 'print'] },
+                  { label: '100% Offline POS & Auto Cloud Sync', labelBn: '১০০% অফলাইন বিক্রি ও অটো সিঙ্ক', key: 'pos.terminal', kw: ['offline'] },
+                  { label: 'Sales Returns & Store Credit Vouchers', labelBn: 'সেলস রিটার্ন ও স্টোর ক্রেডিট', key: 'pos.returns', kw: ['return'] },
+                  { label: 'Kitchen Display Screen (KDS)', labelBn: 'কিচেন ডিসপ্লে স্ক্রিন (KDS)', key: 'pos.kitchen_display', kw: ['kitchen', 'kds'] },
+                ].map((row, rIdx) => (
+                  <tr key={rIdx} className="hover:bg-white/[0.02] transition-colors">
+                    <td className="p-4 font-semibold text-slate-200">{isBn ? row.labelBn : row.label}</td>
+                    {plans.map((p) => {
+                      const hasFeat = checkPlanFeature(p, row.key, row.kw);
+                      return (
+                        <td
+                          key={p.id || p.name}
+                          className={`p-4 text-center ${
+                            p.isPopular ? 'bg-amber-400/[0.03] border-x border-amber-400/20' : ''
+                          }`}
+                        >
+                          {hasFeat ? (
+                            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-xs font-black">
+                              ✓
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-white/5 text-slate-600 text-xs">
+                              ✕
+                            </span>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+
+                {/* 3. INVENTORY, BATCHES & EXPIRE */}
+                <tr className="bg-white/[0.04]">
+                  <td colSpan={plans.length + 1} className="py-3 px-5 font-black text-[11px] uppercase tracking-wider text-amber-400">
+                    {isBn ? '৩. ইনভেন্টরি, ব্যাচ ও ট্র্যাকিং' : '3. Inventory, Batches & Tracking'}
+                  </td>
+                </tr>
+
+                {[
+                  { label: 'Barcode Label Designer & Printing', labelBn: 'বারকোড লেবেল ডিজাইন ও প্রিন্টিং', key: 'inventory.barcode_labels', kw: ['barcode', 'label'] },
+                  { label: 'FEFO Batch & Expiry Date Algorithm', labelBn: 'এফইএফও ব্যাচ ও মেয়াদোত্তীর্ণ ট্র্যাকিং', key: 'inventory.batch_tracking', kw: ['batch', 'expiry', 'fefo'] },
+                  { label: 'Serial & IMEI Lifecycle Tracking', labelBn: 'সিরিয়াল ও আইএমইআই (IMEI) ট্র্যাকিং', key: 'inventory.serial_tracking', kw: ['serial', 'imei'] },
+                  { label: 'Supplier Purchase Orders & Delivery', labelBn: 'সাপ্লায়ার পারচেজ অর্ডার ও রিসিভিং', key: 'purchases.orders', kw: ['purchase', 'order'] },
+                  { label: 'Inter-Branch Stock Transfers & Gate Pass', labelBn: 'ব্রাঞ্চ স্টক ট্রান্সফার ও গেটপাস', key: 'inventory.multi_warehouse', kw: ['warehouse', 'transfer', 'branch'] },
+                  { label: 'Light Manufacturing & Bill of Materials', labelBn: 'প্রোডাকশন ও বিল অব ম্যাটেরিয়ালস (BOM)', key: 'manufacturing.bom', kw: ['bom', 'manufacturing'] },
+                ].map((row, rIdx) => (
+                  <tr key={rIdx} className="hover:bg-white/[0.02] transition-colors">
+                    <td className="p-4 font-semibold text-slate-200">{isBn ? row.labelBn : row.label}</td>
+                    {plans.map((p) => {
+                      const hasFeat = checkPlanFeature(p, row.key, row.kw);
+                      return (
+                        <td
+                          key={p.id || p.name}
+                          className={`p-4 text-center ${
+                            p.isPopular ? 'bg-amber-400/[0.03] border-x border-amber-400/20' : ''
+                          }`}
+                        >
+                          {hasFeat ? (
+                            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-xs font-black">
+                              ✓
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-white/5 text-slate-600 text-xs">
+                              ✕
+                            </span>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+
+                {/* 4. ACCOUNTS & COMPLIANCE */}
+                <tr className="bg-white/[0.04]">
+                  <td colSpan={plans.length + 1} className="py-3 px-5 font-black text-[11px] uppercase tracking-wider text-amber-400">
+                    {isBn ? '৪. হিসাব, ক্যাশবক্স ও ট্যাক্স' : '4. Accounting & Compliance'}
+                  </td>
+                </tr>
+
+                {[
+                  { label: 'Shift Cashbox Float Reconciliation', labelBn: 'শিফট ক্যাশবক্স ফ্লোট ব্যালেন্সিং', key: 'finance.cashbox', kw: ['cashbox'] },
+                  { label: 'Expense Vouchers & Petty Cash', labelBn: 'খরচের ভাউচার ও দৈনিক ক্যাশ', key: 'finance.expenses', kw: ['expense'] },
+                  { label: 'Double-Entry General Journal', labelBn: 'অটোমেটিক ডাবল-এন্ট্রি জার্নাল', key: 'finance.journal', kw: ['journal', 'accounting'] },
+                  { label: 'Customer Due (Baki) & SMS Reminders', labelBn: 'কাস্টমার বকেয়া খাতা ও এসএমএস রিমাইন্ডার', key: 'finance.cashbox', kw: ['due', 'ledger'] },
+                  { label: 'Net VAT 9.1 Return Calculation', labelBn: 'এনবিআর নেট ভ্যাট ৯.১ রিটার্ন হিসাব', key: 'reports.tax_vat', kw: ['vat', 'tax'] },
+                  { label: 'Audit-Grade Profit & Loss Report', labelBn: 'অডিট-গ্রেড লাভ-ক্ষতি ও ব্যালেন্স শিট', key: 'reports.basic_sales', kw: ['profit', 'report'] },
+                ].map((row, rIdx) => (
+                  <tr key={rIdx} className="hover:bg-white/[0.02] transition-colors">
+                    <td className="p-4 font-semibold text-slate-200">{isBn ? row.labelBn : row.label}</td>
+                    {plans.map((p) => {
+                      const hasFeat = checkPlanFeature(p, row.key, row.kw);
+                      return (
+                        <td
+                          key={p.id || p.name}
+                          className={`p-4 text-center ${
+                            p.isPopular ? 'bg-amber-400/[0.03] border-x border-amber-400/20' : ''
+                          }`}
+                        >
+                          {hasFeat ? (
+                            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-xs font-black">
+                              ✓
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-white/5 text-slate-600 text-xs">
+                              ✕
+                            </span>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+
+                {/* 5. OMNICHANNEL, AI & ENTERPRISE */}
+                <tr className="bg-white/[0.04]">
+                  <td colSpan={plans.length + 1} className="py-3 px-5 font-black text-[11px] uppercase tracking-wider text-amber-400">
+                    {isBn ? '৫. অনলাইন স্টোর, AI ও এন্টারপ্রাইজ' : '5. Omnichannel, AI & Enterprise'}
+                  </td>
+                </tr>
+
+                {[
+                  { label: 'Online Storefront (5 Themes)', labelBn: 'অনলাইন ই-কমার্স স্টোর (৫টি থিম)', key: 'ecommerce.storefront', kw: ['ecommerce', 'storefront'] },
+                  { label: 'Pathao & Steadfast Courier Booking', labelBn: 'সরাসরি পাঠাও ও স্টিডফাস্ট কুরিয়ার বুকিং', key: 'ecommerce.courier_integration', kw: ['courier'] },
+                  { label: 'Custom Store Domain Connection', labelBn: 'কাস্টম নিজস্ব স্টোর ডোমেন', key: 'ecommerce.custom_domain', kw: ['domain'] },
+                  { label: 'Bizora AI ERP Assistant (EN & BN)', labelBn: 'বিজনেস এআই সহকারী (বাংলা ও ইংরেজি)', key: 'ai.assistant', kw: ['ai', 'assistant'] },
+                  { label: 'Tamper-Evident Security Audit Logs', labelBn: 'ক্রিপ্টোগ্রাফিক সিকিউরিটি অডিট লগ', key: 'security.audit_logs', kw: ['audit', 'security'] },
+                  { label: 'Public Developer REST & Webhook APIs', labelBn: 'ডেভেলপার রেস্ট ও ওয়েবহুক এপিআই', key: 'api.access', kw: ['api'] },
+                ].map((row, rIdx) => (
+                  <tr key={rIdx} className="hover:bg-white/[0.02] transition-colors">
+                    <td className="p-4 font-semibold text-slate-200">{isBn ? row.labelBn : row.label}</td>
+                    {plans.map((p) => {
+                      const hasFeat = checkPlanFeature(p, row.key, row.kw);
+                      return (
+                        <td
+                          key={p.id || p.name}
+                          className={`p-4 text-center ${
+                            p.isPopular ? 'bg-amber-400/[0.03] border-x border-amber-400/20' : ''
+                          }`}
+                        >
+                          {hasFeat ? (
+                            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-xs font-black">
+                              ✓
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-white/5 text-slate-600 text-xs">
+                              ✕
+                            </span>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          /* TRADITIONAL SYSTEMS SIDE-BY-SIDE COMPARISON */
+          <div className="overflow-x-auto bg-[#141418] border border-white/10 rounded-2xl shadow-2xl">
+            <table className="w-full text-left border-collapse text-sm min-w-[700px]">
+              <thead>
+                <tr className="border-b border-white/10">
+                  <th className="p-5 font-black text-white bg-white/5 w-2/5">{isBn ? 'ফিচার ও সক্ষমতা' : 'Capability'}</th>
+                  <th className="p-5 font-black text-black bg-amber-400 text-center w-1/5">Bizora Cloud ERP</th>
+                  <th className="p-5 font-semibold text-slate-400 bg-white/5 text-center w-1/5">{isBn ? 'খাতা ও এক্সেল' : 'Spreadsheets'}</th>
+                  <th className="p-5 font-semibold text-slate-400 bg-white/5 text-center w-1/5">{isBn ? 'সাধারণ POS' : 'Basic POS Registers'}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {[
+                  { title: 'Works 100% offline & auto-syncs to cloud', titleBn: 'অফলাইনে কাজ ও স্বয়ংক্রিয় সিঙ্ক', biz: true, sp: false, pos: false },
+                  { title: 'FEFO oldest-expiry selling algorithm', titleBn: 'আগে মেয়াদ শেষ হওয়া ব্যাচ আগে বিক্রি (FEFO)', biz: true, sp: false, pos: false },
+                  { title: 'IMEI & Serial tracking from PO to sale', titleBn: 'ক্রয় থেকে বিক্রি পর্যন্ত সিরিয়াল ট্র্যাকিং', biz: true, sp: false, pos: false },
+                  { title: 'Automated double-entry journal posting', titleBn: 'প্রতিটি বিক্রিতে অটোমেটিক হিসাব জার্নাল', biz: true, sp: false, pos: false },
+                  { title: 'Net VAT calculation net of returns', titleBn: 'রিটার্ন বাদ দিয়ে সঠিক ভ্যাট রিপোর্ট', biz: true, sp: false, pos: true },
+                  { title: 'Credit sale instalment schedules & SMS', titleBn: 'বাকিতে বিক্রির কিস্তি ও এসএমএস রিমাইন্ডার', biz: true, sp: false, pos: false },
+                  { title: 'Online storefront on the same inventory', titleBn: 'একই স্টকে অনলাইন শপ ও রিয়েলটাইম সিঙ্ক', biz: true, sp: false, pos: false },
+                  { title: 'Direct courier booking (Pathao/Steadfast)', titleBn: 'সরাসরি কুরিয়ার বুকিং ও ট্র্যাকিং', biz: true, sp: false, pos: false },
+                  { title: 'Multi-branch stores with stock transfers', titleBn: 'একাধিক শাখা ও ব্রাঞ্চ স্টক ট্রান্সফার', biz: true, sp: false, pos: false },
+                  { title: 'Bilingual English & Bengali toggle', titleBn: 'বাংলা ও ইংরেজি সম্পূর্ণ পরিবর্তনযোগ্য', biz: true, sp: false, pos: false },
+                ].map((row, idx) => (
+                  <tr key={idx} className="hover:bg-white/[0.02] transition-colors">
+                    <td className="p-4 font-semibold text-slate-200">{isBn ? row.titleBn : row.title}</td>
+                    <td className="p-4 text-center bg-amber-400/10 font-bold text-amber-400">
+                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-500 text-white text-xs">✓</span>
+                    </td>
+                    <td className="p-4 text-center text-slate-500">
+                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-white/10 text-slate-400 text-xs">✕</span>
+                    </td>
+                    <td className="p-4 text-center text-slate-500">
+                      {row.pos ? (
+                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-400/20 text-amber-400 text-xs font-bold">~</span>
+                      ) : (
+                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-white/10 text-slate-400 text-xs">✕</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
 
       {/* 10. DYNAMIC INTERACTIVE PRICING PLANS (HUMAN LABELS + MODAL VIEWER) */}
@@ -2595,65 +3301,220 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) =>
         </div>
       </section>
 
-      {/* 11. ACCORDION FAQ SECTION */}
+      {/* 11. ACCORDION FAQ SECTION (ALL 10 VERIFIED QUESTIONS) */}
       <section id="faq" className="py-24 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16 space-y-3">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-400/10 border border-amber-400/20 text-amber-300 text-xs font-bold uppercase tracking-widest">
+            <HelpCircle className="w-3.5 h-3.5 text-amber-400" />
+            <span>{isBn ? 'সচরাচর জিজ্ঞাসা' : 'Verified Knowledge Base'}</span>
+          </div>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white">
             {isBn ? 'সাধারণ জিজ্ঞাসা (FAQ)' : 'Frequently Asked Questions'}
           </h2>
           <p className="text-base sm:text-lg text-slate-400 font-medium">
-            {isBn ? 'দোকান মালিকদের সাধারণ প্রশ্ন ও সমাধান।' : 'Answers to key operational questions from business owners.'}
+            {isBn ? 'দোকান ও ব্যবসা পরিচালনার বাস্তব প্রশ্ন ও নির্ভরযোগ্য উত্তর।' : 'Straightforward answers to key technical and operational questions.'}
           </p>
         </div>
 
         <div className="space-y-4 text-left">
           {[
             {
-              q: 'Does Bizora work without internet?',
-              qBn: 'ইন্টারনেট সংযোগ না থাকলে কি Bizora কাজ করবে?',
-              a: 'Yes. All sales, barcode scanning, and receipts run seamlessly offline. Once connectivity is restored, all offline transactions automatically sync to the cloud database with conflict resolution.',
-              aBn: 'হ্যাঁ। ইন্টারনেট বন্ধ থাকলেও বিক্রি ও বিলিং স্বাভাবিকভাবে চলবে। সংযোগ ফিরে আসার সাথে সাথে সমস্ত ডাটা ক্লাউডে নিরাপদভাবে সিঙ্ক হয়ে যাবে।'
+              q: '1. What is Bizora ERP?',
+              qBn: '১. Bizora ERP কী এবং এটি কাদের জন্য?',
+              a: 'Bizora is a comprehensive multi-tenant cloud ERP platform designed specifically for modern retail, supermarkets, pharmacies, wholesale distribution, and light manufacturing. It integrates high-speed barcode checkout, FEFO batch and expiry inventory, double-entry financial accounting, Net VAT 9.1 compliance, multi-branch store control, and live e-commerce into a single connected platform.',
+              aBn: 'Bizora একটি সমন্বিত ক্লাউড ইআরপি প্ল্যাটফর্ম যা সাধারণ রিটেল, সুপারশপ, ফার্মেসি, পাইকারি ডিস্ট্রিবিউশন এবং ম্যানুফ্যাকচারিং ব্যবসার জন্য তৈরি। এটি হাই-স্পিড বারকোড বিলিং, এফইএফও ব্যাচ ও মেয়াদ ট্র্যাকিং, স্বয়ংক্রিয় ডাবল-এন্ট্রি হিসাব, ভ্যাট ৯.১ রিটার্ন, ব্রাঞ্চ ম্যানেজমেন্ট এবং অনলাইন শপকে একই প্ল্যাটফর্মে সংযুক্ত করে।'
             },
             {
-              q: 'Can my staff use it without prior technical training?',
-              qBn: 'স্টাফ কি কোনো প্রশিক্ষণ ছাড়াই চালাতে পারবে?',
-              a: 'Yes. Bizora provides pre-configured role templates (Cashier, Stock Manager, Manager). Each person only sees what they are authorized to do, keeping screens intuitive and uncluttered.',
-              aBn: 'হ্যাঁ। ক্যাশিয়ার, স্টক ম্যানেজার বা ম্যানেজারের মতো তৈরি রোল বেছে নিন। প্রত্যেকে শুধু তাদের কাজের অংশ দেখতে পাবে।'
+              q: '2. Which operational modules are available in the platform?',
+              qBn: '২. প্ল্যাটফর্মে কোন কোন মডিউল উপলব্ধ আছে?',
+              a: 'Bizora provides 8 canonical ERP modules: (1) Point of Sale & Quick Till, (2) Purchasing, Batches, Serials & FEFO Expiry, (3) Accounts, Cashbox Shifts & Double-Entry Journal, (4) Tax Compliance & Net VAT 9.1 Returns, (5) Multi-Store, Branches & Warehouses, (6) Staff Hierarchy & Granular RBAC Permissions, (7) Online Storefront & Courier Consignments, and (8) Natural Language Business Assistant with Tamper-Evident Security Audit Logs.',
+              aBn: 'Bizora-তে ৮টি মূল মডিউল রয়েছে: (১) পিওএস ও কুইক সেল টিল, (২) ক্রয়, ব্যাচ, সিরিয়াল ও এফইএফও মেয়াদ, (৩) হিসাব, ক্যাশবক্স ও ডাবল-এন্ট্রি জার্নাল, (৪) কর ও নেট ভ্যাট ৯.১ রিটার্ন, (৫) একাধিক শাখা ও ওয়্যারহাউস ট্রান্সফার, (৬) স্টাফ রোল ও পারমিশন কন্ট্রোল, (৭) অনলাইন স্টোর ও কুরিয়ার পার্সেল বুকিং, এবং (৮) বিজনেস এআই সহকারী ও অডিট লগ।'
             },
             {
-              q: 'Can I manage multiple branch stores under one account?',
-              qBn: 'আমি কি একাধিক শাখা বা দোকান পরিচালনা করতে পারব?',
-              a: 'Yes. You can manage multiple branch stores under one central owner account, perform stock transfers between locations, and review unified financial reports.',
-              aBn: 'হ্যাঁ। এক লগইনেই সব ব্রাঞ্চ পরিচালনা করা যায়, এক দোকান থেকে অন্য দোকানে স্টক ট্রান্সফার করা যায় এবং একত্রিত রিপোর্ট দেখা যায়।'
+              q: '3. How do I create an account and get started?',
+              qBn: '৩. কীভাবে অ্যাকাউন্ট খুলব এবং শুরু করব?',
+              a: 'You can start a 14-day free trial in under 2 minutes with zero credit card required. Simply click "Start Free Trial", register with your email or phone, set up your shop profile and VAT number, and import your product catalog via Excel/CSV. Our onboarding team is also available to assist with receipt format and barcode printer pairing.',
+              aBn: 'কোনো ক্রেডিট কার্ড ছাড়াই ২ মিনিটে ১৪ দিনের ফ্রি ট্রায়াল শুরু করতে পারেন। "ফ্রি ট্রায়াল" বাটনে ক্লিক করে ইমেইল বা ফোন দিয়ে রেজিস্টার করুন, দোকানের নাম ও ভ্যাট কনফিগার করুন এবং এক্সেল/সিএসভি দিয়ে পণ্য আপলোড করে সাথে সাথে কাউন্টারে বিক্রি শুরু করুন।'
             },
             {
-              q: 'How does VAT calculation handle customer returns?',
-              qBn: 'কাস্টমার পণ্য রিটার্ন করলে ভ্যাট কীভাবে সমন্বয় হয়?',
-              a: 'Bizora automatically nets output and input VAT against partial and full returns, ensuring you only report and pay legitimate tax obligations.',
-              aBn: 'Bizora স্বয়ংক্রিয়ভাবে রিটার্ন করা পণ্যের ভ্যাট বাদ দিয়ে মোট প্রদেয় ট্যাক্স হিসাব করে।'
+              q: '4. How are packages and subscription pricing determined?',
+              qBn: '৪. প্যাকেজ ও সাবস্ক্রিপশন মূল্য কীভাবে নির্ধারিত হয়?',
+              a: 'Bizora pricing is fully transparent with no hidden onboarding fees: Trial (14-day full evaluation), Basic (৳999/month for single retail stores), Pro (৳2,499/month for growing stores requiring batch FEFO, online storefront, and courier shipping), and Enterprise (৳4,999/month for multi-branch chains, manufacturing BOM, and API access). Annual billing includes substantial multi-month discounts.',
+              aBn: 'Bizora-র মূল্য সম্পূর্ণ স্বচ্ছ: ট্রায়াল (১৪ দিন ফ্রি), বেসিক (৳৯৯৯/মাস একক রিটেল দোকানের জন্য), প্রো (৳২,৪৯৯/মাস ব্যাচ মেয়াদ, অনলাইন শপ ও কুরিয়ার বুকিং সহ), এবং এন্টারপ্রাইজ (৳৪,৯৯৯/মাস একাধিক শাখা, কারখানা BOM ও এপিআই অ্যাক্সেস সহ)। বাৎসরিক পেমেন্টে বড় ছাড় পাওয়া যায়।'
             },
             {
-              q: 'How secure is my business data?',
-              qBn: 'আমার ব্যবসার ডাটা কতটা নিরাপদ?',
-              a: 'Your data is protected with 2FA, argon2id/bcrypt password hashing, automated cloud backups, audit logging, and strict multi-tenant isolation.',
-              aBn: 'আপনার সমস্ত তথ্য টু-ফ্যাক্টর অথেন্টিকেশন, এনক্রিপ্টেড ব্যাকআপ এবং সম্পূর্ণ বিচ্ছিন্ন ডাটাবেস সিকিউরিটির মাধ্যমে সুরক্ষিত।'
+              q: '5. Can I manage multiple branch stores and warehouses under one account?',
+              qBn: '৫. আমি কি এক অ্যাকাউন্টেই একাধিক ব্রাঞ্চ বা শাখা পরিচালনা করতে পারব?',
+              a: 'Yes. On Pro and Enterprise plans, you can manage multiple retail branch stores and central warehouses under a single owner login. You can transfer stock between locations using gate passes, set store-specific selling prices, and review unified financial statements as well as per-branch profitability.',
+              aBn: 'হ্যাঁ। প্রো এবং এন্টারপ্রাইজ প্ল্যানে এক লগইনেই একাধিক ব্রাঞ্চ দোকান এবং সেন্ট্রাল গুদাম পরিচালনা করা যায়। গেটপাস দিয়ে শাখাগুলোর মাঝে স্টক ট্রান্সফার করা যায় এবং সব ব্রাঞ্চের আলাদা ও সমন্বিত লাভ-ক্ষতি রিপোর্ট দেখা যায়।'
+            },
+            {
+              q: '6. How do customer dues, credit sales, and payment receipts work?',
+              qBn: '৬. কাস্টমার বাকি (Credit), কিস্তি এবং পেমেন্ট রসিদ কীভাবে কাজ করে?',
+              a: 'Bizora maintains a real-time customer receivable ledger (baki khata). You can accept split payments (cash, cards, mobile banking, and credit), generate instalment repayment schedules, send automated SMS balance reminders, issue store credit vouchers on returns, and print thermal 58mm/80mm receipts.',
+              aBn: 'Bizora প্রতিটি কাস্টমারের বকেয়া খাতা রিয়েল-টাইমে ট্র্যাক করে। স্প্লিট পেমেন্ট নেওয়া যায়, বাকির কিস্তি নির্ধারণ করা যায়, স্বয়ংক্রিয় এসএমএস পাঠানো যায় এবং পণ্যের আংশিক বা পূর্ণ রিটার্নে স্টোর ক্রেডিট ভাউচার ও রসিদ প্রিন্ট করা যায়।'
+            },
+            {
+              q: '7. How are employees and role-based permissions managed?',
+              qBn: '৭. স্টাফ এবং রোলভিত্তিক পারমিশন কীভাবে নিয়ন্ত্রিত হয়?',
+              a: 'Bizora provides preconfigured role templates: Shop Owner, Manager, Cashier, Stock Manager, and Accountant. Granular access controls hide purchase wholesale costs, supplier margins, and balance sheets from counter cashiers while enforcing shift opening/closing cash drawer float reconciliation.',
+              aBn: 'দোকান মালিক, ম্যানেজার, ক্যাশিয়ার, স্টক কিপার এবং অ্যাকাউন্ট্যান্টের জন্য তৈরি রোল রয়েছে। ক্যাশিয়াররা দ্রুত বিক্রি করতে পারলেও মালিকের আসল ক্রয়মূল্য বা মুনাফার মার্জিন দেখতে পারে না। প্রতিটি শিফটের শুরুতে ও শেষে ক্যাশবাক্স হিসাব মেলানো বাধ্যতামূলক।'
+            },
+            {
+              q: '8. How do data backup and offline point of sale work?',
+              qBn: '৮. অফলাইনে বিক্রি এবং ক্লাউড ব্যাকআপ কীভাবে কাজ করে?',
+              a: 'Bizora uses an offline-first IndexedDB architecture. If your store loses internet connection or WiFi drops, counter sales, barcode scanning, and thermal receipt printing continue without stopping. When connectivity returns, transactions automatically reconcile to the cloud database with conflict prevention and automated daily backups.',
+              aBn: 'Bizora সম্পূর্ণ অফলাইন-ফার্স্ট প্রযুক্তিতে তৈরি। ইন্টারনেট বা ওয়াইফাই সংযোগ বিচ্ছিন্ন হলেও ক্যাশ কাউন্টারে বিক্রি ও রসিদ প্রিন্টিং স্বাভাবিকভাবে চলবে। নেট কানেকশন ফিরে আসার সাথে সাথে ডাটা ক্লাউডে নিরাপদভাবে সিঙ্ক হয়ে যাবে।'
+            },
+            {
+              q: '9. How can I contact customer support and onboarding assistance?',
+              qBn: '৯. কাস্টমার সাপোর্ট ও সেটআপ সহায়তার জন্য কীভাবে যোগাযোগ করব?',
+              a: 'You can reach our engineering support team via email at support@bizora.app, through our in-app ticket desk, or by scheduling an onboarding session where our specialists assist with product catalog migration and thermal printer setup.',
+              aBn: 'আমাদের সাপোর্ট টিমের সাথে সরাসরি support@bizora.app ইমেইলে অথবা ড্যাশবোর্ডের টিকেট সিস্টেমের মাধ্যমে যোগাযোগ করতে পারেন। আমাদের বিশেষজ্ঞ দল আপনার ক্যাটালগ আপলোড এবং প্রিন্টার কনফিগারেশনে সহায়তা করবে।'
+            },
+            {
+              q: '10. How can I upgrade or manage my subscription plan?',
+              qBn: '১০. কীভাবে সাবস্ক্রিপশন প্ল্যান আপগ্রেড বা পরিবর্তন করব?',
+              a: 'You can upgrade, downgrade, or switch between monthly and annual billing cycles at any time from the Subscriptions section of your Shop Owner portal. Additional branch limits, user seats, and enterprise modules activate instantly upon subscription confirmation.',
+              aBn: 'দোকান মালিকের পোর্টালের সাবস্ক্রিপশন মেনু থেকে যেকোনো সময় প্যাকেজ পরিবর্তন বা বাৎসরিক বিলিংয়ে সুইচ করতে পারেন। আপগ্রেড নিশ্চিত করার সাথে সাথেই অতিরিক্ত ব্রাঞ্চ ও ফিচার স্বয়ংক্রিয়ভাবে কার্যকর হয়।'
             }
           ].map((item, idx) => (
-            <div key={idx} className="border border-white/10 rounded-2xl bg-[#141418] overflow-hidden shadow-xs">
+            <div key={idx} className="border border-white/10 rounded-2xl bg-[#141418] overflow-hidden shadow-xs hover:border-white/20 transition-colors">
               <button
+                type="button"
                 onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                className="w-full p-5 sm:p-6 text-left font-bold text-base sm:text-lg text-white flex justify-between items-center gap-4 hover:bg-white/[0.02] transition-colors cursor-pointer"
+                className="w-full p-5 sm:p-6 text-left font-bold text-sm sm:text-base text-white flex justify-between items-center gap-4 hover:bg-white/[0.02] transition-colors cursor-pointer"
               >
                 <span>{isBn ? item.qBn : item.q}</span>
-                <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform ${openFaq === idx ? 'rotate-180 text-amber-400' : ''}`} />
+                <ChevronDown className={`w-5 h-5 text-slate-400 shrink-0 transition-transform ${openFaq === idx ? 'rotate-180 text-amber-400' : ''}`} />
               </button>
               {openFaq === idx && (
-                <div className="px-5 pb-6 sm:px-6 text-slate-300 text-sm sm:text-base leading-relaxed border-t border-white/5 pt-3">
+                <div className="px-5 pb-6 sm:px-6 text-slate-300 text-xs sm:text-sm leading-relaxed border-t border-white/5 pt-3">
                   {isBn ? item.aBn : item.a}
                 </div>
               )}
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* 11B. CONTACT & ONBOARDING ASSISTANCE */}
+      <section id="contact" className="py-20 bg-[#0d0d12] text-white border-y border-white/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+            
+            <div className="lg:col-span-6 space-y-4 text-left">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-cyan-400/10 border border-cyan-400/20 text-cyan-300 text-xs font-bold uppercase tracking-widest">
+                <HeadphonesIcon className="w-3.5 h-3.5 text-cyan-400" />
+                <span>{isBn ? 'সাপোর্ট ও অনবোর্ডিং' : 'Merchant Support & Onboarding'}</span>
+              </div>
+              <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-white">
+                {isBn ? 'আমরা আপনার ব্যবসার পাশে আছি।' : 'Direct Support for Growing Businesses.'}
+              </h2>
+              <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
+                {isBn
+                  ? 'আপনার পুরোনো সফটওয়্যার বা এক্সেল খাতা থেকে Bizora-তে ডাটা মাইগ্রেশন করতে সহায়তা প্রয়োজন? আমাদের টেকনিক্যাল টিম আপনাকে সরাসরি সাহায্য করবে।'
+                  : 'Transitioning from paper notebooks or legacy spreadsheets? Our engineering specialists assist with bulk item catalog import, thermal receipt pairing, and cashier staff setup.'}
+              </p>
+              
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center gap-3 text-sm text-slate-200">
+                  <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-amber-400">
+                    <Mail className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-slate-400 text-xs block">{isBn ? 'ইমেইল সাপোর্ট' : 'Engineering Support'}</span>
+                    <a href="mailto:support@bizora.app" className="font-bold hover:text-amber-400 transition-colors">support@bizora.app</a>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 text-sm text-slate-200">
+                  <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-emerald-400">
+                    <Clock className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-slate-400 text-xs block">{isBn ? 'সাপোর্ট সময়' : 'Availability'}</span>
+                    <span className="font-bold">Saturday – Thursday · 9:00 AM – 8:00 PM</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="lg:col-span-6 bg-[#141419] border border-white/10 rounded-3xl p-6 sm:p-8 space-y-4 text-left shadow-2xl">
+              <h3 className="text-xl font-black text-white">
+                {isBn ? 'সরাসরি পোর্টাল লগইন' : 'Direct Portal Access'}
+              </h3>
+              <p className="text-xs text-slate-400">
+                {isBn ? 'আপনার ভূমিকা অনুযায়ী নির্দিষ্ট পোর্টালে প্রবেশ করুন:' : 'Access your authorized workspace based on your business role:'}
+              </p>
+
+              <div className="space-y-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={(e) => handlePortalClick('shop', e)}
+                  className="w-full p-4 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-amber-400/50 hover:bg-amber-400/5 transition-all flex items-center justify-between cursor-pointer group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      <Store className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="font-bold text-sm text-white group-hover:text-amber-400 transition-colors">
+                        {isBn ? 'শপ ওনার পোর্টাল' : 'Shop Owner Portal'}
+                      </div>
+                      <div className="text-[11px] text-slate-400">
+                        {isBn ? 'দোকান পরিচালনা, ইনভেন্টরি, হিসাব ও সেটিংস' : 'Manage stores, inventory, finance & branches'}
+                      </div>
+                    </div>
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-amber-400 group-hover:translate-x-1 transition-all" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={(e) => handlePortalClick('employee', e)}
+                  className="w-full p-4 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-blue-400/50 hover:bg-blue-400/5 transition-all flex items-center justify-between cursor-pointer group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                      <Users className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="font-bold text-sm text-white group-hover:text-blue-400 transition-colors">
+                        {isBn ? 'এমপ্লয়ী পোর্টাল' : 'Employee Portal'}
+                      </div>
+                      <div className="text-[11px] text-slate-400">
+                        {isBn ? 'ক্যাশিয়ার টিল, শিফট ব্যালেন্স ও অর্ডার' : 'POS sales till, shift drawer float & order lookup'}
+                      </div>
+                    </div>
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-blue-400 group-hover:translate-x-1 transition-all" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={(e) => handlePortalClick('customer', e)}
+                  className="w-full p-4 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-purple-400/50 hover:bg-purple-400/5 transition-all flex items-center justify-between cursor-pointer group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                      <ShoppingBag className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="font-bold text-sm text-white group-hover:text-purple-400 transition-colors">
+                        {isBn ? 'কাস্টমার পোর্টাল' : 'Customer Portal'}
+                      </div>
+                      <div className="text-[11px] text-slate-400">
+                        {isBn ? 'ক্রয় ইতিহাস, ডিজিটাল রসিদ ও ডেলিভারি ট্র্যাক' : 'View purchase history, receipts & courier tracking'}
+                      </div>
+                    </div>
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-purple-400 group-hover:translate-x-1 transition-all" />
+                </button>
+              </div>
+            </div>
+
+          </div>
         </div>
       </section>
 
@@ -2665,21 +3526,22 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) =>
           </h2>
           <p className="text-lg sm:text-xl font-medium text-slate-900 max-w-2xl mx-auto">
             {isBn
-              ? '১৪ দিনের ফ্রি ট্রায়াল শুরু করুন। আমাদের সাপোর্ট টিম আপনাকে সম্পূর্ণ প্রোডাক্ট ও অ্যাকাউন্ট সেটআপে সাহায্য করবে।'
-              : 'Start your free trial now with zero credit card. Our technical team assists with product catalog import and receipt setup.'}
+              ? '১৪ দিনের ফ্রি ট্রায়াল শুরু করুন। কোনো ক্রেডিট কার্ড লাগবে না। আমাদের সাপোর্ট টিম আপনাকে সম্পূর্ণ ক্যাটালগ ও রসিদ সেটআপে সাহায্য করবে।'
+              : 'Start your 14-day free trial now with zero credit card. Our technical team assists with product catalog import and receipt setup.'}
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
             <button
-              onClick={(e) => handlePortalClick('shop', e)}
+              type="button"
+              onClick={(e) => handlePortalClick('shop', e, { mode: 'register' })}
               className="px-8 py-4 rounded-full bg-black text-white font-black text-base shadow-xl hover:bg-slate-900 hover:scale-105 transition-all cursor-pointer"
             >
-              {isBn ? 'ফ্রি ট্রায়াল শুরু করুন' : 'Start Free Trial'}
+              {isBn ? 'ফ্রি ট্রায়াল শুরু করুন' : 'Start 14-Day Free Trial'}
             </button>
             <a
               href="mailto:support@bizora.app"
               className="px-8 py-4 rounded-full border-2 border-black text-black font-extrabold text-base hover:bg-black hover:text-white transition-all cursor-pointer"
             >
-              {isBn ? 'টিমের সাথে কথা বলুন' : 'Talk to Onboarding Team'}
+              {isBn ? 'সাপোর্টে কথা বলুন' : 'Talk to Onboarding Team'}
             </a>
           </div>
         </div>
@@ -2739,11 +3601,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) =>
               <h4 className="text-white font-bold text-sm mb-4">{isBn ? 'প্ল্যাটফর্ম' : 'Platform'}</h4>
               <ul className="space-y-2 text-xs">
                 <li><a href="#features" className="hover:text-white transition-colors">{isBn ? 'ফিচারসমূহ' : 'Features'}</a></li>
-                <li><a href="#about" className="hover:text-white transition-colors">{isBn ? 'Bizora সম্পর্কে' : 'About Bizora'}</a></li>
+                <li><a href="#how" className="hover:text-white transition-colors">{isBn ? 'কীভাবে চলে' : 'How It Works'}</a></li>
+                <li><a href="#benefits" className="hover:text-white transition-colors">{isBn ? 'সুবিধাসমূহ' : 'Benefits'}</a></li>
                 <li><a href="#os" className="hover:text-white transition-colors">{isBn ? 'বিজনেস OS' : 'Business OS'}</a></li>
                 <li><a href="#industries" className="hover:text-white transition-colors">{isBn ? 'ব্যবসার ধরন' : 'Industries'}</a></li>
-                <li><a href="#compare" className="hover:text-white transition-colors">{isBn ? 'তুলনা' : 'Compare'}</a></li>
+                <li><a href="#compare" className="hover:text-white transition-colors">{isBn ? 'প্যাকেজ তুলনা' : 'Compare Matrix'}</a></li>
                 <li><a href="#plans" className="hover:text-white transition-colors">{isBn ? 'সাবস্ক্রিপশন প্ল্যান' : 'Pricing Plans'}</a></li>
+                <li><a href="#about" className="hover:text-white transition-colors">{isBn ? 'Bizora পরিচিতি' : 'About Bizora'}</a></li>
+                <li><a href="#faq" className="hover:text-white transition-colors">{isBn ? 'সাধারণ জিজ্ঞাসা' : 'FAQ'}</a></li>
+                <li><a href="#contact" className="hover:text-white transition-colors">{isBn ? 'যোগাযোগ ও সাপোর্ট' : 'Contact Support'}</a></li>
               </ul>
             </div>
 
