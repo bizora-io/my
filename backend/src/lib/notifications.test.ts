@@ -71,6 +71,19 @@ class TenantNotificationService {
     return false;
   }
 
+  public markAllAsRead(businessId: string): number {
+    const tenantMap = this.tenantStore.get(businessId);
+    if (!tenantMap) return 0;
+    let count = 0;
+    tenantMap.forEach((doc) => {
+      if (!doc.read) {
+        doc.read = true;
+        count++;
+      }
+    });
+    return count;
+  }
+
   public deleteNotification(id: string, callerBusinessId: string): boolean {
     const tenantMap = this.tenantStore.get(callerBusinessId);
     if (tenantMap && tenantMap.has(id)) {
@@ -173,5 +186,66 @@ describe('Multi-Tenant Notification System & Isolation Verification', () => {
 
     notifs = service.getTenantNotifications(bizA);
     assert.equal(notifs[0].read, true);
+  });
+
+  test('marks all notifications read within specific tenant without touching other tenants', () => {
+    const bizA = 'business_shop_alpha_101';
+    const bizB = 'business_shop_beta_202';
+
+    service.createNotification({
+      id: 'notif_a1',
+      userId: 'user_alpha',
+      businessId: bizA,
+      title: 'Sale A1',
+      message: 'Msg A1',
+    });
+    service.createNotification({
+      id: 'notif_a2',
+      userId: 'user_alpha',
+      businessId: bizA,
+      title: 'Sale A2',
+      message: 'Msg A2',
+    });
+    service.createNotification({
+      id: 'notif_b1',
+      userId: 'user_beta',
+      businessId: bizB,
+      title: 'Sale B1',
+      message: 'Msg B1',
+    });
+
+    // Mark all as read for Business A
+    const updatedCount = service.markAllAsRead(bizA);
+    assert.equal(updatedCount, 2);
+
+    // All Business A items are read
+    const alertsA = service.getTenantNotifications(bizA);
+    assert.equal(alertsA.every((n) => n.read), true);
+
+    // Business B item remains unread
+    const alertsB = service.getTenantNotifications(bizB);
+    assert.equal(alertsB[0].read, false, 'Other tenant unread status must not be modified');
+  });
+
+  test('verifies real-time room targeting logic for business vs saas-staff', () => {
+    function computeTargetRooms(businessId?: string, targetRole?: string, userId?: string) {
+      const rooms: string[] = [];
+      if (targetRole === 'SAAS_ADMIN' || (!businessId && !userId)) {
+        rooms.push('saas-staff');
+      }
+      if (businessId) {
+        rooms.push(`business:${businessId}`);
+      }
+      if (userId) {
+        rooms.push(`user:${userId}`);
+      }
+      return rooms;
+    }
+
+    const tenantRooms = computeTargetRooms('shop_123', undefined, 'user_456');
+    assert.deepEqual(tenantRooms, ['business:shop_123', 'user:user_456']);
+
+    const saasRooms = computeTargetRooms(undefined, 'SAAS_ADMIN', 'admin_1');
+    assert.deepEqual(saasRooms, ['saas-staff', 'user:admin_1']);
   });
 });

@@ -6,11 +6,11 @@ import {
   Shield, Sparkles, ChevronRight, Megaphone, Volume2, VolumeX,
   Loader2, RefreshCw, Search, ArrowLeft, Filter
 } from 'lucide-react';
-import { useNotifications, Notification } from '../contexts/NotificationContext';
+import { useNotifications, type Notification as AppNotification } from '../contexts/NotificationContext';
 import { useSound } from '../contexts/SoundContext';
 import { useSettings } from '../contexts/SettingsContext';
 
-const getNotificationVisuals = (notif: Notification) => {
+const getNotificationVisuals = (notif: AppNotification) => {
   const cat = notif.category || 'general';
   const type = notif.type || 'info';
 
@@ -152,6 +152,22 @@ export const NotificationsPage: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState<'all' | 'unread' | 'sales' | 'inventory' | 'finance' | 'system' | 'announcements'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [browserPermission, setBrowserPermission] = useState<NotificationPermission>(() => {
+    if (typeof window !== 'undefined' && typeof Notification !== 'undefined') {
+      return Notification.permission;
+    }
+    return 'default';
+  });
+
+  const handleRequestBrowserPermission = async () => {
+    if (typeof window === 'undefined' || typeof Notification === 'undefined') return;
+    try {
+      const res = await Notification.requestPermission();
+      setBrowserPermission(res);
+    } catch (err) {
+      console.warn('Failed to request notification permission:', err);
+    }
+  };
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -185,7 +201,7 @@ export const NotificationsPage: React.FC = () => {
   }, [notifications, activeFilter, searchQuery]);
 
   const groupedNotifications = useMemo(() => {
-    const groups: Record<'Today' | 'Yesterday' | 'Earlier', Notification[]> = {
+    const groups: Record<'Today' | 'Yesterday' | 'Earlier', AppNotification[]> = {
       Today: [],
       Yesterday: [],
       Earlier: [],
@@ -197,7 +213,7 @@ export const NotificationsPage: React.FC = () => {
     return groups;
   }, [filteredNotifications]);
 
-  const handleItemClick = (n: Notification) => {
+  const handleItemClick = (n: AppNotification) => {
     markAsRead(n.id);
     if (n.target) {
       navigate(n.target);
@@ -253,6 +269,28 @@ export const NotificationsPage: React.FC = () => {
             {soundEnabled ? <Volume2 className="w-4 h-4 text-indigo-600" /> : <VolumeX className="w-4 h-4 text-slate-400" />}
             <span>{soundEnabled ? 'Audio On' : 'Muted'}</span>
           </button>
+
+          {/* Browser Push Permission State */}
+          {browserPermission !== 'granted' ? (
+            <button
+              type="button"
+              onClick={handleRequestBrowserPermission}
+              className={`px-3 py-2 rounded-xl text-xs font-bold border transition-colors flex items-center gap-1.5 ${
+                browserPermission === 'denied'
+                  ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-900 cursor-not-allowed'
+                  : 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800 hover:bg-indigo-50'
+              }`}
+              title={browserPermission === 'denied' ? 'Browser alerts blocked in site settings' : 'Enable browser alerts'}
+            >
+              <Bell className="w-4 h-4" />
+              <span>{browserPermission === 'denied' ? 'Push Blocked' : 'Enable Push'}</span>
+            </button>
+          ) : (
+            <span className="px-2.5 py-1.5 rounded-xl text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
+              <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Push Active</span>
+            </span>
+          )}
 
           {/* Refresh */}
           <button
@@ -450,3 +488,4 @@ export const NotificationsPage: React.FC = () => {
 };
 
 export default NotificationsPage;
+

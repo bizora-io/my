@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authFetch, hasAuthToken } from '../lib/apiClient';
 import soundService from '../services/soundService';
+import { subscribeBusinessSync } from '../lib/realtimeSocket';
 
 export type NotificationType = 'info' | 'success' | 'warning' | 'error';
 export type NotificationCategory = 'general' | 'sales' | 'inventory' | 'finance' | 'subscription' | 'support' | 'announcements' | 'system';
@@ -145,6 +146,32 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   useEffect(() => {
     refreshNotifications();
   }, [refreshNotifications]);
+
+  // Real-time notification synchronization over WebSocket
+  useEffect(() => {
+    const unsubscribe = subscribeBusinessSync((ev) => {
+      if (ev.domain === 'notifications') {
+        const payload: any = ev.payload?.payload || ev.payload;
+        if (payload && payload.id) {
+          setNotifications((prev) => {
+            if (prev.some((n) => n.id === payload.id)) return prev;
+            soundService.playNotificationOnce(payload.id);
+            const updated = [payload, ...prev];
+            if (userId) {
+              localStorage.setItem(`nexus_notifications_${userId}`, JSON.stringify(updated));
+            }
+            return updated;
+          });
+        } else {
+          refreshNotifications();
+        }
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [userId, refreshNotifications]);
 
   const saveLocal = (notifs: Notification[]) => {
     if (userId) {

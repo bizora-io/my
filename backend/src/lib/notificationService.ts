@@ -61,6 +61,9 @@ export async function sendNotification(params: CreateNotificationParams): Promis
   });
 
   try {
+    if (businessId) {
+      await getDb().collection("businesses").doc(businessId).collection("notifications").doc(notifId).set(payload);
+    }
     await getDb().collection("notifications").doc(notifId).set(payload);
   } catch (err) {
     console.error("[notificationService] Error writing notification to DB:", err);
