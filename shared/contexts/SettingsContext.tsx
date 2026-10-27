@@ -27,6 +27,7 @@ interface SettingsContextType {
   decimalPlaces: number;
   setDecimalPlaces: (num: number) => void;
   formatMoney: (amount: number) => string;
+  formatCurrency: (amount: number) => string;
   
   // Invoice Customization
   invoiceConfig: InvoiceConfig;
@@ -686,6 +687,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         invoiceConfig, setInvoiceConfig,
         decimalPlaces, setDecimalPlaces: updateDecimalPlaces,
         formatMoney,
+        formatCurrency: formatMoney,
         convertLocalToGlobal,
         convertGlobalToLocal,
         applyExchangeRates, setApplyExchangeRates,

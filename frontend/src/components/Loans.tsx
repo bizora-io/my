@@ -29,9 +29,11 @@ interface LoanRecord {
 }
 
 export const Loans: React.FC = () => {
-  const { t, formatCurrency } = useSettings();
+  const { t, formatCurrency, formatMoney } = useSettings();
+  const format = formatCurrency || formatMoney || ((n: number) => `$ ${n}`);
   const [loans, setLoans] = useState<LoanRecord[]>([]);
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedLoan, setSelectedLoan] = useState<LoanRecord | null>(null);
   const [showScheduleModal, setShowScheduleModal] = useState<LoanRecord | null>(null);
@@ -51,11 +53,18 @@ export const Loans: React.FC = () => {
 
   const loadData = useCallback(async () => {
     setLoading(true);
+    setErrorMsg(null);
     try {
       const res = await authFetch('/api/loans');
-      if (res.ok) setLoans(await res.json());
-    } catch (e) {
+      if (res.ok) {
+        setLoans(await res.json());
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setErrorMsg(err.error || `Failed to load loans (${res.status})`);
+      }
+    } catch (e: any) {
       console.warn('Failed to load loans', e);
+      setErrorMsg(e?.message || 'Network error loading loans');
     } finally {
       setLoading(false);
     }
@@ -154,6 +163,15 @@ export const Loans: React.FC = () => {
         </div>
       </div>
 
+      {errorMsg && (
+        <div className="p-4 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-xl text-rose-700 dark:text-rose-300 text-sm flex items-center justify-between">
+          <span>{errorMsg}</span>
+          <button onClick={loadData} className="text-xs underline font-semibold ml-4">
+            {t('Retry')}
+          </button>
+        </div>
+      )}
+
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between">
@@ -162,7 +180,7 @@ export const Loans: React.FC = () => {
               {t('Total Outstanding Debt (Payable)')}
             </span>
             <span className="text-2xl font-bold text-rose-600 dark:text-rose-400">
-              {formatCurrency(totalPayableOutstanding)}
+              {format(totalPayableOutstanding)}
             </span>
           </div>
           <div className="p-3 bg-rose-50 dark:bg-rose-950/40 rounded-xl text-rose-600">
@@ -176,7 +194,7 @@ export const Loans: React.FC = () => {
               {t('Total Lent Out (Receivable)')}
             </span>
             <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-              {formatCurrency(totalReceivableOutstanding)}
+              {format(totalReceivableOutstanding)}
             </span>
           </div>
           <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl text-emerald-600">
@@ -204,8 +222,21 @@ export const Loans: React.FC = () => {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
               {loans.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="p-8 text-center text-slate-400">
-                    {t('No loans recorded.')}
+                  <td colSpan={8} className="p-12 text-center text-slate-400">
+                    <Landmark className="w-10 h-10 mx-auto text-slate-300 dark:text-slate-600 mb-2" />
+                    <p className="font-semibold text-slate-600 dark:text-slate-300">
+                      {t('No loans or borrowings recorded.')}
+                    </p>
+                    <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                      {t('Track bank loans, owner borrowings, credit lines, and lent capital with automated amortization schedules.')}
+                    </p>
+                    <button
+                      onClick={() => setShowCreateModal(true)}
+                      className="mt-4 inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-semibold"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      {t('Record New Loan')}
+                    </button>
                   </td>
                 </tr>
               ) : (
@@ -226,7 +257,7 @@ export const Loans: React.FC = () => {
                       </span>
                     </td>
                     <td className="p-4 font-semibold whitespace-nowrap">
-                      {formatCurrency(loan.principal)}
+                      {format(loan.principal)}
                     </td>
                     <td className="p-4 whitespace-nowrap">
                       {loan.interestRate}% p.a.
@@ -235,7 +266,7 @@ export const Loans: React.FC = () => {
                       {loan.tenureMonths} {t('months')}
                     </td>
                     <td className="p-4 font-bold text-slate-900 dark:text-white whitespace-nowrap">
-                      {formatCurrency(loan.outstanding)}
+                      {format(loan.outstanding)}
                     </td>
                     <td className="p-4">
                       <span
@@ -395,7 +426,7 @@ export const Loans: React.FC = () => {
             <form onSubmit={handleRecordPayment} className="space-y-3">
               <div>
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                  {t('Payment Amount')} (Outstanding: {formatCurrency(selectedLoan.outstanding)})
+                  {t('Payment Amount')} (Outstanding: {format(selectedLoan.outstanding)})
                 </label>
                 <input
                   type="number"
@@ -468,9 +499,9 @@ export const Loans: React.FC = () => {
                     <tr key={ins.installmentNo}>
                       <td className="py-2.5 font-bold">{ins.installmentNo}</td>
                       <td className="py-2.5">{ins.dueDate}</td>
-                      <td className="py-2.5">{formatCurrency(ins.principal)}</td>
-                      <td className="py-2.5">{formatCurrency(ins.interest)}</td>
-                      <td className="py-2.5 font-semibold">{formatCurrency(ins.totalDue)}</td>
+                      <td className="py-2.5">{format(ins.principal)}</td>
+                      <td className="py-2.5">{format(ins.interest)}</td>
+                      <td className="py-2.5 font-semibold">{format(ins.totalDue)}</td>
                       <td className="py-2.5 text-right">
                         <span
                           className={`px-2 py-0.5 rounded text-[10px] font-bold ${

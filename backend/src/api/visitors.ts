@@ -20,7 +20,7 @@ function visitorsCol(businessId: string) {
 }
 
 // GET /api/visitors
-router.get("/", requirePermission("hr.manage", "crm.view"), async (req, res) => {
+router.get("/", requirePermission("hr.manage", "crm.view", "admin.settings", "admin.stores", "crm.manage"), async (req, res) => {
   try {
     const businessId = (req as any).businessId || getActingBusinessId(req as any);
     const { status } = req.query;
@@ -40,7 +40,7 @@ router.get("/", requirePermission("hr.manage", "crm.view"), async (req, res) => 
 });
 
 // GET /api/visitors/on-site
-router.get("/on-site", requirePermission("hr.manage", "crm.view"), async (req, res) => {
+router.get("/on-site", requirePermission("hr.manage", "crm.view", "admin.settings", "admin.stores", "crm.manage"), async (req, res) => {
   try {
     const businessId = (req as any).businessId || getActingBusinessId(req as any);
     const snap = await visitorsCol(businessId).where("status", "==", "CHECKED_IN").get();
@@ -53,7 +53,7 @@ router.get("/on-site", requirePermission("hr.manage", "crm.view"), async (req, r
 });
 
 // POST /api/visitors - Pre-register or register
-router.post("/", requirePermission("hr.manage", "crm.manage"), async (req, res) => {
+router.post("/", requirePermission("hr.manage", "crm.manage", "admin.settings", "admin.stores", "crm.view"), async (req, res) => {
   try {
     const businessId = (req as any).businessId || getActingBusinessId(req as any);
     const { visitorName, phone, email, company, hostEmployeeName, hostEmployeeId, purpose, expectedDate, notes } = req.body || {};
@@ -89,7 +89,7 @@ router.post("/", requirePermission("hr.manage", "crm.manage"), async (req, res) 
 });
 
 // POST /api/visitors/:id/check-in
-router.post("/:id/check-in", requirePermission("hr.manage", "crm.manage"), async (req, res) => {
+router.post("/:id/check-in", requirePermission("hr.manage", "crm.manage", "admin.settings", "crm.view"), async (req, res) => {
   try {
     const businessId = (req as any).businessId || getActingBusinessId(req as any);
     const docRef = visitorsCol(businessId).doc(String(req.params.id));
@@ -113,7 +113,7 @@ router.post("/:id/check-in", requirePermission("hr.manage", "crm.manage"), async
 });
 
 // POST /api/visitors/:id/check-out
-router.post("/:id/check-out", requirePermission("hr.manage", "crm.manage"), async (req, res) => {
+router.post("/:id/check-out", requirePermission("hr.manage", "crm.manage", "admin.settings", "crm.view"), async (req, res) => {
   try {
     const businessId = (req as any).businessId || getActingBusinessId(req as any);
     const docRef = visitorsCol(businessId).doc(String(req.params.id));
@@ -135,7 +135,7 @@ router.post("/:id/check-out", requirePermission("hr.manage", "crm.manage"), asyn
 });
 
 // POST /api/visitors/:id/cancel
-router.post("/:id/cancel", requirePermission("hr.manage", "crm.manage"), async (req, res) => {
+router.post("/:id/cancel", requirePermission("hr.manage", "crm.manage", "admin.settings", "crm.view"), async (req, res) => {
   try {
     const businessId = (req as any).businessId || getActingBusinessId(req as any);
     const docRef = visitorsCol(businessId).doc(String(req.params.id));

@@ -23,6 +23,7 @@ export const Visitors: React.FC = () => {
   const { employees } = useData();
   const [visitors, setVisitors] = useState<VisitorRecord[]>([]);
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'all' | 'onsite'>('all');
   const [showAddModal, setShowAddModal] = useState(false);
 
@@ -35,12 +36,19 @@ export const Visitors: React.FC = () => {
 
   const loadData = useCallback(async () => {
     setLoading(true);
+    setErrorMsg(null);
     try {
       const endpoint = activeTab === 'onsite' ? '/api/visitors/on-site' : '/api/visitors';
       const res = await authFetch(endpoint);
-      if (res.ok) setVisitors(await res.json());
-    } catch (e) {
+      if (res.ok) {
+        setVisitors(await res.json());
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setErrorMsg(err.error || `Failed to load visitors (${res.status})`);
+      }
+    } catch (e: any) {
       console.warn('Failed to load visitors', e);
+      setErrorMsg(e?.message || 'Network error loading visitors');
     } finally {
       setLoading(false);
     }
@@ -71,9 +79,13 @@ export const Visitors: React.FC = () => {
         setPhone('');
         setCompany('');
         loadData();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(err.error || 'Failed to register visitor');
       }
-    } catch (e) {
+    } catch (e: any) {
       console.warn('Register visitor failed', e);
+      alert(e?.message || 'Failed to register visitor');
     }
   };
 
@@ -132,6 +144,15 @@ export const Visitors: React.FC = () => {
         </div>
       </div>
 
+      {errorMsg && (
+        <div className="p-4 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-xl text-rose-700 dark:text-rose-300 text-sm flex items-center justify-between">
+          <span>{errorMsg}</span>
+          <button onClick={loadData} className="text-xs underline font-semibold ml-4">
+            {t('Retry')}
+          </button>
+        </div>
+      )}
+
       {/* Tabs */}
       <div className="flex border-b border-slate-200 dark:border-slate-700 gap-2">
         <button
@@ -177,8 +198,27 @@ export const Visitors: React.FC = () => {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
               {visitors.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="p-8 text-center text-slate-400">
-                    {t('No visitor records found.')}
+                  <td colSpan={8} className="p-12 text-center text-slate-400">
+                    <UserCheck className="w-10 h-10 mx-auto text-slate-300 dark:text-slate-600 mb-2" />
+                    <p className="font-semibold text-slate-600 dark:text-slate-300">
+                      {activeTab === 'onsite'
+                        ? t('No visitors are currently on-site.')
+                        : t('No visitor records found.')}
+                    </p>
+                    <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                      {activeTab === 'onsite'
+                        ? t('When registered guests check in, their live presence will show here.')
+                        : t('Pre-register guests or issue quick gatepasses for building security.')}
+                    </p>
+                    {activeTab === 'all' && (
+                      <button
+                        onClick={() => setShowAddModal(true)}
+                        className="mt-4 inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        {t('Register First Visitor')}
+                      </button>
+                    )}
                   </td>
                 </tr>
               ) : (

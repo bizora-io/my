@@ -28,7 +28,7 @@ function transactionsCol(businessId: string) {
 }
 
 // GET /api/vehicles
-router.get("/", requirePermission("inventory.view", "admin.stores"), async (req, res) => {
+router.get("/", requirePermission("admin.settings", "inventory.view", "admin.stores"), async (req, res) => {
   try {
     const businessId = (req as any).businessId || getActingBusinessId(req as any);
     const snap = await vehiclesCol(businessId).get();
@@ -42,7 +42,7 @@ router.get("/", requirePermission("inventory.view", "admin.stores"), async (req,
 });
 
 // GET /api/vehicles/:id
-router.get("/:id", requirePermission("inventory.view", "admin.stores"), async (req, res) => {
+router.get("/:id", requirePermission("admin.settings", "inventory.view", "admin.stores"), async (req, res) => {
   try {
     const businessId = (req as any).businessId || getActingBusinessId(req as any);
     const vehicleId = String(req.params.id);
@@ -61,7 +61,7 @@ router.get("/:id", requirePermission("inventory.view", "admin.stores"), async (r
 });
 
 // POST /api/vehicles
-router.post("/", requirePermission("admin.settings", "inventory.add"), async (req, res) => {
+router.post("/", requirePermission("admin.settings", "inventory.add", "admin.stores"), async (req, res) => {
   try {
     const businessId = (req as any).businessId || getActingBusinessId(req as any);
     const { regNumber, model, type = "Truck", driverName, driverPhone, currentOdometer = 0, fuelType = "Diesel", notes } = req.body || {};
@@ -94,7 +94,7 @@ router.post("/", requirePermission("admin.settings", "inventory.add"), async (re
 });
 
 // PATCH /api/vehicles/:id
-router.patch("/:id", requirePermission("admin.settings", "inventory.edit"), async (req, res) => {
+router.patch("/:id", requirePermission("admin.settings", "inventory.edit", "admin.stores"), async (req, res) => {
   try {
     const businessId = (req as any).businessId || getActingBusinessId(req as any);
     const docRef = vehiclesCol(businessId).doc(String(req.params.id));
@@ -116,7 +116,7 @@ router.patch("/:id", requirePermission("admin.settings", "inventory.edit"), asyn
 });
 
 // POST /api/vehicles/:id/logs
-router.post("/:id/logs", requirePermission("inventory.adjustment", "finance.expense.add"), async (req, res) => {
+router.post("/:id/logs", requirePermission("admin.settings", "inventory.adjustment", "finance.expense.add", "admin.stores", "inventory.view"), async (req, res) => {
   try {
     const businessId = (req as any).businessId || getActingBusinessId(req as any);
     const vehicleId = String(req.params.id);

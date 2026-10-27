@@ -28,9 +28,11 @@ interface Vehicle {
 }
 
 export const Vehicles: React.FC = () => {
-  const { t, formatCurrency } = useSettings();
+  const { t, formatCurrency, formatMoney } = useSettings();
+  const format = formatCurrency || formatMoney || ((n: number) => `$ ${n}`);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [vehicleLogs, setVehicleLogs] = useState<VehicleLog[]>([]);
@@ -54,11 +56,18 @@ export const Vehicles: React.FC = () => {
 
   const loadData = useCallback(async () => {
     setLoading(true);
+    setErrorMsg(null);
     try {
       const res = await authFetch('/api/vehicles');
-      if (res.ok) setVehicles(await res.json());
-    } catch (e) {
+      if (res.ok) {
+        setVehicles(await res.json());
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setErrorMsg(err.error || `Failed to load fleet (${res.status})`);
+      }
+    } catch (e: any) {
       console.warn('Failed to load vehicles', e);
+      setErrorMsg(e?.message || 'Network error loading fleet');
     } finally {
       setLoading(false);
     }
@@ -171,6 +180,15 @@ export const Vehicles: React.FC = () => {
         </div>
       </div>
 
+      {errorMsg && (
+        <div className="p-4 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-xl text-rose-700 dark:text-rose-300 text-sm flex items-center justify-between">
+          <span>{errorMsg}</span>
+          <button onClick={loadData} className="text-xs underline font-semibold ml-4">
+            {t('Retry')}
+          </button>
+        </div>
+      )}
+
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800">
@@ -194,58 +212,77 @@ export const Vehicles: React.FC = () => {
             {t('Total Fuel & Fleet Cost')}
           </span>
           <span className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">
-            {formatCurrency(totalFleetCost)}
+            {format(totalFleetCost)}
           </span>
         </div>
       </div>
 
       {/* Vehicle Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        {vehicles.map((v) => (
-          <div
-            key={v.id}
-            className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm space-y-4 hover:border-cyan-400 transition-all cursor-pointer"
-            onClick={() => loadVehicleDetails(v)}
+      {vehicles.length === 0 ? (
+        <div className="p-12 text-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+          <Truck className="w-12 h-12 mx-auto text-slate-300 dark:text-slate-600 mb-3" />
+          <h3 className="text-base font-bold text-slate-700 dark:text-slate-200">
+            {t('No fleet vehicles registered yet')}
+          </h3>
+          <p className="text-xs text-slate-400 max-w-md mx-auto mt-1 mb-4">
+            {t('Track delivery vans, cargo trucks, mileage, fuel fill-ups, and maintenance with auto-posting to expense ledgers.')}
+          </p>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm"
           >
-            <div className="flex items-start justify-between">
-              <div>
-                <span className="text-xs font-bold px-2 py-0.5 rounded bg-cyan-50 dark:bg-cyan-950/40 text-cyan-700 dark:text-cyan-300 uppercase">
-                  {v.type}
+            <Plus className="w-4 h-4" />
+            {t('Register First Vehicle')}
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {vehicles.map((v) => (
+            <div
+              key={v.id}
+              className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm space-y-4 hover:border-cyan-400 transition-all cursor-pointer"
+              onClick={() => loadVehicleDetails(v)}
+            >
+              <div className="flex items-start justify-between">
+                <div>
+                  <span className="text-xs font-bold px-2 py-0.5 rounded bg-cyan-50 dark:bg-cyan-950/40 text-cyan-700 dark:text-cyan-300 uppercase">
+                    {v.type}
+                  </span>
+                  <h3 className="font-extrabold text-lg text-slate-900 dark:text-white mt-1">
+                    {v.regNumber}
+                  </h3>
+                  <p className="text-xs text-slate-500">{v.model || 'Commercial Vehicle'}</p>
+                </div>
+                <span
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                    v.status === 'ACTIVE'
+                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300'
+                      : 'bg-amber-100 text-amber-800'
+                  }`}
+                >
+                  {v.status}
                 </span>
-                <h3 className="font-extrabold text-lg text-slate-900 dark:text-white mt-1">
-                  {v.regNumber}
-                </h3>
-                <p className="text-xs text-slate-500">{v.model || 'Commercial Vehicle'}</p>
               </div>
-              <span
-                className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                  v.status === 'ACTIVE'
-                    ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300'
-                    : 'bg-amber-100 text-amber-800'
-                }`}
-              >
-                {v.status}
-              </span>
-            </div>
 
-            <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-slate-100 dark:border-slate-800">
-              <div>
-                <span className="text-slate-400 block">{t('Driver')}</span>
-                <span className="font-semibold text-slate-800 dark:text-white">{v.driverName || 'Unassigned'}</span>
+              <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-slate-100 dark:border-slate-800">
+                <div>
+                  <span className="text-slate-400 block">{t('Driver')}</span>
+                  <span className="font-semibold text-slate-800 dark:text-white">{v.driverName || 'Unassigned'}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block">{t('Odometer')}</span>
+                  <span className="font-semibold text-slate-800 dark:text-white">{v.currentOdometer.toLocaleString()} km</span>
+                </div>
               </div>
-              <div>
-                <span className="text-slate-400 block">{t('Odometer')}</span>
-                <span className="font-semibold text-slate-800 dark:text-white">{v.currentOdometer.toLocaleString()} km</span>
-              </div>
-            </div>
 
-            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
-              <span className="text-slate-500">{t('Total Spent')}:</span>
-              <span className="font-bold text-slate-900 dark:text-white">{formatCurrency(v.totalCostIncurred)}</span>
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
+                <span className="text-slate-500">{t('Total Spent')}:</span>
+                <span className="font-bold text-slate-900 dark:text-white">{format(v.totalCostIncurred)}</span>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* Add Vehicle Modal */}
       {showAddModal && (
@@ -410,7 +447,7 @@ export const Vehicles: React.FC = () => {
                         </span>
                         {l.notes && <div className="text-[11px] text-slate-400">{l.notes}</div>}
                       </div>
-                      <span className="font-bold text-slate-900 dark:text-white">{formatCurrency(l.cost)}</span>
+                      <span className="font-bold text-slate-900 dark:text-white">{format(l.cost)}</span>
                     </div>
                   ))}
                 </div>

@@ -28,7 +28,7 @@ function transactionsCol(businessId: string) {
 }
 
 // --- Rooms ---
-router.get("/rooms", requirePermission("pos.sell", "inventory.view"), async (req, res) => {
+router.get("/rooms", requirePermission("pos.sell", "inventory.view", "admin.settings", "admin.stores"), async (req, res) => {
   try {
     const businessId = (req as any).businessId || getActingBusinessId(req as any);
     const { status, type } = req.query;
@@ -48,7 +48,7 @@ router.get("/rooms", requirePermission("pos.sell", "inventory.view"), async (req
   }
 });
 
-router.post("/rooms", requirePermission("admin.settings", "inventory.add"), async (req, res) => {
+router.post("/rooms", requirePermission("admin.settings", "inventory.add", "pos.sell"), async (req, res) => {
   try {
     const businessId = (req as any).businessId || getActingBusinessId(req as any);
     const { roomNumber, roomType = "Standard", floor = 1, capacity = 2, ratePerNight = 0, amenities = [] } = req.body || {};
@@ -77,7 +77,7 @@ router.post("/rooms", requirePermission("admin.settings", "inventory.add"), asyn
   }
 });
 
-router.patch("/rooms/:id", requirePermission("admin.settings", "inventory.edit"), async (req, res) => {
+router.patch("/rooms/:id", requirePermission("admin.settings", "inventory.edit", "pos.sell"), async (req, res) => {
   try {
     const businessId = (req as any).businessId || getActingBusinessId(req as any);
     const docRef = roomsCol(businessId).doc(String(req.params.id));
@@ -98,7 +98,7 @@ router.patch("/rooms/:id", requirePermission("admin.settings", "inventory.edit")
   }
 });
 
-router.delete("/rooms/:id", requirePermission("admin.settings", "inventory.delete"), async (req, res) => {
+router.delete("/rooms/:id", requirePermission("admin.settings", "inventory.delete", "pos.sell"), async (req, res) => {
   try {
     const businessId = (req as any).businessId || getActingBusinessId(req as any);
     const roomId = String(req.params.id);
@@ -111,7 +111,7 @@ router.delete("/rooms/:id", requirePermission("admin.settings", "inventory.delet
 });
 
 // --- Reservations ---
-router.get("/reservations", requirePermission("pos.sell", "pos.view_sales"), async (req, res) => {
+router.get("/reservations", requirePermission("pos.sell", "pos.view_sales", "admin.settings", "admin.stores"), async (req, res) => {
   try {
     const businessId = (req as any).businessId || getActingBusinessId(req as any);
     const { status } = req.query;
@@ -130,7 +130,7 @@ router.get("/reservations", requirePermission("pos.sell", "pos.view_sales"), asy
   }
 });
 
-router.post("/reservations", requirePermission("pos.sell"), async (req, res) => {
+router.post("/reservations", requirePermission("pos.sell", "admin.settings"), async (req, res) => {
   try {
     const businessId = (req as any).businessId || getActingBusinessId(req as any);
     const {
@@ -189,7 +189,7 @@ router.post("/reservations", requirePermission("pos.sell"), async (req, res) => 
 });
 
 // Check-in
-router.post("/reservations/:id/check-in", requirePermission("pos.sell"), async (req, res) => {
+router.post("/reservations/:id/check-in", requirePermission("pos.sell", "admin.settings"), async (req, res) => {
   try {
     const businessId = (req as any).businessId || getActingBusinessId(req as any);
     const resRef = reservationsCol(businessId).doc(String(req.params.id));
@@ -226,7 +226,7 @@ router.post("/reservations/:id/check-in", requirePermission("pos.sell"), async (
 });
 
 // Check-out
-router.post("/reservations/:id/check-out", requirePermission("pos.sell"), async (req, res) => {
+router.post("/reservations/:id/check-out", requirePermission("pos.sell", "admin.settings"), async (req, res) => {
   try {
     const businessId = (req as any).businessId || getActingBusinessId(req as any);
     const resRef = reservationsCol(businessId).doc(String(req.params.id));
@@ -276,8 +276,8 @@ router.post("/reservations/:id/check-out", requirePermission("pos.sell"), async 
         const roomRef = roomsCol(businessId).doc(reservation.roomId);
         t.update(roomRef, {
           status: "CLEANING",
-          currentReservationId: null,
-          currentGuestName: null,
+          currentReservationId: "",
+          currentGuestName: "",
           updatedAt: new Date().toISOString(),
         });
       }

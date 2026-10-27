@@ -24,7 +24,7 @@ function transactionsCol(businessId: string) {
 }
 
 // GET /api/loans
-router.get("/", requirePermission("finance.ledgers", "finance.accounts"), async (req, res) => {
+router.get("/", requirePermission("finance.ledgers", "finance.accounts", "admin.settings", "finance.cashbox"), async (req, res) => {
   try {
     const businessId = (req as any).businessId || getActingBusinessId(req as any);
     const { type } = req.query;
@@ -44,7 +44,7 @@ router.get("/", requirePermission("finance.ledgers", "finance.accounts"), async 
 });
 
 // GET /api/loans/:id
-router.get("/:id", requirePermission("finance.ledgers", "finance.accounts"), async (req, res) => {
+router.get("/:id", requirePermission("finance.ledgers", "finance.accounts", "admin.settings", "finance.cashbox"), async (req, res) => {
   try {
     const businessId = (req as any).businessId || getActingBusinessId(req as any);
     const doc = await loansCol(businessId).doc(String(req.params.id)).get();
@@ -57,7 +57,7 @@ router.get("/:id", requirePermission("finance.ledgers", "finance.accounts"), asy
 });
 
 // POST /api/loans
-router.post("/", requirePermission("finance.accounts"), async (req, res) => {
+router.post("/", requirePermission("finance.accounts", "finance.ledgers", "admin.settings"), async (req, res) => {
   try {
     const businessId = (req as any).businessId || getActingBusinessId(req as any);
     const {
@@ -149,7 +149,7 @@ router.post("/", requirePermission("finance.accounts"), async (req, res) => {
 });
 
 // POST /api/loans/:id/payments
-router.post("/:id/payments", requirePermission("finance.accounts"), async (req, res) => {
+router.post("/:id/payments", requirePermission("finance.accounts", "finance.ledgers", "admin.settings", "finance.cashbox"), async (req, res) => {
   try {
     const businessId = (req as any).businessId || getActingBusinessId(req as any);
     const docRef = loansCol(businessId).doc(String(req.params.id));

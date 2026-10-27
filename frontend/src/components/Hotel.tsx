@@ -32,11 +32,13 @@ interface Reservation {
 }
 
 export const Hotel: React.FC = () => {
-  const { t, formatCurrency } = useSettings();
+  const { t, formatCurrency, formatMoney } = useSettings();
+  const format = formatCurrency || formatMoney || ((n: number) => `$ ${n}`);
   const [activeTab, setActiveTab] = useState<'rooms' | 'reservations'>('rooms');
   const [rooms, setRooms] = useState<Room[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Modals
   const [showRoomModal, setShowRoomModal] = useState(false);
@@ -63,15 +65,24 @@ export const Hotel: React.FC = () => {
 
   const loadData = useCallback(async () => {
     setLoading(true);
+    setErrorMsg(null);
     try {
       const [rRes, resRes] = await Promise.all([
         authFetch('/api/hotel/rooms'),
         authFetch('/api/hotel/reservations'),
       ]);
-      if (rRes.ok) setRooms(await rRes.json());
-      if (resRes.ok) setReservations(await resRes.json());
-    } catch (e) {
+      if (rRes.ok) {
+        setRooms(await rRes.json());
+      } else {
+        const err = await rRes.json().catch(() => ({}));
+        setErrorMsg(err.error || `Failed to load rooms (${rRes.status})`);
+      }
+      if (resRes.ok) {
+        setReservations(await resRes.json());
+      }
+    } catch (e: any) {
       console.warn('Failed to load hotel data', e);
+      setErrorMsg(e?.message || 'Network error loading hotel data');
     } finally {
       setLoading(false);
     }
@@ -220,6 +231,15 @@ export const Hotel: React.FC = () => {
         </div>
       </div>
 
+      {errorMsg && (
+        <div className="p-4 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-xl text-rose-700 dark:text-rose-300 text-sm flex items-center justify-between">
+          <span>{errorMsg}</span>
+          <button onClick={loadData} className="text-xs underline font-semibold ml-4">
+            {t('Retry')}
+          </button>
+        </div>
+      )}
+
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800">
@@ -276,61 +296,80 @@ export const Hotel: React.FC = () => {
 
       {/* Tab: Rooms Grid */}
       {activeTab === 'rooms' && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {rooms.map((room) => (
-            <div
-              key={room.id}
-              className={`p-4 rounded-xl border transition-all ${
-                room.status === 'AVAILABLE'
-                  ? 'border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/40 dark:bg-emerald-950/20'
-                  : room.status === 'OCCUPIED'
-                  ? 'border-rose-200 dark:border-rose-900/50 bg-rose-50/40 dark:bg-rose-950/20'
-                  : 'border-amber-200 dark:border-amber-900/50 bg-amber-50/40 dark:bg-amber-950/20'
-              }`}
+        rooms.length === 0 ? (
+          <div className="p-12 text-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+            <BedDouble className="w-12 h-12 mx-auto text-slate-300 dark:text-slate-600 mb-3" />
+            <h3 className="text-base font-bold text-slate-700 dark:text-slate-200">
+              {t('No hotel rooms configured yet')}
+            </h3>
+            <p className="text-xs text-slate-400 max-w-md mx-auto mt-1 mb-4">
+              {t('Configure Standard, Deluxe, Executive rooms with floor assignments and nightly rates to enable guest bookings.')}
+            </p>
+            <button
+              onClick={() => setShowRoomModal(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm"
             >
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <h3 className="font-extrabold text-lg text-slate-900 dark:text-white">
-                    {room.roomNumber}
-                  </h3>
-                  <span className="text-xs text-slate-500 dark:text-slate-400">
-                    {room.roomType} • Fl {room.floor}
+              <Plus className="w-4 h-4" />
+              {t('Add First Room')}
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {rooms.map((room) => (
+              <div
+                key={room.id}
+                className={`p-4 rounded-xl border transition-all ${
+                  room.status === 'AVAILABLE'
+                    ? 'border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/40 dark:bg-emerald-950/20'
+                    : room.status === 'OCCUPIED'
+                    ? 'border-rose-200 dark:border-rose-900/50 bg-rose-50/40 dark:bg-rose-950/20'
+                    : 'border-amber-200 dark:border-amber-900/50 bg-amber-50/40 dark:bg-amber-950/20'
+                }`}
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <h3 className="font-extrabold text-lg text-slate-900 dark:text-white">
+                      {room.roomNumber}
+                    </h3>
+                    <span className="text-xs text-slate-500 dark:text-slate-400">
+                      {room.roomType} • Fl {room.floor}
+                    </span>
+                  </div>
+                  <span
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                      room.status === 'AVAILABLE'
+                        ? 'bg-emerald-200 text-emerald-800 dark:bg-emerald-800 dark:text-emerald-100'
+                        : room.status === 'OCCUPIED'
+                        ? 'bg-rose-200 text-rose-800 dark:bg-rose-800 dark:text-rose-100'
+                        : 'bg-amber-200 text-amber-800 dark:bg-amber-800 dark:text-amber-100'
+                    }`}
+                  >
+                    {room.status}
                   </span>
                 </div>
-                <span
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-                    room.status === 'AVAILABLE'
-                      ? 'bg-emerald-200 text-emerald-800 dark:bg-emerald-800 dark:text-emerald-100'
-                      : room.status === 'OCCUPIED'
-                      ? 'bg-rose-200 text-rose-800 dark:bg-rose-800 dark:text-rose-100'
-                      : 'bg-amber-200 text-amber-800 dark:bg-amber-800 dark:text-amber-100'
-                  }`}
-                >
-                  {room.status}
-                </span>
-              </div>
 
-              <div className="mt-3 pt-3 border-t border-slate-200/60 dark:border-slate-800 flex items-center justify-between text-xs">
-                <span className="font-bold text-slate-900 dark:text-white">
-                  {formatCurrency(room.ratePerNight)}/night
-                </span>
-                {room.status === 'CLEANING' && (
-                  <button
-                    onClick={() => handleCleanRoom(room.id)}
-                    className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded font-semibold text-[11px]"
-                  >
-                    {t('Mark Ready')}
-                  </button>
-                )}
-                {room.status === 'OCCUPIED' && room.currentGuestName && (
-                  <span className="truncate max-w-[100px] text-slate-600 dark:text-slate-300">
-                    {room.currentGuestName}
+                <div className="mt-3 pt-3 border-t border-slate-200/60 dark:border-slate-800 flex items-center justify-between text-xs">
+                  <span className="font-bold text-slate-900 dark:text-white">
+                    {format(room.ratePerNight)}/night
                   </span>
-                )}
+                  {room.status === 'CLEANING' && (
+                    <button
+                      onClick={() => handleCleanRoom(room.id)}
+                      className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded font-semibold text-[11px]"
+                    >
+                      {t('Mark Ready')}
+                    </button>
+                  )}
+                  {room.status === 'OCCUPIED' && room.currentGuestName && (
+                    <span className="truncate max-w-[100px] text-slate-600 dark:text-slate-300">
+                      {room.currentGuestName}
+                    </span>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )
       )}
 
       {/* Tab: Reservations */}
@@ -350,59 +389,80 @@ export const Hotel: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
-                {reservations.map((res) => (
-                  <tr key={res.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                    <td className="p-4">
-                      <div className="font-bold text-slate-900 dark:text-white">{res.guestName}</div>
-                      {res.guestPhone && <div className="text-xs text-slate-400">{res.guestPhone}</div>}
-                    </td>
-                    <td className="p-4 font-semibold text-slate-900 dark:text-white">
-                      #{res.roomNumber}
-                    </td>
-                    <td className="p-4 text-xs text-slate-500">
-                      {res.totalNights} {t('night(s)')}
-                    </td>
-                    <td className="p-4 font-bold text-slate-900 dark:text-white whitespace-nowrap">
-                      {formatCurrency(res.totalAmount)}
-                    </td>
-                    <td className="p-4 text-emerald-600 font-semibold whitespace-nowrap">
-                      {formatCurrency(res.advancePaid)}
-                    </td>
-                    <td className="p-4">
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                          res.status === 'CHECKED_IN'
-                            ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400'
-                            : res.status === 'CHECKED_OUT'
-                            ? 'bg-slate-100 text-slate-500 dark:bg-slate-800'
-                            : 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400'
-                        }`}
+                {reservations.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="p-12 text-center text-slate-400">
+                      <Calendar className="w-10 h-10 mx-auto text-slate-300 dark:text-slate-600 mb-2" />
+                      <p className="font-semibold text-slate-600 dark:text-slate-300">
+                        {t('No hotel reservations found.')}
+                      </p>
+                      <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                        {t('Book rooms for guests, manage night stays, and collect advance payments.')}
+                      </p>
+                      <button
+                        onClick={() => setShowBookModal(true)}
+                        className="mt-4 inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-semibold"
                       >
-                        {res.status}
-                      </span>
-                    </td>
-                    <td className="p-4 text-right whitespace-nowrap space-x-1.5">
-                      {res.status === 'BOOKED' && (
-                        <button
-                          onClick={() => handleCheckIn(res.id)}
-                          className="px-2.5 py-1 bg-teal-600 hover:bg-teal-700 text-white rounded text-xs font-semibold inline-flex items-center gap-1"
-                        >
-                          <UserCheck className="w-3.5 h-3.5" />
-                          {t('Check-in')}
-                        </button>
-                      )}
-                      {res.status === 'CHECKED_IN' && (
-                        <button
-                          onClick={() => { setCheckoutReservation(res); setCheckoutPaid(res.remainingAmount); }}
-                          className="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded text-xs font-semibold inline-flex items-center gap-1"
-                        >
-                          <LogOut className="w-3.5 h-3.5" />
-                          {t('Check-out')}
-                        </button>
-                      )}
+                        <Plus className="w-3.5 h-3.5" />
+                        {t('New Reservation')}
+                      </button>
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  reservations.map((res) => (
+                    <tr key={res.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                      <td className="p-4">
+                        <div className="font-bold text-slate-900 dark:text-white">{res.guestName}</div>
+                        {res.guestPhone && <div className="text-xs text-slate-400">{res.guestPhone}</div>}
+                      </td>
+                      <td className="p-4 font-semibold text-slate-900 dark:text-white">
+                        #{res.roomNumber}
+                      </td>
+                      <td className="p-4 text-xs text-slate-500">
+                        {res.totalNights} {t('night(s)')}
+                      </td>
+                      <td className="p-4 font-bold text-slate-900 dark:text-white whitespace-nowrap">
+                        {format(res.totalAmount)}
+                      </td>
+                      <td className="p-4 text-emerald-600 font-semibold whitespace-nowrap">
+                        {format(res.advancePaid)}
+                      </td>
+                      <td className="p-4">
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                            res.status === 'CHECKED_IN'
+                              ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400'
+                              : res.status === 'CHECKED_OUT'
+                              ? 'bg-slate-100 text-slate-500 dark:bg-slate-800'
+                              : 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400'
+                          }`}
+                        >
+                          {res.status}
+                        </span>
+                      </td>
+                      <td className="p-4 text-right whitespace-nowrap space-x-1.5">
+                        {res.status === 'BOOKED' && (
+                          <button
+                            onClick={() => handleCheckIn(res.id)}
+                            className="px-2.5 py-1 bg-teal-600 hover:bg-teal-700 text-white rounded text-xs font-semibold inline-flex items-center gap-1"
+                          >
+                            <UserCheck className="w-3.5 h-3.5" />
+                            {t('Check-in')}
+                          </button>
+                        )}
+                        {res.status === 'CHECKED_IN' && (
+                          <button
+                            onClick={() => { setCheckoutReservation(res); setCheckoutPaid(res.remainingAmount); }}
+                            className="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded text-xs font-semibold inline-flex items-center gap-1"
+                          >
+                            <LogOut className="w-3.5 h-3.5" />
+                            {t('Check-out')}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -522,7 +582,7 @@ export const Hotel: React.FC = () => {
                   <option value="">{t('Select an available room...')}</option>
                   {rooms.filter((r) => r.status === 'AVAILABLE').map((r) => (
                     <option key={r.id} value={r.id}>
-                      #{r.roomNumber} - {r.roomType} ({formatCurrency(r.ratePerNight)}/night)
+                      #{r.roomNumber} - {r.roomType} ({format(r.ratePerNight)}/night)
                     </option>
                   ))}
                 </select>
@@ -570,10 +630,10 @@ export const Hotel: React.FC = () => {
               {t('Guest Check-out')}: {checkoutReservation.guestName}
             </h2>
             <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg text-xs space-y-1">
-              <div>Total Stay Bill: {formatCurrency(checkoutReservation.totalAmount)}</div>
-              <div>Advance Received: {formatCurrency(checkoutReservation.advancePaid)}</div>
+              <div>Total Stay Bill: {format(checkoutReservation.totalAmount)}</div>
+              <div>Advance Received: {format(checkoutReservation.advancePaid)}</div>
               <div className="font-bold text-slate-900 dark:text-white text-sm">
-                Remaining Due: {formatCurrency(checkoutReservation.remainingAmount)}
+                Remaining Due: {format(checkoutReservation.remainingAmount)}
               </div>
             </div>
             <form onSubmit={handleCheckOut} className="space-y-3">
