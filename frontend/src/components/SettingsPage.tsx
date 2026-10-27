@@ -725,6 +725,9 @@ const SettingsPage: React.FC = () => {
                                 <select value={profileData.businessType} onChange={e => setProfileData({...profileData, businessType: e.target.value})} className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white">
                                     <option>Retail</option>
                                     <option>Wholesale</option>
+                                    <option>Restaurant</option>
+                                    <option>Cafe & Bakery</option>
+                                    <option>Hotel & Hospitality</option>
                                     <option>Service</option>
                                     <option>Manufacturing</option>
                                 </select>

@@ -28,7 +28,7 @@ import businessAdminRouter from "./src/api/businessAdmin.js";
 import platformConfigRouter from "./src/api/platformConfig.js";
 import planRequestsRouter from "./src/api/planRequests.js";
 import { quotationsRouter } from "./src/api/quotations.js";
-import { kitchenOrdersRouter } from "./src/api/kitchenOrders.js";
+import kitchenRouter from "./src/api/kitchen.js";
 import announcementsRouter, { publicAnnouncementsRouter } from "./src/api/announcements.js";
 import revenueRouter from "./src/api/revenue.js";
 import { purchaseOrdersRouter } from "./src/api/purchaseOrders.js";
@@ -300,7 +300,8 @@ async function startServer() {
   app.use("/api/plan-requests", planRequestsRouter);
   app.use("/api/subscription-requests", planRequestsRouter);
   app.use("/api/quotations", quotationsRouter);
-  app.use("/api/kitchen-orders", kitchenOrdersRouter);
+  app.use("/api/kitchen", kitchenRouter);
+  app.use("/api/kitchen-orders", kitchenRouter);
   app.use("/api/admin/announcements", announcementsRouter);
   app.use("/api/announcements", publicAnnouncementsRouter);
   app.use("/api/admin/revenue", revenueRouter);

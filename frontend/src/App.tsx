@@ -1178,7 +1178,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           { to: '/wastage', icon: AlertTriangle, label: t('Wastage & Damage'), permission: PERMISSIONS.INVENTORY.subFeatures.ADJUSTMENT.key },
           { to: '/eprocurement', icon: Briefcase, label: t('E-Procurement'), permission: PERMISSIONS.INVENTORY.subFeatures.PURCHASE.key },
           { to: '/lc', icon: FileSpreadsheet, label: t('Letter of Credit (LC)'), permission: PERMISSIONS.INVENTORY.subFeatures.PURCHASE.key },
-          ...(user.businessType?.toLowerCase() === 'restaurant' ? [{ to: '/kitchen', icon: ChefHat, label: t('Kitchen Display'), permission: PERMISSIONS.POS.subFeatures.SELL.key }] : [])
+          ...(['restaurant', 'cafe', 'food', 'bakery', 'hospitality'].some(k => (user.businessType || '').toLowerCase().includes(k)) || user.role === 'SHOP_OWNER' || (Array.isArray(user.permissions) && (user.permissions.includes('all') || user.permissions.includes('pos.sell'))) ? [{ to: '/kitchen', icon: ChefHat, label: t('Kitchen Management (KDS)') || 'Kitchen Management (KDS)', permission: PERMISSIONS.POS.subFeatures.SELL.key }] : [])
         ]
       },
       {

@@ -80,6 +80,8 @@ export const TENANT_SUBCOLLECTIONS: SchemaCollection[] = [
   { name: 'customerGroups', scope: 'tenant', description: 'CRM groups' },
   { name: 'quotations', scope: 'tenant', description: 'Sales quotations' },
   { name: 'kitchenOrders', scope: 'tenant', description: 'Restaurant kitchen tickets' },
+  { name: 'kitchenTickets', scope: 'tenant', description: 'Restaurant Kitchen Order Tickets (KOT) & KDS records' },
+  { name: 'kitchenSettings', scope: 'tenant', description: 'Kitchen station definitions, prep targets, and KOT printer layout' },
   { name: 'purchaseOrders', scope: 'tenant', description: 'PO to suppliers' },
   { name: 'stockTransfers', scope: 'tenant', description: 'Inter-warehouse transfers' },
   { name: 'giftCards', scope: 'tenant', description: 'Gift card ledger' },

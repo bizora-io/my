@@ -32,7 +32,7 @@ const Sell: React.FC = () => {
   // Kitchen Order Ticket (KOT) - only meaningful for restaurant-type
   // businesses, so the UI for it stays out of the way for retail/other
   // business types instead of always showing a "Table Number" field.
-  const isRestaurant = (user?.businessType || '').toLowerCase() === 'restaurant';
+  const isRestaurantType = ['restaurant', 'cafe', 'food', 'bakery', 'hospitality'].some(k => (user?.businessType || '').toLowerCase().includes(k));
   const [tableNumber, setTableNumber] = useState('');
   const [orderType, setOrderType] = useState<'Dine-In' | 'Takeaway' | 'Delivery'>('Dine-In');
   const [sentKotIds, setSentKotIds] = useState<string[]>([]);
@@ -51,6 +51,8 @@ const Sell: React.FC = () => {
       id: string, name: string, stock: number, qty: number, price: number, 
       serialNumbers: string[], warranty?: string, image?: string, category?: string
   }[]>([]);
+
+  const isRestaurant = isRestaurantType || cart.some(item => Boolean(products.find(p => p.id === item.id)?.kitchenStation));
   
   const [invoiceDate, setInvoiceDate] = useState(() => new Date().toISOString().split('T')[0]);
   
