@@ -55,6 +55,16 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         description: 'Real-time sales, cashflow, stock alerts & quick actions',
         descriptionBn: 'লাইভ বিক্রয়, ক্যাশফ্লো, স্টক অ্যালার্ট ও অ্যাকশন',
         keywords: ['home', 'dashboard', 'overview', 'kpi', 'summary', 'analytics']
+      },
+      {
+        id: 'nav-notifications',
+        to: '/notifications',
+        label: 'Notifications',
+        labelBn: 'নোটিফিকেশন',
+        iconName: 'Bell',
+        description: 'Real-time activity alerts, low-stock warnings & broadcast updates',
+        descriptionBn: 'সকল নোটিফিকেশন, স্টক অ্যালার্ট ও সিস্টেম বার্তা',
+        keywords: ['notifications', 'alerts', 'announcements', 'messages', 'updates', 'inbox']
       }
     ]
   },
@@ -277,6 +287,17 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         description: 'Cash in hand, bank balances, bKash/Nagad accounts & reconciliation',
         descriptionBn: 'নগদ ক্যাশ, ব্যাংক অ্যাকাউন্ট, মোবাইল ব্যাংকিং ও হিসাব সমন্বয়',
         keywords: ['cashbox', 'bank', 'accounts', 'cash in hand', 'bkash', 'nagad', 'reconciliation']
+      },
+      {
+        id: 'nav-bank-reconcile',
+        to: '/bank-reconcile',
+        label: 'Bank Reconciliation',
+        labelBn: 'ব্যাংক সমন্বয়',
+        iconName: 'RefreshCw',
+        permission: 'finance.cashbox',
+        description: 'Upload bank statement CSV, match book transactions & verify balance',
+        descriptionBn: 'ব্যাংক স্টেটমেন্ট আপলোড ও স্বয়ংক্রিয় লেনদেন সমন্বয়',
+        keywords: ['bank reconciliation', 'reconciliation', 'statement', 'csv match', 'reconcile']
       },
       {
         id: 'nav-sale-ledger',
@@ -727,6 +748,17 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         description: 'Restore soft-deleted items, sales or contacts safely',
         descriptionBn: 'মুছে ফেলা যেকোনো তথ্য ও হিসাব নিরাপদে পুনরুদ্ধার',
         keywords: ['bin', 'recycle bin', 'trash', 'restore', 'deleted items']
+      },
+      {
+        id: 'nav-audit',
+        to: '/audit',
+        label: 'Security & Audit Log',
+        labelBn: 'অডিট ও অ্যাক্টিভিটি লগ',
+        iconName: 'ShieldAlert',
+        permission: 'admin.settings',
+        description: 'Track user activity, price overrides, deleted records & authentication history',
+        descriptionBn: 'নিরাপত্তা সংক্রান্ত লগ, ডাটা ডিলিট ও সিস্টেম অ্যাক্টিভিটি ট্র্যাকিং',
+        keywords: ['audit', 'audit log', 'activity log', 'security', 'history', 'compliance']
       }
     ]
   }
@@ -750,6 +782,16 @@ export const PATH_TO_NAV_ITEM: Record<string, NavItemConfig> = Object.fromEntrie
 export const PATH_TO_NAV_GROUP: Record<string, NavGroupConfig> = Object.fromEntries(
   NAV_GROUPS.flatMap(group => group.items.map(item => [item.to, group]))
 );
+
+// Register canonical route aliases for subroutes and alternative endpoints
+if (PATH_TO_NAV_ITEM['/ai-chat']) {
+  PATH_TO_NAV_ITEM['/assistant'] = PATH_TO_NAV_ITEM['/ai-chat'];
+  PATH_TO_NAV_GROUP['/assistant'] = PATH_TO_NAV_GROUP['/ai-chat'];
+}
+if (PATH_TO_NAV_ITEM['/audit']) {
+  PATH_TO_NAV_ITEM['/audit-log'] = PATH_TO_NAV_ITEM['/audit'];
+  PATH_TO_NAV_GROUP['/audit-log'] = PATH_TO_NAV_GROUP['/audit'];
+}
 
 /**
  * Filter navigation groups and items based on:

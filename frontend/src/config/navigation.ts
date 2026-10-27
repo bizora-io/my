@@ -9,7 +9,7 @@ import {
   Landmark, PiggyBank, CreditCard, FileSpreadsheet, Briefcase, Users,
   Building, ShieldCheck, Hotel, Truck, UserCheck, FolderGit2, Award,
   Globe, MessageSquare, Megaphone, HeadphonesIcon, ScanText, Bot, Settings,
-  Store, Crown, Printer, Trash2, HelpCircle
+  Store, Crown, Printer, Trash2, HelpCircle, Bell, RefreshCw, ShieldAlert
 } from 'lucide-react';
 
 export * from '@shared/config/navigation';
@@ -57,7 +57,10 @@ export const ICON_MAP: Record<string, React.ComponentType<any>> = {
   Store,
   Crown,
   Printer,
-  Trash2
+  Trash2,
+  Bell,
+  RefreshCw,
+  ShieldAlert
 };
 
 export function getNavIcon(iconName: string): React.ComponentType<any> {

@@ -212,5 +212,33 @@ describe('Bizora ERP Navigation Architecture & Single Source of Truth', () => {
       assert.ok(crumbs.length >= 2);
       assert.equal(crumbs[0].label, 'Home');
     });
+
+    test('generates accurate breadcrumbs for new items and canonical aliases', () => {
+      const notifCrumbs = getNavBreadcrumbs('/notifications', 'en');
+      assert.equal(notifCrumbs.length, 3);
+      assert.equal(notifCrumbs[1].label, 'Workspace');
+      assert.equal(notifCrumbs[2].label, 'Notifications');
+      assert.equal(notifCrumbs[2].to, '/notifications');
+
+      const bankCrumbs = getNavBreadcrumbs('/bank-reconcile', 'en');
+      assert.equal(bankCrumbs.length, 3);
+      assert.equal(bankCrumbs[1].label, 'Finance & Accounts');
+      assert.equal(bankCrumbs[2].label, 'Bank Reconciliation');
+      assert.equal(bankCrumbs[2].to, '/bank-reconcile');
+
+      const auditCrumbs = getNavBreadcrumbs('/audit', 'en');
+      assert.equal(auditCrumbs.length, 3);
+      assert.equal(auditCrumbs[1].label, 'System & Tools');
+      assert.equal(auditCrumbs[2].label, 'Security & Audit Log');
+      assert.equal(auditCrumbs[2].to, '/audit');
+
+      const auditLogAliasCrumbs = getNavBreadcrumbs('/audit-log', 'en');
+      assert.equal(auditLogAliasCrumbs.length, 3);
+      assert.equal(auditLogAliasCrumbs[2].label, 'Security & Audit Log');
+
+      const assistantAliasCrumbs = getNavBreadcrumbs('/assistant', 'en');
+      assert.equal(assistantAliasCrumbs.length, 3);
+      assert.equal(assistantAliasCrumbs[2].label, 'ERP AI Assistant');
+    });
   });
 });

@@ -1161,89 +1161,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     return searchNavigation(mobileSearchQuery, allAuthorizedItems);
   }, [mobileSearchQuery, allAuthorizedItems]);
 
-  // Memoized navigation sections for business (tenant) users to ensure role-based menu items are computed once per session
-  const businessSections = useMemo(() => {
-    if (!user || isSaaSUser) return [];
-    
-    const sections = [
-      {
-        title: t('Operations'),
-        items: [
-          { to: '/sale', icon: ShoppingBag, label: t('Sell'), permission: PERMISSIONS.POS.subFeatures.SELL.key },
-          { to: '/purchase', icon: ShoppingCart, label: t('Buy'), permission: PERMISSIONS.INVENTORY.subFeatures.PURCHASE.key },
-          { to: '/quick-sale', icon: Zap, label: t('Quick Sale'), permission: PERMISSIONS.POS.subFeatures.QUICK_SALE.key },
-          { to: '/sales-return', icon: RotateCcw, label: t('Sales Return') || 'Sales Return', permission: PERMISSIONS.POS.subFeatures.RETURNS.key },
-          { to: '/purchase-return', icon: RotateCcw, label: t('Purchase Return') || 'Purchase Return', permission: PERMISSIONS.POS.subFeatures.RETURNS.key },
-          { to: '/quotations', icon: FileText, label: t('Quotations'), permission: PERMISSIONS.POS.subFeatures.SELL.key },
-          { to: '/purchase-orders', icon: ClipboardList, label: t('Purchase Orders'), permission: PERMISSIONS.INVENTORY.subFeatures.PURCHASE.key },
-          { to: '/wastage', icon: AlertTriangle, label: t('Wastage & Damage'), permission: PERMISSIONS.INVENTORY.subFeatures.ADJUSTMENT.key },
-          { to: '/eprocurement', icon: Briefcase, label: t('E-Procurement'), permission: PERMISSIONS.INVENTORY.subFeatures.PURCHASE.key },
-          { to: '/lc', icon: FileSpreadsheet, label: t('Letter of Credit (LC)'), permission: PERMISSIONS.INVENTORY.subFeatures.PURCHASE.key },
-          ...(['restaurant', 'cafe', 'food', 'bakery', 'hospitality'].some(k => (user.businessType || '').toLowerCase().includes(k)) || user.role === 'SHOP_OWNER' || (Array.isArray(user.permissions) && (user.permissions.includes('all') || user.permissions.includes('pos.sell'))) ? [{ to: '/kitchen', icon: ChefHat, label: t('Kitchen Management (KDS)') || 'Kitchen Management (KDS)', permission: PERMISSIONS.POS.subFeatures.SELL.key }] : [])
-        ]
-      },
-      {
-        title: t('Finance'),
-        items: [
-          { to: '/cashbox', icon: Wallet, label: t('Accounts & Cash'), permission: PERMISSIONS.FINANCE.subFeatures.VIEW_CASHBOX.key },
-          { to: '/sale-ledger', icon: FileText, label: t('Sale Ledger'), permission: PERMISSIONS.FINANCE.subFeatures.VIEW_LEDGERS.key },
-          { to: '/purchase-ledger', icon: ClipboardList, label: t('Purchase Ledger'), permission: PERMISSIONS.FINANCE.subFeatures.VIEW_LEDGERS.key },
-          { to: '/due-ledger', icon: BookOpen, label: t('Due Ledger'), permission: PERMISSIONS.FINANCE.subFeatures.VIEW_LEDGERS.key },
-          { to: '/installments', icon: CalendarClock, label: t('Installments'), permission: PERMISSIONS.FINANCE.subFeatures.VIEW_LEDGERS.key },
-          { to: '/expense-ledger', icon: DollarSign, label: t('Expense Ledger'), permission: PERMISSIONS.FINANCE.subFeatures.VIEW_LEDGERS.key },
-          { to: '/loans', icon: Landmark, label: t('Loans & Debt'), permission: PERMISSIONS.FINANCE.subFeatures.VIEW_LEDGERS.key },
-          { to: '/pf', icon: PiggyBank, label: t('Provident Fund'), permission: PERMISSIONS.HR.subFeatures.VIEW_PAYROLL.key },
-          { to: '/journal', icon: BookOpen, label: t('Journal') || 'Journal', permission: PERMISSIONS.FINANCE.subFeatures.VIEW_LEDGERS.key },
-        ]
-      },
-      {
-        title: t('Management'),
-        items: [
-          { to: '/customers', icon: Users, label: t('Customers'), permission: PERMISSIONS.CRM.subFeatures.VIEW_CUSTOMERS.key },
-          { to: '/suppliers', icon: Briefcase, label: t('Suppliers'), permission: PERMISSIONS.CRM.subFeatures.VIEW_CUSTOMERS.key },
-          { to: '/lots', icon: Package, label: t('Lot Enquiry') || 'Lots', permission: PERMISSIONS.INVENTORY.subFeatures.VIEW_STOCK.key },
-          { to: '/stock', icon: Package, label: t('Stock Report'), permission: PERMISSIONS.INVENTORY.subFeatures.VIEW_STOCK.key },
-          { to: '/products', icon: Box, label: t('Product List'), permission: PERMISSIONS.INVENTORY.subFeatures.VIEW_STOCK.key },
-          { to: '/catalog', icon: Tags, label: t('Catalog Master'), permission: PERMISSIONS.INVENTORY.subFeatures.VIEW_STOCK.key },
-          { to: '/product-attributes', icon: Tags, label: t('Categories & Brands'), permission: PERMISSIONS.INVENTORY.subFeatures.VIEW_STOCK.key },
-          { to: '/production', icon: Factory, label: t('Production'), permission: PERMISSIONS.INVENTORY.subFeatures.PRODUCTION.key },
-          { to: '/hotel', icon: HotelIcon, label: t('Hotel & Hospitality'), permission: PERMISSIONS.POS.subFeatures.SELL.key },
-          { to: '/vehicles', icon: Truck, label: t('Fleet & Vehicles'), permission: PERMISSIONS.ADMIN.subFeatures.MANAGE_STORES.key },
-          { to: '/visitors', icon: UserCheck, label: t('Visitors & Passes'), permission: PERMISSIONS.CRM.subFeatures.VIEW_CUSTOMERS.key },
-          { to: '/projects', icon: FolderGit2, label: t('Projects & Tasks'), permission: PERMISSIONS.REPORTS.subFeatures.VIEW_REPORTS.key },
-          { to: '/dealers', icon: Award, label: t('Dealer Targets'), permission: PERMISSIONS.POS.subFeatures.VIEW_SALES.key },
-          { to: '/transfer', icon: ArrowRightLeft, label: t('Product Transfer'), permission: PERMISSIONS.INVENTORY.subFeatures.TRANSFER.key, requiredFeature: 'Unlimited Stores' },
-          { to: '/stores', icon: Store, label: t('Store Management'), permission: PERMISSIONS.ADMIN.subFeatures.MANAGE_STORES.key },
-          { to: '/employees', icon: Briefcase, label: t('Employees'), permission: PERMISSIONS.HR.subFeatures.MANAGE_STAFF.key, requiredFeature: 'Employee Management' },
-          { to: '/hr-structure', icon: Building, label: t('HR Structure'), permission: PERMISSIONS.HR.subFeatures.MANAGE_STAFF.key, requiredFeature: 'Employee Management' },
-          { to: '/access', icon: ShieldCheck, label: t('Access Control'), permission: PERMISSIONS.ADMIN.subFeatures.ACCESS_CONTROL.key, requiredFeature: 'Employee Management' },
-          { to: '/subscription', icon: Crown, label: t('Subscription'), permission: PERMISSIONS.ADMIN.subFeatures.SUBSCRIPTION.key }
-        ]
-      },
-      {
-        title: t('Tools'),
-        items: [
-          { to: '/document-ai', icon: ScanText, label: t('Document AI Scan'), permission: PERMISSIONS.FINANCE.subFeatures.ADD_EXPENSE.key },
-          { to: '/communication', icon: MessageSquare, label: t('Communication'), permission: PERMISSIONS.CRM.subFeatures.COMMUNICATION.key, requiredFeature: 'SMS Gateway Notification System' },
-          { to: '/marketing', icon: Megaphone, label: t('Marketing'), permission: PERMISSIONS.CRM.subFeatures.MARKETING.key, requiredFeature: 'SMS Gateway Notification System' },
-          { to: '/reports', icon: Briefcase, label: t('Reports & Tax'), permission: PERMISSIONS.REPORTS.subFeatures.VIEW_REPORTS.key },
-          { to: '/consolidation', icon: Briefcase, label: t('Consolidation'), permission: PERMISSIONS.REPORTS.subFeatures.VIEW_REPORTS.key },          { to: '/payments', icon: CreditCard, label: 'Online Payments', permission: PERMISSIONS.FINANCE.subFeatures.VIEW_CASHBOX.key },
-          { to: '/shop', icon: Globe, label: t('Online Shop'), permission: PERMISSIONS.ONLINE_SHOP.subFeatures.MANAGE_SHOP.key, requiredFeature: 'E-commerce Integration' },
-          { to: '/support', icon: HeadphonesIcon, label: t('Support'), permission: PERMISSIONS.CRM.subFeatures.SUPPORT.key },
-          { to: '/bin', icon: Trash2, label: t('Recycle Bin'), permission: PERMISSIONS.ADMIN.subFeatures.RECYCLE_BIN.key },
-          { to: '/training', icon: BookOpen, label: t('App Training'), permission: PERMISSIONS.ADMIN.subFeatures.SETTINGS.key },
-          { to: '/printer', icon: Printer, label: t('Printer Config'), permission: PERMISSIONS.ADMIN.subFeatures.SETTINGS.key },
-          { to: '/settings', icon: Settings, label: t('Settings'), permission: PERMISSIONS.ADMIN.subFeatures.SETTINGS.key }
-        ]
-      }
-    ];
-
-    return sections.map(sec => ({
-      ...sec,
-      items: sec.items.filter(item => check(item.permission))
-    })).filter(sec => sec.items.length > 0);
-  }, [user?.id, user?.role, user?.permissions, language]);
-
   // Memoized navigation sections for SaaS platform admins
   const saasSections = useMemo(() => {
     if (!user || !isSaaSUser) return [];
@@ -1422,7 +1339,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                                 {group.items.map(item => {
                                     const IconComponent = getNavIcon(item.iconName);
                                     const itemLabel = language === 'bn' ? item.labelBn : item.label;
-                                    const isActive = location.pathname === item.to;
+                                    const isActive = location.pathname === item.to ||
+                                        (item.to === '/audit' && location.pathname === '/audit-log') ||
+                                        (item.to === '/ai-chat' && location.pathname === '/assistant');
                                     return (
                                         <DesktopSidebarItem 
                                             key={item.id} 
@@ -1980,7 +1899,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                               const IconComponent = getNavIcon(item.iconName);
                               const itemLabel = language === 'bn' ? item.labelBn : item.label;
                               const itemDesc = language === 'bn' ? item.descriptionBn : item.description;
-                              const isActive = location.pathname === item.to;
+                              const isActive = location.pathname === item.to ||
+                                (item.to === '/audit' && location.pathname === '/audit-log') ||
+                                (item.to === '/ai-chat' && location.pathname === '/assistant');
                               return (
                                 <MobileMenuItem
                                   key={item.id}
@@ -2094,7 +2015,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                                           const IconComponent = getNavIcon(item.iconName);
                                           const itemLabel = language === 'bn' ? item.labelBn : item.label;
                                           const itemDesc = language === 'bn' ? item.descriptionBn : item.description;
-                                          const isActive = location.pathname === item.to;
+                                          const isActive = location.pathname === item.to ||
+                                        (item.to === '/audit' && location.pathname === '/audit-log') ||
+                                        (item.to === '/ai-chat' && location.pathname === '/assistant');
                                           return (
                                             <MobileMenuItem
                                               key={item.id}
