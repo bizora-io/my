@@ -194,8 +194,10 @@ export async function signInWithGoogle(
   } catch (err: any) {
     if (err?.code === 'auth/unauthorized-domain' || err?.message?.includes('unauthorized-domain')) {
       const currentHost = typeof window !== 'undefined' ? window.location.hostname : 'current domain';
+      const activeProj = auth?.app?.options?.projectId || 'test-saas2552';
+      const activeDomain = auth?.app?.options?.authDomain || `${activeProj}.firebaseapp.com`;
       throw new Error(
-        `Google Sign-In Domain Error: "${currentHost}" is not authorized in Firebase Authentication. Please visit the official production URL (https://bizora-app-io.vercel.app) or add "${currentHost}" to Firebase Console -> Authentication -> Settings -> Authorized domains.`
+        `Google Sign-In Domain Error: "${currentHost}" is not authorized for Firebase project "${activeProj}" (${activeDomain}). Please verify that "${currentHost}" is added to Firebase Console -> Authentication -> Settings -> Authorized domains for project "${activeProj}".`
       );
     }
     // If popup was blocked or unsupported, fallback to redirect flow

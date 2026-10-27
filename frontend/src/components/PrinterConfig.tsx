@@ -6,6 +6,7 @@ import {
   FileCode, CheckCircle2, AlertTriangle, Eye, ArrowRight
 } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
+import soundService from '@shared/services/soundService';
 
 interface PrinterProfile {
   id: string;
@@ -47,65 +48,8 @@ export default function PrinterConfig() {
 
   // Play a retro thermal printer hum/beep sound when test printing
   const playPrinterSound = () => {
-    try {
-      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      
-      // Beep first (attention)
-      const oscBeep = audioCtx.createOscillator();
-      const gainBeep = audioCtx.createGain();
-      oscBeep.type = 'sine';
-      oscBeep.frequency.setValueAtTime(2000, audioCtx.currentTime); // high pitch beep
-      gainBeep.gain.setValueAtTime(0.15, audioCtx.currentTime);
-      gainBeep.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
-      oscBeep.connect(gainBeep);
-      gainBeep.connect(audioCtx.destination);
-      oscBeep.start();
-      oscBeep.stop(audioCtx.currentTime + 0.15);
-
-      // Noise generator for thermal printing hum
-      setTimeout(() => {
-        const bufferSize = audioCtx.sampleRate * 1.5; // 1.5 seconds hum
-        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-        const data = buffer.getChannelData(0);
-        
-        // Populate white noise
-        for (let i = 0; i < bufferSize; i++) {
-          data[i] = Math.random() * 2 - 1;
-        }
-
-        const noiseNode = audioCtx.createBufferSource();
-        noiseNode.buffer = buffer;
-
-        // Bandpass filter to make it sound like a raspy printer engine hum
-        const filter = audioCtx.createBiquadFilter();
-        filter.type = 'bandpass';
-        filter.frequency.setValueAtTime(450, audioCtx.currentTime);
-        filter.Q.setValueAtTime(2.0, audioCtx.currentTime);
-
-        const gainHum = audioCtx.createGain();
-        gainHum.gain.setValueAtTime(0.0, audioCtx.currentTime);
-        // Fade in
-        gainHum.gain.linearRampToValueAtTime(0.12, audioCtx.currentTime + 0.1);
-        // Intermittent rhythm to simulate printing speed line-by-line
-        for (let t = 0.1; t < 1.3; t += 0.15) {
-          gainHum.gain.setValueAtTime(0.12, audioCtx.currentTime + t);
-          gainHum.gain.linearRampToValueAtTime(0.04, audioCtx.currentTime + t + 0.05);
-          gainHum.gain.linearRampToValueAtTime(0.12, audioCtx.currentTime + t + 0.1);
-        }
-        // Fade out
-        gainHum.gain.setValueAtTime(0.12, audioCtx.currentTime + 1.3);
-        gainHum.gain.linearRampToValueAtTime(0.0, audioCtx.currentTime + 1.5);
-
-        noiseNode.connect(filter);
-        filter.connect(gainHum);
-        gainHum.connect(audioCtx.destination);
-        
-        noiseNode.start();
-        noiseNode.stop(audioCtx.currentTime + 1.5);
-      }, 250);
-    } catch (e) {
-      console.warn('Audio Context failed to play sound', e);
-    }
+    soundService.markUserInteracted();
+    soundService.playPrinterBeep();
   };
 
   // Toast Helper

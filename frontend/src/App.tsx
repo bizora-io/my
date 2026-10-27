@@ -46,7 +46,7 @@ const ProductList = lazy(() => import('./components/ProductList'));
 const ProductAttributes = lazy(() => import('./components/ProductAttributes'));
 const StoreManagement = lazy(() => import('./components/StoreManagement'));
 const Subscription = lazy(() => import('./components/Subscription'));
-const NotificationCenter = lazy(() => import('./components/NotificationCenter'));
+const NotificationsPage = lazy(() => import('./components/NotificationsPage'));
 const Buy = lazy(() => import('./components/Buy'));
 const Sell = lazy(() => import('./components/Sell'));
 const SalesReturn = lazy(() => import('./components/SalesReturn'));
@@ -93,6 +93,7 @@ import { CustomerPortal } from './components/CustomerPortal';
 import { EmployeePortal } from './components/EmployeePortal';
 import { SupplierPortal } from './components/SupplierPortal';
 import { InactivityTimer } from './components/InactivityTimer';
+import NotificationCenter from './components/NotificationCenter';
 import { AppLanguage, Currency, UserRole } from './types';
 import { SoundProvider } from './contexts/SoundContext';
 import { SettingsProvider, useSettings, CURRENCY_SYMBOLS } from './contexts/SettingsContext';
@@ -2967,6 +2968,7 @@ const AppContent: React.FC = () => {
             </ProtectedRoute>
           } />
           
+          <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         </Suspense>

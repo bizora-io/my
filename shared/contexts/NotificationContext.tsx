@@ -83,7 +83,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           if (Array.isArray(data.notifications)) {
             if (isInitialLoadRef.current) {
               isInitialLoadRef.current = false;
-              data.notifications.forEach((n: Notification) => soundService.playNotificationOnce(n.id));
+              // Mark existing notifications as seen so historical ones do not chime on app start
+              data.notifications.forEach((n: Notification) => soundService.markNotificationAsSeen(n.id));
             } else {
               const newUnread = data.notifications.find((n: Notification) => !n.read && !notifications.some(existing => existing.id === n.id));
               if (newUnread) {

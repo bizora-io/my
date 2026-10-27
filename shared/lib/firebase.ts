@@ -8,11 +8,20 @@ import { getFirestore, type Firestore } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 
 const env = (typeof import.meta !== 'undefined' && (import.meta as any).env) || {};
+const effectiveProjectId =
+  env.VITE_FIREBASE_PROJECT_ID || (firebaseConfig as any).projectId || 'test-saas2552';
+
 const config = {
   apiKey: env.VITE_FIREBASE_API_KEY || (firebaseConfig as any).apiKey,
-  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN || (firebaseConfig as any).authDomain,
-  projectId: env.VITE_FIREBASE_PROJECT_ID || (firebaseConfig as any).projectId,
-  storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET || (firebaseConfig as any).storageBucket,
+  authDomain:
+    env.VITE_FIREBASE_AUTH_DOMAIN ||
+    (firebaseConfig as any).authDomain ||
+    `${effectiveProjectId}.firebaseapp.com`,
+  projectId: effectiveProjectId,
+  storageBucket:
+    env.VITE_FIREBASE_STORAGE_BUCKET ||
+    (firebaseConfig as any).storageBucket ||
+    `${effectiveProjectId}.firebasestorage.app`,
   messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID || (firebaseConfig as any).messagingSenderId,
   appId: env.VITE_FIREBASE_APP_ID || (firebaseConfig as any).appId,
   measurementId: env.VITE_FIREBASE_MEASUREMENT_ID || (firebaseConfig as any).measurementId || undefined,

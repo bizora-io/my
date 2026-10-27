@@ -63,6 +63,7 @@ export const PLATFORM_COLLECTIONS: SchemaCollection[] = [
   { name: 'paymentExternalIndex', scope: 'platform', description: 'Stripe/etc external id → business map' },
   { name: 'consolidationGroups', scope: 'platform', description: 'Multi-company consolidation groups' },
   { name: 'backups', scope: 'platform', description: 'Backup metadata (encrypted payloads elsewhere)' },
+  { name: 'notifications', scope: 'platform', description: 'Platform notification feed and system broadcast alerts' },
 ];
 
 /** Subcollections under businesses/{businessId}/ */
@@ -114,6 +115,7 @@ export const TENANT_SUBCOLLECTIONS: SchemaCollection[] = [
   { name: 'projectTasks', scope: 'tenant', description: 'Project task management and completion tracking' },
   { name: 'dealerTargets', scope: 'tenant', description: 'Dealer sales targets and performance metrics' },
   { name: 'documentAiJobs', scope: 'tenant', description: 'Document AI scan jobs, extracted receipt and invoice data' },
+  { name: 'notifications', scope: 'tenant', description: 'Tenant notification alerts, transaction notifications, and operational activity' },
 ];
 
 /** Default limits written on new shop registration */

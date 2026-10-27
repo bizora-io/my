@@ -4,8 +4,12 @@ import { authenticateToken } from "./middleware/auth.js";
 
 const router = express.Router();
 
-function notificationsCollection() {
+function rootNotificationsCollection() {
   return getDb().collection("notifications");
+}
+
+function tenantNotificationsCollection(businessId: string) {
+  return getDb().collection("businesses").doc(businessId).collection("notifications");
 }
 
 function stripUndefined<T extends Record<string, any>>(obj: T): T {
@@ -14,11 +18,12 @@ function stripUndefined<T extends Record<string, any>>(obj: T): T {
 
 router.use(authenticateToken);
 
-// GET /api/notifications - List user's notifications
+// GET /api/notifications - List user's notifications (Tenant Isolated + SaaS Staff support)
 router.get("/", async (req, res) => {
   try {
     const user = (req as any).user;
     const userId = user?.id || user?.userId || user?.businessId;
+    const businessId = user?.businessId || (user?.role === "SHOP_OWNER" ? user?.id : null);
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized user ID" });
     }
@@ -28,9 +33,9 @@ router.get("/", async (req, res) => {
     let notifications: any[] = [];
     if (isSaasStaff) {
       const [userSnap, adminSnap, saasRoleSnap] = await Promise.all([
-        notificationsCollection().where("userId", "in", [userId, "saas-owner", "system"].filter(Boolean)).get(),
-        notificationsCollection().where("targetRole", "==", "SAAS_ADMIN").get(),
-        notificationsCollection().where("targetRole", "==", "ALL").get(),
+        rootNotificationsCollection().where("userId", "in", [userId, "saas-owner", "system"].filter(Boolean)).get(),
+        rootNotificationsCollection().where("targetRole", "==", "SAAS_ADMIN").get(),
+        rootNotificationsCollection().where("targetRole", "==", "ALL").get(),
       ]);
 
       const map = new Map<string, any>();
@@ -38,8 +43,26 @@ router.get("/", async (req, res) => {
         map.set(doc.id, { id: doc.id, ...doc.data() });
       });
       notifications = Array.from(map.values());
+    } else if (businessId) {
+      // 1. Primary: Subcollection businesses/{businessId}/notifications (Canonical Tenant Isolation)
+      // 2. Secondary: Root collection where userId == userId (Backward Compatibility)
+      const [tenantSnap, rootSnap] = await Promise.all([
+        tenantNotificationsCollection(businessId).get().catch(() => ({ docs: [] })),
+        rootNotificationsCollection().where("userId", "==", userId).get().catch(() => ({ docs: [] })),
+      ]);
+
+      const map = new Map<string, any>();
+      (tenantSnap.docs || []).forEach((doc: any) => {
+        map.set(doc.id, { id: doc.id, ...doc.data() });
+      });
+      (rootSnap.docs || []).forEach((doc: any) => {
+        if (!map.has(doc.id)) {
+          map.set(doc.id, { id: doc.id, ...doc.data() });
+        }
+      });
+      notifications = Array.from(map.values());
     } else {
-      const snapshot = await notificationsCollection()
+      const snapshot = await rootNotificationsCollection()
         .where("userId", "==", userId)
         .get();
       notifications = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
@@ -63,6 +86,7 @@ router.post("/", async (req, res) => {
   try {
     const user = (req as any).user;
     const userId = user?.id || user?.userId || user?.businessId;
+    const businessId = user?.businessId || (user?.role === "SHOP_OWNER" ? user?.id : null);
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized user ID" });
     }
@@ -76,7 +100,9 @@ router.post("/", async (req, res) => {
     const now = new Date().toISOString();
 
     const payload = stripUndefined({
+      id: notifId,
       userId,
+      businessId: businessId || null,
       title,
       message,
       type,
@@ -88,8 +114,14 @@ router.post("/", async (req, res) => {
       updatedAt: now,
     });
 
-    await notificationsCollection().doc(notifId).set(payload);
-    res.status(201).json({ notification: { id: notifId, ...payload } });
+    // Write to tenant subcollection if businessId is present
+    if (businessId) {
+      await tenantNotificationsCollection(businessId).doc(notifId).set(payload);
+    }
+    // Also record in root collection for staff/audit lookup
+    await rootNotificationsCollection().doc(notifId).set(payload);
+
+    res.status(201).json({ notification: payload });
   } catch (error) {
     console.error("Create notification error:", error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -101,24 +133,43 @@ router.patch("/:id/read", async (req, res) => {
   try {
     const user = (req as any).user;
     const userId = user?.id || user?.userId || user?.businessId;
+    const businessId = user?.businessId || (user?.role === "SHOP_OWNER" ? user?.id : null);
     const { id } = req.params;
 
-    const docRef = notificationsCollection().doc(id);
-    const doc = await docRef.get();
-    if (!doc.exists) {
-      return res.status(404).json({ error: "Notification not found" });
-    }
-
-    const data = doc.data();
-    const isSaasStaff = user?.role === "SAAS_OWNER" || user?.role === "SAAS_ADMIN";
-    if (data?.userId && data.userId !== userId && !isSaasStaff && data.targetRole !== "ALL") {
-      return res.status(403).json({ error: "Forbidden" });
-    }
-
-    await docRef.update({
+    const updates = {
       read: true,
       updatedAt: new Date().toISOString(),
-    });
+    };
+
+    let updated = false;
+
+    // Check tenant subcollection first
+    if (businessId) {
+      const tenantRef = tenantNotificationsCollection(businessId).doc(id);
+      const tenantDoc = await tenantRef.get();
+      if (tenantDoc.exists) {
+        await tenantRef.update(updates);
+        updated = true;
+      }
+    }
+
+    // Check root collection
+    const rootRef = rootNotificationsCollection().doc(id);
+    const rootDoc = await rootRef.get();
+    if (rootDoc.exists) {
+      const data = rootDoc.data();
+      const isSaasStaff = user?.role === "SAAS_OWNER" || user?.role === "SAAS_ADMIN";
+      if (data?.userId && data.userId !== userId && !isSaasStaff && data.targetRole !== "ALL") {
+        if (!updated) return res.status(403).json({ error: "Forbidden" });
+      } else {
+        await rootRef.update(updates);
+        updated = true;
+      }
+    }
+
+    if (!updated) {
+      return res.status(404).json({ error: "Notification not found" });
+    }
 
     res.json({ success: true, id });
   } catch (error) {
@@ -132,36 +183,49 @@ router.post("/read-all", async (req, res) => {
   try {
     const user = (req as any).user;
     const userId = user?.id || user?.userId || user?.businessId;
+    const businessId = user?.businessId || (user?.role === "SHOP_OWNER" ? user?.id : null);
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized user ID" });
     }
 
     const isSaasStaff = user?.role === "SAAS_OWNER" || user?.role === "SAAS_ADMIN";
-
-    let docsToUpdate: any[] = [];
-    if (isSaasStaff) {
-      const [uSnap, aSnap] = await Promise.all([
-        notificationsCollection().where("userId", "in", [userId, "saas-owner", "system"].filter(Boolean)).where("read", "==", false).get(),
-        notificationsCollection().where("targetRole", "==", "SAAS_ADMIN").where("read", "==", false).get(),
-      ]);
-      docsToUpdate = [...uSnap.docs, ...aSnap.docs];
-    } else {
-      const snapshot = await notificationsCollection()
-        .where("userId", "==", userId)
-        .where("read", "==", false)
-        .get();
-      docsToUpdate = snapshot.docs;
-    }
-
     const batch = getDb().batch();
     const seen = new Set<string>();
-    docsToUpdate.forEach((doc) => {
-      if (!seen.has(doc.id)) {
-        seen.add(doc.id);
-        batch.update(doc.ref, { read: true, updatedAt: new Date().toISOString() });
+    const now = new Date().toISOString();
+
+    if (isSaasStaff) {
+      const [uSnap, aSnap] = await Promise.all([
+        rootNotificationsCollection().where("userId", "in", [userId, "saas-owner", "system"].filter(Boolean)).where("read", "==", false).get(),
+        rootNotificationsCollection().where("targetRole", "==", "SAAS_ADMIN").where("read", "==", false).get(),
+      ]);
+      [...uSnap.docs, ...aSnap.docs].forEach((doc) => {
+        if (!seen.has(doc.id)) {
+          seen.add(doc.id);
+          batch.update(doc.ref, { read: true, updatedAt: now });
+        }
+      });
+    } else {
+      if (businessId) {
+        const tenantSnap = await tenantNotificationsCollection(businessId).where("read", "==", false).get().catch(() => ({ docs: [] }));
+        (tenantSnap.docs || []).forEach((doc: any) => {
+          if (!seen.has(doc.id)) {
+            seen.add(doc.id);
+            batch.update(doc.ref, { read: true, updatedAt: now });
+          }
+        });
       }
-    });
-    await batch.commit();
+      const rootSnap = await rootNotificationsCollection().where("userId", "==", userId).where("read", "==", false).get().catch(() => ({ docs: [] }));
+      (rootSnap.docs || []).forEach((doc: any) => {
+        if (!seen.has(doc.id)) {
+          seen.add(doc.id);
+          batch.update(doc.ref, { read: true, updatedAt: now });
+        }
+      });
+    }
+
+    if (seen.size > 0) {
+      await batch.commit();
+    }
 
     res.json({ success: true, count: seen.size });
   } catch (error) {
@@ -175,17 +239,31 @@ router.delete("/:id", async (req, res) => {
   try {
     const user = (req as any).user;
     const userId = user?.id || user?.userId || user?.businessId;
+    const businessId = user?.businessId || (user?.role === "SHOP_OWNER" ? user?.id : null);
     const { id } = req.params;
 
-    const docRef = notificationsCollection().doc(id);
-    const doc = await docRef.get();
-    if (doc.exists) {
-      const data = doc.data();
+    let deleted = false;
+
+    if (businessId) {
+      const tenantRef = tenantNotificationsCollection(businessId).doc(id);
+      const tenantDoc = await tenantRef.get();
+      if (tenantDoc.exists) {
+        await tenantRef.delete();
+        deleted = true;
+      }
+    }
+
+    const rootRef = rootNotificationsCollection().doc(id);
+    const rootDoc = await rootRef.get();
+    if (rootDoc.exists) {
+      const data = rootDoc.data();
       const isSaasStaff = user?.role === "SAAS_OWNER" || user?.role === "SAAS_ADMIN";
       if (data?.userId && data.userId !== userId && !isSaasStaff && data.targetRole !== "ALL") {
-        return res.status(403).json({ error: "Forbidden" });
+        if (!deleted) return res.status(403).json({ error: "Forbidden" });
+      } else {
+        await rootRef.delete();
+        deleted = true;
       }
-      await docRef.delete();
     }
 
     res.json({ success: true, id });
@@ -200,21 +278,33 @@ router.delete("/", async (req, res) => {
   try {
     const user = (req as any).user;
     const userId = user?.id || user?.userId || user?.businessId;
+    const businessId = user?.businessId || (user?.role === "SHOP_OWNER" ? user?.id : null);
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized user ID" });
     }
 
-    const snapshot = await notificationsCollection()
-      .where("userId", "==", userId)
-      .get();
-
     const batch = getDb().batch();
-    snapshot.docs.forEach((doc) => {
-      batch.delete(doc.ref);
-    });
-    await batch.commit();
+    let count = 0;
 
-    res.json({ success: true, count: snapshot.size });
+    if (businessId) {
+      const tenantSnap = await tenantNotificationsCollection(businessId).get().catch(() => ({ docs: [] }));
+      (tenantSnap.docs || []).forEach((doc: any) => {
+        batch.delete(doc.ref);
+        count++;
+      });
+    }
+
+    const rootSnap = await rootNotificationsCollection().where("userId", "==", userId).get().catch(() => ({ docs: [] }));
+    (rootSnap.docs || []).forEach((doc: any) => {
+      batch.delete(doc.ref);
+      count++;
+    });
+
+    if (count > 0) {
+      await batch.commit();
+    }
+
+    res.json({ success: true, count });
   } catch (error) {
     console.error("Clear all notifications error:", error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -222,4 +312,3 @@ router.delete("/", async (req, res) => {
 });
 
 export default router;
-

@@ -1,10 +1,10 @@
 {
-  "projectId": "bizora-nodejs-86255584-4e411",
+  "projectId": "test-saas2552",
   "appId": "1:334237993989:web:8157848f196c8b59f8e06c",
   "apiKey": "AIzaSyCMUGPqH5NtMLlb1JiPv8S1ry9gHAcDx8U",
-  "authDomain": "bizora-nodejs-86255584-4e411.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-remixbizora-570ce51f-dfd4-4c90-ba35-f978aaa9f905",
-  "storageBucket": "bizora-nodejs-86255584-4e411.firebasestorage.app",
+  "authDomain": "test-saas2552.firebaseapp.com",
+  "firestoreDatabaseId": "(default)",
+  "storageBucket": "test-saas2552.firebasestorage.app",
   "messagingSenderId": "334237993989",
   "measurementId": ""
 }

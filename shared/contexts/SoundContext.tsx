@@ -12,6 +12,9 @@ interface SoundContextType {
   playOrderReceived: () => void;
   playActionSuccess: () => void;
   playWarning: () => void;
+  playScanSuccess: () => void;
+  playKitchenChime: () => void;
+  playPrinterBeep: () => void;
   previewSound: (type: 'notification' | 'sale' | 'order' | 'action' | 'warning') => void;
 }
 
@@ -74,6 +77,18 @@ export const SoundProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     soundService.playWarning();
   }, []);
 
+  const playScanSuccess = useCallback(() => {
+    soundService.playScanSuccess();
+  }, []);
+
+  const playKitchenChime = useCallback(() => {
+    soundService.playKitchenChime();
+  }, []);
+
+  const playPrinterBeep = useCallback(() => {
+    soundService.playPrinterBeep();
+  }, []);
+
   const previewSound = useCallback((type: 'notification' | 'sale' | 'order' | 'action' | 'warning') => {
     switch (type) {
       case 'notification':
@@ -106,6 +121,9 @@ export const SoundProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       playOrderReceived,
       playActionSuccess,
       playWarning,
+      playScanSuccess,
+      playKitchenChime,
+      playPrinterBeep,
       previewSound,
     }}>
       {children}
@@ -128,6 +146,9 @@ export const useSound = () => {
       playOrderReceived: () => soundService.playOrderReceived(),
       playActionSuccess: () => soundService.playActionSuccess(),
       playWarning: () => soundService.playWarning(),
+      playScanSuccess: () => soundService.playScanSuccess(),
+      playKitchenChime: () => soundService.playKitchenChime(),
+      playPrinterBeep: () => soundService.playPrinterBeep(),
       previewSound: () => {},
     };
   }

@@ -52,6 +52,9 @@ describe('SoundService', () => {
     assert.doesNotThrow(() => soundService.playOrderReceived());
     assert.doesNotThrow(() => soundService.playActionSuccess());
     assert.doesNotThrow(() => soundService.playWarning());
+    assert.doesNotThrow(() => soundService.playScanSuccess());
+    assert.doesNotThrow(() => soundService.playKitchenChime());
+    assert.doesNotThrow(() => soundService.playPrinterBeep());
   });
 
   test('deduplicates notification sound plays by ID', () => {
@@ -73,5 +76,32 @@ describe('SoundService', () => {
     } finally {
       soundService.playNotification = origPlay;
     }
+  });
+
+  test('markNotificationAsSeen silences historical notifications loaded on page mount', () => {
+    let playCount = 0;
+    const origPlay = soundService.playNotification;
+    soundService.playNotification = () => { playCount++; };
+
+    try {
+      soundService.markNotificationAsSeen('history-doc-1');
+      soundService.markNotificationAsSeen('history-doc-2');
+
+      // Attempting to play these existing notifications must not trigger audio
+      soundService.playNotificationOnce('history-doc-1');
+      soundService.playNotificationOnce('history-doc-2');
+      assert.equal(playCount, 0, 'Pre-marked historical notifications must be silenced');
+
+      // Fresh notification arriving later plays
+      soundService.playNotificationOnce('new-order-live');
+      assert.equal(playCount, 1, 'New un-seen notification must play');
+    } finally {
+      soundService.playNotification = origPlay;
+    }
+  });
+
+  test('tracks user gesture interaction status', () => {
+    soundService.markUserInteracted();
+    assert.equal(soundService.isInteracted(), true);
   });
 });

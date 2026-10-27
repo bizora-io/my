@@ -4,7 +4,8 @@
  * 
  * Features:
  * - Pure Web Audio API: Zero external MP3/WAV requests, zero network latency, zero CORS or copyright issues.
- * - Autoplay compliance: AudioContext is created/resumed lazily on user gesture.
+ * - Autoplay compliance: AudioContext is created/resumed strictly after a user gesture (click/touch/key)
+ *   to avoid browser console warnings ("The AudioContext was not allowed to start").
  * - Deduplication: Notification sounds track played IDs to prevent replay on rerenders or polling.
  * - Volume & mute settings persisted in localStorage ('bizora_sound_enabled', 'bizora_sound_volume').
  * - Graceful fallback: Safe no-op in headless/SSR/Node environments.
@@ -15,9 +16,11 @@ class SoundService {
   private enabled: boolean = true;
   private volume: number = 0.7;
   private playedNotificationIds = new Set<string>();
+  private userHasInteracted: boolean = false;
 
   constructor() {
     this.loadPreferences();
+    this.setupGestureListeners();
   }
 
   private loadPreferences() {
@@ -37,6 +40,39 @@ class SoundService {
     } catch {
       // Ignore storage errors in restricted iframes
     }
+  }
+
+  private setupGestureListeners() {
+    if (typeof window === 'undefined') return;
+    const unlock = () => {
+      this.userHasInteracted = true;
+      if (this.ctx && this.ctx.state === 'suspended') {
+        this.ctx.resume().catch(() => {});
+      }
+      window.removeEventListener('click', unlock, true);
+      window.removeEventListener('keydown', unlock, true);
+      window.removeEventListener('touchstart', unlock, true);
+      window.removeEventListener('pointerdown', unlock, true);
+    };
+
+    window.addEventListener('click', unlock, { capture: true, passive: true });
+    window.addEventListener('keydown', unlock, { capture: true, passive: true });
+    window.addEventListener('touchstart', unlock, { capture: true, passive: true });
+    window.addEventListener('pointerdown', unlock, { capture: true, passive: true });
+  }
+
+  /**
+   * Manually signal user interaction (e.g., inside click handlers or unit tests)
+   */
+  public markUserInteracted() {
+    this.userHasInteracted = true;
+    if (this.ctx && this.ctx.state === 'suspended') {
+      this.ctx.resume().catch(() => {});
+    }
+  }
+
+  public isInteracted(): boolean {
+    return this.userHasInteracted;
   }
 
   public isEnabled(): boolean {
@@ -75,7 +111,11 @@ class SoundService {
     const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
     if (!AudioCtx) return null;
 
+    // Do not create AudioContext eagerly before any user gesture to conform with Autoplay policies
     if (!this.ctx) {
+      if (!this.userHasInteracted) {
+        return null;
+      }
       try {
         this.ctx = new AudioCtx();
       } catch {
@@ -83,7 +123,7 @@ class SoundService {
       }
     }
 
-    if (this.ctx && this.ctx.state === 'suspended') {
+    if (this.ctx && this.ctx.state === 'suspended' && this.userHasInteracted) {
       this.ctx.resume().catch(() => {});
     }
 
@@ -93,7 +133,7 @@ class SoundService {
   /**
    * Helper to play a tone or sequential harmonic tones
    */
-  private playTone(
+  public playTone(
     freq: number, 
     type: OscillatorType, 
     duration: number, 
@@ -136,6 +176,21 @@ class SoundService {
     if (!this.enabled || this.volume <= 0) return;
     this.playTone(587.33, 'sine', 0.12, 0.35, 0.0);
     this.playTone(880.00, 'sine', 0.22, 0.40, 0.10);
+  }
+
+  /**
+   * Mark a notification ID as seen so historical ones loaded on page mount do not chime.
+   */
+  public markNotificationAsSeen(id: string) {
+    if (!id) return;
+    this.playedNotificationIds.add(id);
+    if (this.playedNotificationIds.size > 500) {
+      const it = this.playedNotificationIds.values();
+      for (let i = 0; i < 200; i++) {
+        const item = it.next();
+        if (item.value) this.playedNotificationIds.delete(item.value);
+      }
+    }
   }
 
   /**
@@ -193,6 +248,31 @@ class SoundService {
     if (!this.enabled || this.volume <= 0) return;
     this.playTone(392.00, 'sawtooth', 0.12, 0.25, 0.00);
     this.playTone(329.63, 'sawtooth', 0.20, 0.25, 0.10);
+  }
+
+  /**
+   * 6. Barcode scan feedback chime
+   */
+  public playScanSuccess() {
+    if (!this.enabled || this.volume <= 0) return;
+    this.playTone(880, 'sine', 0.08, 0.25, 0.0);
+  }
+
+  /**
+   * 7. Kitchen Display & Order Bell
+   */
+  public playKitchenChime() {
+    if (!this.enabled || this.volume <= 0) return;
+    this.playTone(880, 'sine', 0.12, 0.30, 0.0);
+    this.playTone(1174, 'sine', 0.25, 0.35, 0.10);
+  }
+
+  /**
+   * 8. Thermal printer test chime
+   */
+  public playPrinterBeep() {
+    if (!this.enabled || this.volume <= 0) return;
+    this.playTone(2000, 'sine', 0.15, 0.20, 0.0);
   }
 }
 

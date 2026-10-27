@@ -160,3 +160,55 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
+
+// --- Push Notification Event Handler ---
+self.addEventListener('push', (event) => {
+  if (!event.data) return;
+  try {
+    const data = event.data.json();
+    const title = data.title || 'Bizora ERP';
+    const options = {
+      body: data.message || data.body || 'You have a new update.',
+      icon: data.icon || '/favicon.ico',
+      badge: '/favicon.ico',
+      tag: data.id || `bizora-notif-${Date.now()}`,
+      data: {
+        url: data.target || data.url || '/#/notifications',
+        id: data.id
+      }
+    };
+    event.waitUntil(self.registration.showNotification(title, options));
+  } catch (e) {
+    const text = event.data.text();
+    event.waitUntil(
+      self.registration.showNotification('Bizora ERP', {
+        body: text || 'You have a new notification.',
+        icon: '/favicon.ico'
+      })
+    );
+  }
+});
+
+// --- Push Notification Click Event Handler ---
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const targetUrl = (event.notification.data && event.notification.data.url) || '/#/notifications';
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      // Focus existing window if open
+      for (const client of windowClients) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          if ('navigate' in client && targetUrl) {
+            client.navigate(targetUrl);
+          }
+          return client.focus();
+        }
+      }
+      // Open new window if none active
+      if (clients.openWindow) {
+        return clients.openWindow(targetUrl);
+      }
+    })
+  );
+});

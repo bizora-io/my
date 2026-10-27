@@ -24,7 +24,7 @@ import { useSound } from '../contexts/SoundContext';
 const Sell: React.FC = () => {
   const { t, formatMoney, currencySymbol, language } = useSettings();
   const { user, logActivity } = useAuth();
-  const { playSaleSuccess, playActionSuccess } = useSound();
+  const { playSaleSuccess, playActionSuccess, playScanSuccess } = useSound();
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [customerHistory, setCustomerHistory] = useState<LedgerEntry[]>([]);
   const { transactions, products, customers, staff, updateProductStock, updateProduct, addEntity, addTransaction, promoCodes, financialAccounts, addKitchenOrder, updateKitchenOrderStatus, kitchenOrders, validateCoupon, recordCouponUsage, loyaltyConfig, redeemLoyaltyPoints, redeemGiftCard, refreshProducts, lastProductsSyncAt, productsRealtimeActive , updateEntity } = useData();
@@ -529,18 +529,7 @@ const Sell: React.FC = () => {
               setScanFeedback({ type: 'ok', msg: `Added: ${hit.product.name}` });
           }
           setSearchTerm('');
-          // short audio cue when available
-          try {
-              const Ctx = window.AudioContext || (window as any).webkitAudioContext;
-              if (Ctx) {
-                  const ctx = new Ctx();
-                  const o = ctx.createOscillator();
-                  const g = ctx.createGain();
-                  o.connect(g); g.connect(ctx.destination);
-                  o.frequency.value = 880; g.gain.value = 0.08;
-                  o.start(); o.stop(ctx.currentTime + 0.08);
-              }
-          } catch { /* ignore */ }
+          playScanSuccess();
       } else {
           setScanFeedback({ type: 'err', msg: `No product for code: ${code}` });
           setSearchTerm(code);

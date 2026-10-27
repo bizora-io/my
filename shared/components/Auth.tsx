@@ -327,9 +327,9 @@ export const Auth: React.FC<AuthProps> = ({ initialRole, portalMode, lockRole = 
         setBtnSuccess(true);
       }
     } catch (err: any) {
-      if (err?.code === 'auth/unauthorized-domain' || err?.message?.includes('unauthorized-domain')) {
+      if (err?.code === 'auth/unauthorized-domain' || err?.message?.includes('unauthorized-domain') || err?.message?.includes('Google Sign-In Domain Error')) {
         setLoginError(
-          `Firebase Error: Current domain "${typeof window !== 'undefined' ? window.location.hostname : ''}" is not authorized. Please navigate to https://bizora-app-io.vercel.app or add this domain in Firebase Console > Authentication > Settings > Authorized domains.`
+          err.message || `Firebase Error: Current domain "${typeof window !== 'undefined' ? window.location.hostname : ''}" is not authorized. Please add this domain in Firebase Console > Authentication > Settings > Authorized domains.`
         );
       } else if (err?.code === 'auth/popup-closed-by-user') {
         setLoginError('Google Sign-In popup was closed before completing authorization.');

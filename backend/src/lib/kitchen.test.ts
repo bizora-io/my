@@ -49,7 +49,7 @@ function updateTicketItemStatus(
   const items = ticket.items.map((it) => (it.id === itemId ? { ...it, status: newStatus } : it));
   const activeItems = items.filter((it) => it.status !== 'CANCELLED');
 
-  let computedTicketStatus = ticket.status;
+  let computedTicketStatus: MockTicket['status'] = ticket.status;
   if (activeItems.length === 0) {
     computedTicketStatus = 'CANCELLED';
   } else if (activeItems.every((it) => it.status === 'READY')) {

@@ -531,6 +531,21 @@ const NotificationCenter: React.FC = () => {
               })
             )}
           </div>
+
+          {/* Desktop Footer Link */}
+          <div className="p-2.5 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-100 dark:border-slate-800 text-center shrink-0">
+            <button
+              type="button"
+              onClick={() => {
+                setIsOpen(false);
+                navigate('/notifications');
+              }}
+              className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center justify-center gap-1 w-full py-1"
+            >
+              <span>Open Notification Center</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       )}
 
@@ -668,6 +683,21 @@ const NotificationCenter: React.FC = () => {
                   );
                 })
               )}
+            </div>
+
+            {/* Mobile Bottom Footer */}
+            <div className="px-4 py-3 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsOpen(false);
+                  navigate('/notifications');
+                }}
+                className="w-full py-2.5 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 text-indigo-600 dark:text-indigo-400 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
+              >
+                <span>Open Full Notifications Hub</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
         </div>,

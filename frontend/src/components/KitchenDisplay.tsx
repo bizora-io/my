@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../contexts/SettingsContext';
 import { useSound } from '../contexts/SoundContext';
+import soundService from '@shared/services/soundService';
 import { authFetch } from '../lib/apiClient';
 import {
   ChefHat,
@@ -96,24 +97,7 @@ const DEFAULT_SETTINGS: KitchenSettingsState = {
 };
 
 function playAudioChime() {
-  try {
-    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-    if (!AudioCtx) return;
-    const ctx = new AudioCtx();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(880, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(1174, ctx.currentTime + 0.12);
-    gain.gain.setValueAtTime(0.12, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.36);
-  } catch {
-    // Ignore audio context errors if blocked by browser policy
-  }
+  soundService.playKitchenChime();
 }
 
 export const KitchenDisplay: React.FC = () => {
