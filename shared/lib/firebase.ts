@@ -17,6 +17,10 @@ const config = {
     env.VITE_FIREBASE_AUTH_DOMAIN ||
     (firebaseConfig as any).authDomain ||
     `${effectiveProjectId}.firebaseapp.com`,
+  databaseURL:
+    env.VITE_FIREBASE_DATABASE_URL ||
+    (firebaseConfig as any).databaseURL ||
+    'https://test-saas2552-default-rtdb.firebaseio.com',
   projectId: effectiveProjectId,
   storageBucket:
     env.VITE_FIREBASE_STORAGE_BUCKET ||

@@ -24,12 +24,16 @@ function getFirebaseApp(): App {
     return app;
   }
 
+  const defaultDatabaseUrl = "https://test-saas2552-default-rtdb.firebaseio.com";
+  const databaseURL = process.env.FIREBASE_DATABASE_URL || defaultDatabaseUrl;
+
   const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
   if (serviceAccountJson && serviceAccountJson.trim().startsWith("{")) {
     try {
       const serviceAccount = JSON.parse(serviceAccountJson);
       app = initializeApp({
         credential: cert(serviceAccount),
+        databaseURL,
       });
       return app;
     } catch (e) {
@@ -52,6 +56,7 @@ function getFirebaseApp(): App {
         const serviceAccount = JSON.parse(raw);
         app = initializeApp({
           credential: cert(serviceAccount),
+          databaseURL,
         });
         return app;
       }
@@ -60,7 +65,9 @@ function getFirebaseApp(): App {
     }
   }
 
-  app = initializeApp();
+  app = initializeApp({
+    databaseURL,
+  });
   return app;
 }
 

@@ -3,6 +3,7 @@
   "appId": "1:334237993989:web:8157848f196c8b59f8e06c",
   "apiKey": "AIzaSyCMUGPqH5NtMLlb1JiPv8S1ry9gHAcDx8U",
   "authDomain": "test-saas2552.firebaseapp.com",
+  "databaseURL": "https://test-saas2552-default-rtdb.firebaseio.com",
   "firestoreDatabaseId": "(default)",
   "storageBucket": "test-saas2552.firebasestorage.app",
   "messagingSenderId": "334237993989",
