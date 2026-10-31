@@ -1,11 +1,11 @@
 {
   "projectId": "test-saas2552",
-  "appId": "1:334237993989:web:8157848f196c8b59f8e06c",
-  "apiKey": "AIzaSyCMUGPqH5NtMLlb1JiPv8S1ry9gHAcDx8U",
+  "appId": "1:708828633621:web:b349c9d287d74c83a14c1c",
+  "apiKey": "AIzaSyDdFmNRJDsLPDnrj_yhXkN8ue1HBZNPVrY",
   "authDomain": "test-saas2552.firebaseapp.com",
   "databaseURL": "https://test-saas2552-default-rtdb.firebaseio.com",
   "firestoreDatabaseId": "(default)",
   "storageBucket": "test-saas2552.firebasestorage.app",
-  "messagingSenderId": "334237993989",
-  "measurementId": ""
+  "messagingSenderId": "708828633621",
+  "measurementId": "G-5F7ZQ6ZCXE"
 }
