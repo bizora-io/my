@@ -104,7 +104,7 @@ async function startAutoPlatformBackupLoop() {
   console.log(`[auto-backup] Platform every ${hours}h`);
 }
 
-async function startServer() {
+export function createApp(): express.Application {
   // Hard fail unsafe production config (OTP must never echo in prod)
   if (process.env.NODE_ENV === "production") {
     if (process.env.OTP_DEV_ECHO === "true") {
@@ -276,14 +276,6 @@ async function startServer() {
   app.use("/api/marketing-campaigns", marketingCampaignsRouter);
   app.use("/api/saas-tickets", saasTicketsRouter);
   app.use("/api/auth/2fa", twoFactorRouter);
-  app.get("/api/business/config", (_req, res) => {
-    res.json({
-      systemVersion: "2.4.0",
-      environment: process.env.NODE_ENV || "development",
-      lastUpdated: new Date().toISOString(),
-      status: "healthy",
-    });
-  });
   app.use("/api/business-settings", businessSettingsRouter);
   app.use("/api/suppliers", suppliersRouter);
   app.use("/api/auth", supplierAuthRouter);
@@ -417,9 +409,14 @@ async function startServer() {
     });
   });
 
-  // Wrap the Express app in a plain http.Server so Socket.io (real-time
-  // chat - see chatSocket.ts) can share the same port instead of needing
-  // a separate server/process.
+  return app;
+}
+
+export const app = createApp();
+export default app;
+
+if (!process.env.VERCEL) {
+  const PORT = Number(process.env.PORT) || 3000;
   const httpServer = createServer(app);
   initChat(httpServer);
 
@@ -428,5 +425,3 @@ async function startServer() {
     void startAutoPlatformBackupLoop();
   });
 }
-
-startServer();

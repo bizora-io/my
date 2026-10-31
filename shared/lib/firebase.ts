@@ -5,6 +5,7 @@
 import { initializeApp, getApps, type FirebaseApp } from 'firebase/app';
 import { getAuth, type Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
+import { initializeAppCheck, ReCaptchaEnterpriseProvider, type AppCheck } from 'firebase/app-check';
 import firebaseConfig from '../firebase-applet-config.json';
 
 const env = (typeof import.meta !== 'undefined' && (import.meta as any).env) || {};
@@ -65,6 +66,29 @@ try {
   console.warn('[firebase] Auth unavailable', e);
 }
 export const auth = authInstance;
+
+let appCheckInstance: AppCheck | null = null;
+if (typeof window !== 'undefined') {
+  try {
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    if (isLocal) {
+      (self as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+    }
+    const siteKey =
+      env.VITE_FIREBASE_APPCHECK_SITE_KEY ||
+      (firebaseConfig as any).appCheckSiteKey ||
+      '6LexM_YtAAAAAAsKa3SUpD7K89R81FYDRSTPpS8-';
+    if (siteKey) {
+      appCheckInstance = initializeAppCheck(app, {
+        provider: new ReCaptchaEnterpriseProvider(siteKey),
+        isTokenAutoRefreshEnabled: true,
+      });
+    }
+  } catch (e) {
+    console.warn('[firebase] AppCheck init warning:', e);
+  }
+}
+export const appCheck = appCheckInstance;
 
 export function isClientFirestoreReady(): boolean {
   return db != null;

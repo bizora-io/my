@@ -7,5 +7,6 @@
   "firestoreDatabaseId": "(default)",
   "storageBucket": "test-saas2552.firebasestorage.app",
   "messagingSenderId": "708828633621",
-  "measurementId": "G-5F7ZQ6ZCXE"
+  "measurementId": "G-5F7ZQ6ZCXE",
+  "appCheckSiteKey": "6LexM_YtAAAAAAsKa3SUpD7K89R81FYDRSTPpS8-"
 }
