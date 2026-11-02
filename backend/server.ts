@@ -162,6 +162,8 @@ export function createApp(): express.Application {
   // Allow both the frontend and admin apps to call this API.
   // Set APP_URL / ADMIN_URL in production (comma-separated extra origins also supported via CORS_ORIGINS).
   const defaultProdOrigins = [
+    'https://bizora-app-io.vercel.app',
+    'https://admin-bizora-app.vercel.app',
     'https://bizora.io',
     'https://www.bizora.io',
     'https://shop.bizora.io',
@@ -199,10 +201,14 @@ export function createApp(): express.Application {
     return callback(new Error(`CORS blocked for origin ${origin}`), false);
   };
 
-  app.use(cors({
+  const corsMiddleware = cors({
     origin: allowedOrigins,
-    credentials: true
-  }));
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  });
+
+  app.use(corsMiddleware);
 
   // Rate limiting to prevent brute-force attacks
   const limiter = rateLimit({

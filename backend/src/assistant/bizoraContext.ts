@@ -1,5 +1,5 @@
 import { getDb } from "../lib/firebaseAdmin.js";
-import { FEATURE_CATALOG } from "../../../shared/lib/featureRegistry.js";
+import { FEATURE_CATALOG } from "../lib/featureRegistry.js";
 
 export interface LiveSalesSummary {
   asOf: string;

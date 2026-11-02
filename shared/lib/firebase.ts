@@ -74,11 +74,8 @@ if (typeof window !== 'undefined') {
     if (isLocal) {
       (self as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
     }
-    const siteKey =
-      env.VITE_FIREBASE_APPCHECK_SITE_KEY ||
-      (firebaseConfig as any).appCheckSiteKey ||
-      '6LexM_YtAAAAAAsKa3SUpD7K89R81FYDRSTPpS8-';
-    if (siteKey) {
+    const siteKey = env.VITE_FIREBASE_APPCHECK_SITE_KEY || (firebaseConfig as any).appCheckSiteKey;
+    if (siteKey && typeof siteKey === 'string' && siteKey.trim() && siteKey !== '6LexM_YtAAAAAAsKa3SUpD7K89R81FYDRSTPpS8-') {
       appCheckInstance = initializeAppCheck(app, {
         provider: new ReCaptchaEnterpriseProvider(siteKey),
         isTokenAutoRefreshEnabled: true,
