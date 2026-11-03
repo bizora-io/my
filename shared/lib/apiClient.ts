@@ -7,15 +7,23 @@ export function getApiBaseUrl(): string {
     // If running in browser and hostname is not localhost, ignore any baked-in localhost URL
     if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
       if (envUrl.includes('localhost') || envUrl.includes('127.0.0.1')) {
-        return window.location.hostname === 'bizora-app-io.vercel.app' ? '' : 'https://backend-seven-azure-96.vercel.app';
+        return (
+          window.location.hostname === 'bizora-app-io.vercel.app' ||
+          window.location.hostname === 'admin-bizora-app.vercel.app' ||
+          window.location.hostname.endsWith('.vercel.app')
+        ) ? '' : 'https://backend-seven-azure-96.vercel.app';
       }
     }
     return envUrl.replace(/\/+$/, '');
   }
   // Production fallback for Vercel / cloud deployments:
-  // Use same-origin relative proxy on bizora-app-io.vercel.app, or direct backend on other portals
+  // Both frontend and admin have /api/(.*) rewrites in vercel.json, so use same-origin relative URL
   if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-    if (window.location.hostname === 'bizora-app-io.vercel.app') {
+    if (
+      window.location.hostname === 'bizora-app-io.vercel.app' ||
+      window.location.hostname === 'admin-bizora-app.vercel.app' ||
+      window.location.hostname.endsWith('.vercel.app')
+    ) {
       return '';
     }
     return 'https://backend-seven-azure-96.vercel.app';
