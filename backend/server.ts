@@ -198,7 +198,7 @@ export function createApp(): express.Application {
     }
 
     console.warn(`[CORS] Blocked request from origin: ${origin}`);
-    return callback(new Error(`CORS blocked for origin ${origin}`), false);
+    return callback(null, false);
   };
 
   const corsMiddleware = cors({
@@ -385,6 +385,16 @@ export function createApp(): express.Application {
 
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok" });
+  });
+
+  app.get(["/", "/api", "/health"], (_req, res) => {
+    res.json({
+      name: "Bizora API",
+      status: "healthy",
+      version: "2.1.0-prod",
+      uptime: process.uptime(),
+      timestamp: new Date().toISOString(),
+    });
   });
 
   // 404 handler for unmatched API routes
