@@ -1,17 +1,9 @@
 {
   "version": 2,
-  "rewrites": [
+  "routes": [
     {
-      "source": "/api/(.*)",
-      "destination": "/api"
-    },
-    {
-      "source": "/health",
-      "destination": "/api"
-    },
-    {
-      "source": "/",
-      "destination": "/api"
+      "src": "/(.*)",
+      "dest": "api/index.ts"
     }
   ]
 }
