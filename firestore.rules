@@ -1,28 +1,220 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Global Safety Net: Default Deny - Version 2
+
+    // ===============================================================
+    // Assumed Data Model & Architecture Overview
+    // ===============================================================
+    //
+    // 1. /users/{userId}
+    //    - Individual user profiles and legacy local-first sync data.
+    //    - Subcollections: businesses, products, categories, ledgerEntries, entities, supportTickets.
+    //    - Owner-restricted access: only the authenticated user matching {userId} can read/write.
+    //
+    // 2. /businesses/{businessId}
+    //    - Core multi-tenant tenant boundary document.
+    //    - Fields:
+    //        - firebaseUid: string (Firebase UID of the Shop Owner)
+    //        - ownerId: string (optional legacy owner UID)
+    //        - businessName / name: string (<= 200 chars)
+    //        - email: string (<= 128 chars)
+    //        - mobile: string (<= 32 chars)
+    //        - ecommerce: map (subdomain, published status)
+    //
+    // 3. /businesses/{businessId}/products/{productId}
+    //    - Real-time catalog subscribed via shared/lib/productsRealtime.ts.
+    //    - Fields:
+    //        - name: string (required, 1-200 chars)
+    //        - stock: number (optional)
+    //        - salePrice / purchasePrice: number (optional, >= 0)
+    //        - category: string (optional, <= 100 chars)
+    //        - business_id: string (immutable, must match businessId)
+    //        - sellOnline / showOnline / isStorefront: bool (public visibility flags)
+    //        - isDeleted / isArchived / isFeatured / warranty / isBundle / isDigital: bool
+    //        - description / notes: string (<= 2000 chars)
+    //        - unit / brand / sku / barcode / qrCode: string (bounded lengths)
+    //        - image: string (<= 500,000 chars)
+    //        - images / variants / tags: list (bounded sizes)
+    //        - createdAt: string or timestamp (immutable on update)
+    //
+    // 4. /businesses/{businessId}/staff/{staffId}
+    //    - Staff membership & RBAC assignments within the tenant.
+    //    - Fields:
+    //        - firebaseUid: string (Firebase UID of employee)
+    //        - name, mobile, email, role, permissions (bounded types & sizes)
+    //
+    // 5. Sensitive subcollections:
+    //    - transactions, ledgerEntries, backups, auditLogs:
+    //      Protected read-only for tenant members. Direct client writes forbidden (write: if false).
+    //      Mutations strictly executed via server-side Express API with firebase-admin SDK.
+    // ===============================================================
+
+    // Global Safety Net: Default Deny All Access
     match /{document=**} {
       allow read, write: if false;
     }
 
-    // Helper functions
+    // ===============================================================
+    // Helper Functions: Authentication, Ownership & Identity
+    // ===============================================================
     function isSignedIn() {
       return request.auth != null;
     }
-    
-    // Validate ID
+
     function isValidId(id) {
-        return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
     }
 
-    // Match users collection
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Resolves whether authenticated user is the shop owner of the given businessId
+    function isBusinessOwner(businessId) {
+      return isSignedIn() && (
+        request.auth.uid == businessId ||
+        (
+          exists(/databases/$(database)/documents/businesses/$(businessId)) &&
+          (
+            get(/databases/$(database)/documents/businesses/$(businessId)).data.firebaseUid == request.auth.uid ||
+            get(/databases/$(database)/documents/businesses/$(businessId)).data.ownerId == request.auth.uid
+          )
+        ) ||
+        (
+          request.auth.token != null &&
+          'businessId' in request.auth.token &&
+          request.auth.token.businessId == businessId &&
+          'role' in request.auth.token &&
+          request.auth.token.role in ['SHOP_OWNER', 'OWNER', 'ADMIN', 'SAAS_ADMIN']
+        )
+      );
+    }
+
+    // Resolves whether authenticated user is a staff member of the given businessId
+    function isBusinessStaff(businessId) {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/businesses/$(businessId)/staff/$(request.auth.uid)) ||
+        (
+          request.auth.token != null &&
+          'businessId' in request.auth.token &&
+          request.auth.token.businessId == businessId &&
+          'role' in request.auth.token &&
+          request.auth.token.role in ['EMPLOYEE', 'STAFF', 'SHOP_OWNER', 'OWNER', 'ADMIN', 'SAAS_ADMIN']
+        )
+      );
+    }
+
+    // Resolves whether user is either owner or staff of the business
+    function isBusinessMember(businessId) {
+      return isBusinessOwner(businessId) || isBusinessStaff(businessId);
+    }
+
+    // Checks whether a product is marked for public storefront catalog visibility
+    function isPublicProduct(data) {
+      return ('showOnline' in data && data.showOnline == true) ||
+             ('isStorefront' in data && data.isStorefront == true) ||
+             ('sellOnline' in data && data.sellOnline == true);
+    }
+
+    // Checks whether a business is published for storefront access
+    function isPublicBusiness(data) {
+      return ('ecommerce' in data && data.ecommerce is map &&
+              'published' in data.ecommerce && data.ecommerce.published == true) ||
+             ('isStorefrontActive' in data && data.isStorefrontActive == true) ||
+             ('published' in data && data.published == true);
+    }
+
+    // ===============================================================
+    // Domain Validators (Validator Function Pattern)
+    // ===============================================================
+
+    // Validates product payload schema and bounds against Resource Exhaustion / DoS
+    function isValidProduct(data, businessId) {
+      return data.name is string &&
+             data.name.size() > 0 &&
+             data.name.size() <= 200 &&
+             (!('salePrice' in data) || (data.salePrice is number && data.salePrice >= 0)) &&
+             (!('purchasePrice' in data) || (data.purchasePrice is number && data.purchasePrice >= 0)) &&
+             (!('stock' in data) || data.stock is number) &&
+             (!('category' in data) || (data.category is string && data.category.size() <= 100)) &&
+             (!('subCategory' in data) || (data.subCategory is string && data.subCategory.size() <= 100)) &&
+             (!('business_id' in data) || data.business_id == businessId) &&
+             (!('description' in data) || (data.description is string && data.description.size() <= 2000)) &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 2000)) &&
+             (!('unit' in data) || (data.unit is string && data.unit.size() <= 50)) &&
+             (!('brand' in data) || (data.brand is string && data.brand.size() <= 100)) &&
+             (!('sku' in data) || (data.sku is string && data.sku.size() <= 100)) &&
+             (!('barcode' in data) || (data.barcode is string && data.barcode.size() <= 100)) &&
+             (!('qrCode' in data) || (data.qrCode is string && data.qrCode.size() <= 200)) &&
+             (!('kitchenStation' in data) || (data.kitchenStation is string && data.kitchenStation.size() <= 100)) &&
+             (!('sellOnline' in data) || data.sellOnline is bool) &&
+             (!('showOnline' in data) || data.showOnline is bool) &&
+             (!('isStorefront' in data) || data.isStorefront is bool) &&
+             (!('isDeleted' in data) || data.isDeleted is bool) &&
+             (!('isArchived' in data) || data.isArchived is bool) &&
+             (!('isFeatured' in data) || data.isFeatured is bool) &&
+             (!('warranty' in data) || data.warranty is bool) &&
+             (!('isBundle' in data) || data.isBundle is bool) &&
+             (!('isDigital' in data) || data.isDigital is bool) &&
+             (!('minStockLevel' in data) || data.minStockLevel is number) &&
+             (!('variants' in data) || (data.variants is list && data.variants.size() <= 50)) &&
+             (!('images' in data) || (data.images is list && data.images.size() <= 10)) &&
+             (!('image' in data) || (data.image is string && data.image.size() <= 500000)) &&
+             (!('tags' in data) || (data.tags is list && data.tags.size() <= 30));
+    }
+
+    function isValidProductCreate(businessId) {
+      return isValidProduct(request.resource.data, businessId);
+    }
+
+    function isValidProductUpdate(businessId) {
+      return isValidProduct(request.resource.data, businessId) &&
+             // Business ID cannot be modified or hijacked
+             (!('business_id' in resource.data) ||
+              !('business_id' in request.resource.data) ||
+              request.resource.data.business_id == resource.data.business_id) &&
+             // Creation timestamp cannot be tampered with
+             (!('createdAt' in resource.data) ||
+              !('createdAt' in request.resource.data) ||
+              request.resource.data.createdAt == resource.data.createdAt);
+    }
+
+    function isValidBusinessData(data) {
+      return (!('businessName' in data) || (data.businessName is string && data.businessName.size() <= 200)) &&
+             (!('name' in data) || (data.name is string && data.name.size() <= 200)) &&
+             (!('firebaseUid' in data) || (data.firebaseUid is string && data.firebaseUid.size() <= 128)) &&
+             (!('ownerId' in data) || (data.ownerId is string && data.ownerId.size() <= 128)) &&
+             (!('email' in data) || (data.email is string && data.email.size() <= 128)) &&
+             (!('mobile' in data) || (data.mobile is string && data.mobile.size() <= 32));
+    }
+
+    function isValidBusinessCreate() {
+      return isValidBusinessData(request.resource.data);
+    }
+
+    function isValidBusinessUpdate() {
+      return isValidBusinessData(request.resource.data) &&
+             (!('firebaseUid' in resource.data) ||
+              !('firebaseUid' in request.resource.data) ||
+              request.resource.data.firebaseUid == resource.data.firebaseUid);
+    }
+
+    function isValidStaffData() {
+      let data = request.resource.data;
+      return (!('name' in data) || (data.name is string && data.name.size() <= 100)) &&
+             (!('mobile' in data) || (data.mobile is string && data.mobile.size() <= 32)) &&
+             (!('email' in data) || (data.email is string && data.email.size() <= 128)) &&
+             (!('role' in data) || (data.role is string && data.role.size() <= 50)) &&
+             (!('firebaseUid' in data) || (data.firebaseUid is string && data.firebaseUid.size() <= 128)) &&
+             (!('permissions' in data) || (data.permissions is list && data.permissions.size() <= 100));
+    }
+
+    // ===============================================================
+    // Root Collection: /users/{userId} (Backward Compatibility)
+    // ===============================================================
     match /users/{userId} {
       allow get, update: if isSignedIn() && isOwner(userId);
-      
-      function isOwner(uid) {
-        return request.auth.uid == uid;
-      }
+      allow create: if isSignedIn() && isOwner(userId);
 
       match /businesses/{businessId} {
         allow read, write: if isOwner(userId) && isValidId(businessId);
@@ -41,6 +233,123 @@ service cloud.firestore {
       }
       match /supportTickets/{ticketId} {
         allow read, write: if isOwner(userId) && isValidId(ticketId);
+      }
+    }
+
+    // ===============================================================
+    // Root Collection: /businesses/{businessId} (Multi-Tenant ERP Hierarchy)
+    // ===============================================================
+    match /businesses/{businessId} {
+      // Direct get allowed for verified members, or public visitor if storefront published
+      allow get: if isValidId(businessId) && (isBusinessMember(businessId) || isPublicBusiness(resource.data));
+      // Cross-tenant list queries strictly disallowed to prevent tenant enumeration
+      allow list: if false;
+
+      // Creation allowed during initial sign-up / onboarding linking to authenticated UID
+      allow create: if isSignedIn() && isValidId(businessId) &&
+                       (request.resource.data.firebaseUid == request.auth.uid || businessId == request.auth.uid) &&
+                       isValidBusinessCreate();
+
+      // Only verified business owner can update business configuration
+      allow update: if isValidId(businessId) && isBusinessOwner(businessId) && isValidBusinessUpdate();
+
+      // Deletion handled strictly through backend admin API
+      allow delete: if false;
+
+      // -------------------------------------------------------------
+      // Subcollection: /businesses/{businessId}/products/{productId}
+      // Product Catalog & Realtime Subscriptions (shared/lib/productsRealtime.ts)
+      // -------------------------------------------------------------
+      match /products/{productId} {
+        // Reads:
+        // - Authenticated business members can read all products of their business
+        // - Unauthenticated visitors / customers can only read products flagged for online storefront
+        allow get: if isValidId(businessId) && isValidId(productId) &&
+                      (isBusinessMember(businessId) || isPublicProduct(resource.data));
+        allow list: if isValidId(businessId) &&
+                       (isBusinessMember(businessId) || isPublicProduct(resource.data));
+
+        // Writes:
+        // - Authenticated business members can create and update with strict schema validation
+        allow create: if isValidId(businessId) && isValidId(productId) &&
+                         isBusinessMember(businessId) &&
+                         isValidProductCreate(businessId);
+
+        allow update: if isValidId(businessId) && isValidId(productId) &&
+                         isBusinessMember(businessId) &&
+                         isValidProductUpdate(businessId);
+
+        // Deletions restricted to business owner
+        allow delete: if isValidId(businessId) && isValidId(productId) &&
+                         isBusinessOwner(businessId);
+      }
+
+      // -------------------------------------------------------------
+      // Subcollection: /businesses/{businessId}/staff/{staffId}
+      // Staff directory & employee records
+      // -------------------------------------------------------------
+      match /staff/{staffId} {
+        // Business owner can inspect all staff; individual employee can read own record
+        allow get: if isValidId(businessId) && isValidId(staffId) && (
+          isBusinessOwner(businessId) ||
+          (isSignedIn() && (
+            staffId == request.auth.uid ||
+            (resource != null && 'firebaseUid' in resource.data && resource.data.firebaseUid == request.auth.uid)
+          ))
+        );
+        allow list: if isValidId(businessId) && isBusinessOwner(businessId);
+
+        // Staff provisioning & role changes restricted to business owner
+        allow create, update: if isValidId(businessId) && isValidId(staffId) &&
+                                 isBusinessOwner(businessId) &&
+                                 isValidStaffData();
+        allow delete: if isValidId(businessId) && isValidId(staffId) &&
+                         isBusinessOwner(businessId);
+      }
+
+      // -------------------------------------------------------------
+      // Subcollections: categories, entities, warehouses
+      // Operational business metadata
+      // -------------------------------------------------------------
+      match /categories/{categoryId} {
+        allow read: if isValidId(businessId) && isValidId(categoryId) && isBusinessMember(businessId);
+        allow write: if isValidId(businessId) && isValidId(categoryId) && isBusinessOwner(businessId);
+      }
+
+      match /entities/{entityId} {
+        allow read: if isValidId(businessId) && isValidId(entityId) && isBusinessMember(businessId);
+        allow write: if isValidId(businessId) && isValidId(entityId) && isBusinessOwner(businessId);
+      }
+
+      match /warehouses/{warehouseId} {
+        allow read: if isValidId(businessId) && isValidId(warehouseId) && isBusinessMember(businessId);
+        allow write: if isValidId(businessId) && isValidId(warehouseId) && isBusinessOwner(businessId);
+      }
+
+      // -------------------------------------------------------------
+      // Sensitive Financial & Audit Subcollections
+      // Transactions, Ledger Entries, Backups, Notifications
+      // Read allowed for authorized members; client direct writes strictly FORBIDDEN.
+      // -------------------------------------------------------------
+      match /transactions/{transactionId} {
+        allow read: if isValidId(businessId) && isValidId(transactionId) && isBusinessMember(businessId);
+        allow write: if false; // Mutated strictly via backend Express API (firebase-admin)
+      }
+
+      match /ledgerEntries/{entryId} {
+        allow read: if isValidId(businessId) && isValidId(entryId) && isBusinessMember(businessId);
+        allow write: if false; // Mutated strictly via backend Express API (firebase-admin)
+      }
+
+      match /backups/{backupId} {
+        allow read: if isValidId(businessId) && isValidId(backupId) && isBusinessOwner(businessId);
+        allow write: if false; // Backups managed server-side only
+      }
+
+      match /notifications/{notificationId} {
+        allow read: if isValidId(businessId) && isValidId(notificationId) && isBusinessMember(businessId);
+        allow update: if isValidId(businessId) && isValidId(notificationId) && isBusinessMember(businessId);
+        allow create, delete: if false;
       }
     }
   }

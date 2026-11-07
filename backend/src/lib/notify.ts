@@ -58,9 +58,9 @@ export function normalizePhoneE164(raw: string): string {
 async function sendSmsTwilio(to: string, body: string): Promise<{ ok: boolean; error?: string }> {
   const sid = process.env.TWILIO_ACCOUNT_SID;
   const token = process.env.TWILIO_AUTH_TOKEN;
-  const from = process.env.TWILIO_FROM_NUMBER;
+  const from = process.env.TWILIO_FROM_NUMBER || process.env.TWILIO_PHONE_NUMBER;
   if (!sid || !token || !from) {
-    return { ok: false, error: "Twilio is not configured (TWILIO_ACCOUNT_SID / AUTH_TOKEN / FROM_NUMBER)." };
+    return { ok: false, error: "Twilio is not configured (TWILIO_ACCOUNT_SID / AUTH_TOKEN / TWILIO_FROM_NUMBER or TWILIO_PHONE_NUMBER)." };
   }
   const url = `https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`;
   const params = new URLSearchParams({ To: normalizePhoneE164(to), From: from, Body: body });
@@ -108,7 +108,11 @@ export async function sendEmailResend(to: string, subject: string, text: string)
 }
 
 function smsConfigured() {
-  return !!(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_FROM_NUMBER);
+  return !!(
+    process.env.TWILIO_ACCOUNT_SID &&
+    process.env.TWILIO_AUTH_TOKEN &&
+    (process.env.TWILIO_FROM_NUMBER || process.env.TWILIO_PHONE_NUMBER)
+  );
 }
 
 function emailConfigured() {

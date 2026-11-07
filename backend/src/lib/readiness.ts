@@ -94,7 +94,10 @@ export function runReadinessChecks(opts?: { includeFirebaseProbe?: boolean }): {
   });
 
   // --- OTP / notify ---
-  const twilio = present(process.env.TWILIO_ACCOUNT_SID) && present(process.env.TWILIO_AUTH_TOKEN);
+  const twilio =
+    present(process.env.TWILIO_ACCOUNT_SID) &&
+    present(process.env.TWILIO_AUTH_TOKEN) &&
+    (present(process.env.TWILIO_FROM_NUMBER) || present(process.env.TWILIO_PHONE_NUMBER));
   const resend = present(process.env.RESEND_API_KEY) && present(process.env.EMAIL_FROM || process.env.RESEND_FROM);
   add({
     id: "otp_pepper",

@@ -33,7 +33,7 @@ const present = (k) => !!(process.env[k] && String(process.env[k]).trim());
 console.log("\nBizora OTP provider check\n");
 console.log(`NODE_ENV=${process.env.NODE_ENV || "unset"}`);
 
-const twilio = present("TWILIO_ACCOUNT_SID") && present("TWILIO_AUTH_TOKEN") && present("TWILIO_FROM_NUMBER");
+const twilio = present("TWILIO_ACCOUNT_SID") && present("TWILIO_AUTH_TOKEN") && (present("TWILIO_FROM_NUMBER") || present("TWILIO_PHONE_NUMBER"));
 const resend = present("RESEND_API_KEY") && (present("EMAIL_FROM") || present("RESEND_FROM"));
 const pepper = present("OTP_PEPPER") && !/change-me/i.test(process.env.OTP_PEPPER || "");
 const echo = (process.env.OTP_DEV_ECHO || "").toLowerCase();
