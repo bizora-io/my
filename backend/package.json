@@ -6,7 +6,7 @@
   "description": "Bizora Express API server: Context-aware ERP assistant, auth, real-time sync, and multi-tenant REST endpoints backed by Firestore via firebase-admin.",
   "scripts": {
     "dev": "tsx watch server.ts",
-    "build": "echo backend ready",
+    "build": "esbuild server.ts --bundle --platform=node --format=cjs \"--footer:js=module.exports = module.exports.default || module.exports;\" --outfile=../api/index.js",
     "bundle": "esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
     "start": "node dist/server.cjs",
     "lint": "tsc --noEmit"
