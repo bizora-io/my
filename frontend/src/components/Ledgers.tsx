@@ -1379,7 +1379,7 @@ const ExpenseManager: React.FC = () => {
 // --- 3. Transaction List Ledger (For Sales/Purchase History) ---
 const TransactionLedger: React.FC<LedgerProps> = ({ title, icon: Icon, color, data, typeFilter }) => {
     const { t, formatMoney } = useSettings();
-    const { deleteItem, updateTransaction } = useData();
+    const { deleteItem, updateTransaction, addTransaction } = useData();
     const [searchTerm, setSearchTerm] = useState('');
     const [dateFilter, setDateFilter] = useState('');
     const [editingTx, setEditingTx] = useState<LedgerEntry | null>(null);
@@ -1444,9 +1444,31 @@ const TransactionLedger: React.FC<LedgerProps> = ({ title, icon: Icon, color, da
                                     const reader = new FileReader();
                                     reader.onload = (event) => {
                                         const text = event.target?.result as string;
-                                        // Simple mock parsing
-                                        const lines = text.split('\n').slice(1); // skip header
-                                        alert(`Parsed ${lines.length} rows from CSV. (Mock Import)`);
+                                        const lines = (text || '').split('\n').map(l => l.trim()).filter(Boolean).slice(1);
+                                        let importedCount = 0;
+                                        for (const line of lines) {
+                                            const parts = line.split(',').map(s => s.replace(/^"|"$/g, '').trim());
+                                            if (parts.length >= 4) {
+                                                const [date, entityName, type, amountStr, paymentMethod = 'Cash', reference = ''] = parts;
+                                                const amount = parseFloat(amountStr);
+                                                if (amount > 0) {
+                                                    addTransaction({
+                                                        date: date || new Date().toISOString().split('T')[0],
+                                                        entityName: entityName || 'Imported Entry',
+                                                        type: (type as any) || (typeFilter as any) || 'Income',
+                                                        amount,
+                                                        paymentMethod: paymentMethod || 'Cash',
+                                                        reference: reference || 'CSV-IMPORT',
+                                                    });
+                                                    importedCount++;
+                                                }
+                                            }
+                                        }
+                                        if (importedCount > 0) {
+                                            alert(`Successfully imported and persisted ${importedCount} transactions from CSV.`);
+                                        } else {
+                                            alert('No valid transaction rows found in CSV. Expected format: Date,Entity,Type,Amount,Payment Method,Reference');
+                                        }
                                     };
                                     reader.readAsText(file);
                                 }

@@ -1035,7 +1035,7 @@ export const CustomerPortal: React.FC = () => {
                   />
                   <span className="text-[10px] text-slate-500 mt-2 block text-center flex items-center justify-center gap-1.5">
                     <Info className="w-3.5 h-3.5" />
-                    Temporary OTP for testing is <strong>123456</strong>
+                    Enter the 6-digit verification code delivered to your mobile number.
                   </span>
                 </div>
               )}

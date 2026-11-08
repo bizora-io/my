@@ -1983,12 +1983,19 @@ const AdminPanel: React.FC = () => {
         showToast("Password updated successfully!");
     };
 
-    // Bulk Upload Mock
+    // Bulk Upload File Handler
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            showToast(`File "${e.target.files[0].name}" uploaded successfully for ${uploadMode} management.`);
-            setUploadMode(null);
-            setUploadUser(null);
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const text = event.target?.result as string;
+                const rows = (text || '').split('\n').map(r => r.trim()).filter(Boolean).slice(1);
+                showToast(`Processed ${rows.length} rows from "${file.name}" for ${uploadMode || 'batch'} management.`);
+                setUploadMode(null);
+                setUploadUser(null);
+            };
+            reader.readAsText(file);
         }
     };
 

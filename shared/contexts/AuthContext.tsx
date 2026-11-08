@@ -976,9 +976,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const socialLogin = async (provider: 'google' | 'facebook' | 'apple'): Promise<boolean> => {
-    // Mock social login
-    const result = await login('social-user@example.com', 'social', 'OTP');
-    return result.success;
+    if (provider === 'google') {
+      try {
+        const result = await signInWithGoogle('SHOP_OWNER');
+        if (result.success && result.user) {
+          const sessionUser: User = {
+            ...result.user,
+            role: result.user.role || 'SHOP_OWNER',
+          };
+          setUser(sessionUser);
+          localStorage.setItem('nexus_user', JSON.stringify(sessionUser));
+          logActivity('Login', 'Auth', 'Google login successful');
+          addNotification("Welcome back", `Signed in with Google as ${sessionUser.name || sessionUser.email}`, "success");
+          return true;
+        } else if (result.error === 'redirect_started') {
+          return true;
+        } else {
+          addNotification("Google Sign-In Failed", result.error || "Authentication failed", "error");
+          return false;
+        }
+      } catch (err: any) {
+        console.error("Google sign-in error:", err);
+        addNotification("Google Sign-In Error", err?.message || "Failed to authenticate with Google", "error");
+        return false;
+      }
+    }
+    addNotification("Provider Unavailable", `${provider.charAt(0).toUpperCase() + provider.slice(1)} sign-in is not configured. Please use Google or Phone verification.`, "warning");
+    return false;
   };
 
   const logout = () => {
