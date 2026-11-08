@@ -92,7 +92,7 @@ describe('Bizora ERP Navigation Architecture & Single Source of Truth', () => {
       assert.ok(!paths.includes('/stock'), 'Cashier must not see /stock without inventory permission');
     });
 
-    test('restaurant businessType includes kitchen display, retail excludes it', () => {
+    test('kitchen display is accessible across business types for authorized POS users', () => {
       const restaurantGroups = getAuthorizedNavGroups({
         user: { role: 'SHOP_OWNER', businessType: 'restaurant' },
         hasPermission: () => true,
@@ -109,7 +109,7 @@ describe('Bizora ERP Navigation Architecture & Single Source of Truth', () => {
         isFullAccess: true
       });
       const retailPaths = retailGroups.flatMap(g => g.items).map(i => i.to);
-      assert.ok(!retailPaths.includes('/kitchen'), 'Retail user must not see restaurant /kitchen');
+      assert.ok(retailPaths.includes('/kitchen'), 'Retail / general shop owner must have /kitchen accessible');
     });
 
     test('unsubscribed feature is flagged with isLocked: true', () => {

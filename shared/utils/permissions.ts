@@ -11,6 +11,7 @@ export const PERMISSIONS = {
       RETURNS: { key: 'pos.returns', label: 'Process Returns' },
       DISCOUNT: { key: 'pos.discount', label: 'Apply Discount' },
       VIEW_SALES: { key: 'pos.view_sales', label: 'View Sales History' },
+      KITCHEN_DISPLAY: { key: 'pos.kitchen_display', label: 'Kitchen Display (KOT)' },
     }
   },
   // Inventory

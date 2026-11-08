@@ -2845,12 +2845,12 @@ const AppContent: React.FC = () => {
                 </ProtectedRoute>
               } />
               <Route path="/projects" element={
-                <ProtectedRoute requiredPermission={PERMISSIONS.ADMIN.subFeatures.SETTINGS.key}>
+                <ProtectedRoute requiredPermission={PERMISSIONS.REPORTS.subFeatures.VIEW_REPORTS.key}>
                   <Projects />
                 </ProtectedRoute>
               } />
               <Route path="/dealers" element={
-                <ProtectedRoute requiredPermission={PERMISSIONS.CRM.subFeatures.VIEW_CUSTOMERS.key}>
+                <ProtectedRoute requiredPermission={PERMISSIONS.POS.subFeatures.VIEW_SALES.key}>
                   <Dealers />
                 </ProtectedRoute>
               } />

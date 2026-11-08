@@ -17,12 +17,19 @@ export const AUTO_JOURNAL_ACCOUNTS: Record<string, AutoJournalAccount> = {
   inventory: { id: 'a-1300', code: '1300', name: 'Inventory', type: 'Asset' },
   ap: { id: 'a-2000', code: '2000', name: 'Accounts Payable', type: 'Liability' },
   storeCredit: { id: 'a-2100', code: '2100', name: 'Store Credit Liability', type: 'Liability' },
+  loanPayable: { id: 'a-2200', code: '2200', name: 'Bank Loans Payable', type: 'Liability' },
+  pfPayable: { id: 'a-2300', code: '2300', name: 'Provident Fund Liability', type: 'Liability' },
   equity: { id: 'a-3000', code: '3000', name: 'Owner Equity', type: 'Equity' },
   sales: { id: 'a-4000', code: '4000', name: 'Sales Revenue', type: 'Revenue' },
   otherIncome: { id: 'a-4100', code: '4100', name: 'Other Income', type: 'Revenue' },
+  hotelRevenue: { id: 'a-4200', code: '4200', name: 'Hospitality & Room Revenue', type: 'Revenue' },
   cogs: { id: 'a-5000', code: '5000', name: 'Cost of Goods Sold', type: 'Expense' },
   opex: { id: 'a-5100', code: '5100', name: 'Operating Expense', type: 'Expense' },
   salary: { id: 'a-5200', code: '5200', name: 'Salary Expense', type: 'Expense' },
+  interestExpense: { id: 'a-5300', code: '5300', name: 'Interest Expense', type: 'Expense' },
+  vehicleExpense: { id: 'a-5400', code: '5400', name: 'Vehicle & Transport Expense', type: 'Expense' },
+  projectExpense: { id: 'a-5500', code: '5500', name: 'Project & Milestone Expense', type: 'Expense' },
+  dealerCommission: { id: 'a-5600', code: '5600', name: 'Dealer Sales Commission', type: 'Expense' },
 };
 
 export function journalLine(
@@ -174,7 +181,90 @@ export function buildAutoJournalEntry(
   const memoBase = `${entry.type}: ${entry.entityName || entry.category || 'General'}`;
   const lines: ReturnType<typeof journalLine>[] = [];
 
-  switch (entry.type) {
+  const rawType = (entry.type || '').trim();
+  const subType = String((entry as any).subType || '').trim();
+  const category = String(entry.category || '').toLowerCase();
+
+  let effectiveType = rawType;
+  if (rawType === 'Loan Disbursement' || subType === 'Loan Disbursement' || category.includes('loans payable') || category.includes('loans receivable')) {
+    effectiveType = 'Loan Disbursement';
+  } else if (rawType === 'Loan Repayment' || subType === 'Loan Repayment' || category.includes('loan repayment') || category.includes('loan recovery')) {
+    effectiveType = 'Loan Repayment';
+  } else if (rawType === 'PF Contribution' || category.includes('provident fund employer contribution') || (subType === 'HR / Payroll' && category.includes('provident fund'))) {
+    effectiveType = 'PF Contribution';
+  } else if (rawType === 'PF Settlement' || category.includes('provident fund settlement') || (subType === 'HR Settlement' && category.includes('provident fund'))) {
+    effectiveType = 'PF Settlement';
+  } else if (rawType === 'Hotel Accommodation' || subType === 'Hotel Accommodation' || category.includes('room revenue')) {
+    effectiveType = 'Hotel Accommodation';
+  } else if (rawType === 'Vehicle Expense' || subType === 'Fleet & Logistics' || category.startsWith('vehicle')) {
+    effectiveType = 'Vehicle Expense';
+  } else if (rawType === 'Project Expense' || category.includes('project')) {
+    effectiveType = 'Project Expense';
+  } else if (rawType === 'Dealer Commission' || subType === 'Dealer Commission' || category.includes('dealer')) {
+    effectiveType = 'Dealer Commission';
+  }
+
+  switch (effectiveType) {
+    case 'Loan Disbursement': {
+      const isReceivable = category.includes('receivable');
+      if (isReceivable) {
+        lines.push(line(AUTO_JOURNAL_ACCOUNTS.ar, amount, 0));
+        lines.push(line(cashAcc, 0, amount));
+      } else {
+        lines.push(line(cashAcc, amount, 0));
+        lines.push(line(AUTO_JOURNAL_ACCOUNTS.loanPayable, 0, amount));
+      }
+      break;
+    }
+    case 'Loan Repayment': {
+      const isRecovery = category.includes('recovery');
+      const interestPart = Math.round(Number((entry as any).interestPaid || (entry as any).interest || 0) * 100) / 100;
+      const principalPart = Math.round(Math.max(0, amount - interestPart) * 100) / 100;
+
+      if (isRecovery) {
+        lines.push(line(cashAcc, amount, 0));
+        if (principalPart > 0) lines.push(line(AUTO_JOURNAL_ACCOUNTS.ar, 0, principalPart));
+        if (interestPart > 0) lines.push(line(AUTO_JOURNAL_ACCOUNTS.otherIncome, 0, interestPart));
+      } else {
+        if (principalPart > 0) lines.push(line(AUTO_JOURNAL_ACCOUNTS.loanPayable, principalPart, 0));
+        if (interestPart > 0) lines.push(line(AUTO_JOURNAL_ACCOUNTS.interestExpense, interestPart, 0));
+        lines.push(line(cashAcc, 0, amount));
+      }
+      break;
+    }
+    case 'PF Contribution': {
+      lines.push(line(AUTO_JOURNAL_ACCOUNTS.salary, amount, 0));
+      lines.push(line(AUTO_JOURNAL_ACCOUNTS.pfPayable, 0, amount));
+      break;
+    }
+    case 'PF Settlement': {
+      lines.push(line(AUTO_JOURNAL_ACCOUNTS.pfPayable, amount, 0));
+      lines.push(line(cashAcc, 0, amount));
+      break;
+    }
+    case 'Hotel Accommodation':
+    case 'Room Revenue': {
+      if (isDue) lines.push(line(AUTO_JOURNAL_ACCOUNTS.ar, amount, 0));
+      else lines.push(line(cashAcc, amount, 0));
+      lines.push(line(AUTO_JOURNAL_ACCOUNTS.hotelRevenue, 0, amount));
+      break;
+    }
+    case 'Vehicle Expense':
+    case 'Fuel Log': {
+      lines.push(line(AUTO_JOURNAL_ACCOUNTS.vehicleExpense, amount, 0));
+      lines.push(line(cashAcc, 0, amount));
+      break;
+    }
+    case 'Project Expense': {
+      lines.push(line(AUTO_JOURNAL_ACCOUNTS.projectExpense, amount, 0));
+      lines.push(line(cashAcc, 0, amount));
+      break;
+    }
+    case 'Dealer Commission': {
+      lines.push(line(AUTO_JOURNAL_ACCOUNTS.dealerCommission, amount, 0));
+      lines.push(line(cashAcc, 0, amount));
+      break;
+    }
     case 'Sale': {
       // Dr Cash/Bank/AR / Cr Sales ; optional Dr COGS / Cr Inventory
       if (isStoreCredit) {

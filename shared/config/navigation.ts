@@ -127,7 +127,6 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         labelBn: 'কিচেন ডিসপ্লে',
         iconName: 'ChefHat',
         permission: 'pos.sell',
-        businessType: 'restaurant',
         badge: 'KOT',
         badgeColor: 'bg-emerald-100 text-emerald-800',
         description: 'Live kitchen order tickets for restaurants and cafes',

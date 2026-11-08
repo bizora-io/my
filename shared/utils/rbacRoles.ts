@@ -112,6 +112,7 @@ export const RBAC_ROLE_TEMPLATES: RbacRoleTemplate[] = [
     label: 'Kitchen',
     description: 'Kitchen order tickets and related sales view.',
     permissions: [
+      'pos.kitchen_display',
       'pos.view_sales',
       'pos.sell',
       'inventory.view',

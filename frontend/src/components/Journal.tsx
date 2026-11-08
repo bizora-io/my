@@ -12,12 +12,19 @@ const DEFAULT_ACCOUNTS: JournalAccount[] = [
   { id: 'a-1300', code: '1300', name: 'Inventory', type: 'Asset' },
   { id: 'a-2000', code: '2000', name: 'Accounts Payable', type: 'Liability' },
   { id: 'a-2100', code: '2100', name: 'Store Credit Liability', type: 'Liability' },
+  { id: 'a-2200', code: '2200', name: 'Bank Loans Payable', type: 'Liability' },
+  { id: 'a-2300', code: '2300', name: 'Provident Fund Liability', type: 'Liability' },
   { id: 'a-3000', code: '3000', name: 'Owner Equity', type: 'Equity' },
   { id: 'a-4000', code: '4000', name: 'Sales Revenue', type: 'Revenue' },
   { id: 'a-4100', code: '4100', name: 'Other Income', type: 'Revenue' },
+  { id: 'a-4200', code: '4200', name: 'Hospitality & Room Revenue', type: 'Revenue' },
   { id: 'a-5000', code: '5000', name: 'Cost of Goods Sold', type: 'Expense' },
   { id: 'a-5100', code: '5100', name: 'Operating Expense', type: 'Expense' },
   { id: 'a-5200', code: '5200', name: 'Salary Expense', type: 'Expense' },
+  { id: 'a-5300', code: '5300', name: 'Interest Expense', type: 'Expense' },
+  { id: 'a-5400', code: '5400', name: 'Vehicle & Transport Expense', type: 'Expense' },
+  { id: 'a-5500', code: '5500', name: 'Project & Milestone Expense', type: 'Expense' },
+  { id: 'a-5600', code: '5600', name: 'Dealer Sales Commission', type: 'Expense' },
 ];
 
 const emptyLine = (): JournalLine => ({

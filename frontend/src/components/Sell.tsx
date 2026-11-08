@@ -52,7 +52,8 @@ const Sell: React.FC = () => {
       serialNumbers: string[], warranty?: string, image?: string, category?: string
   }[]>([]);
 
-  const isRestaurant = isRestaurantType || cart.some(item => Boolean(products.find(p => p.id === item.id)?.kitchenStation));
+  const [showKitchenKot, setShowKitchenKot] = useState(false);
+  const isRestaurant = isRestaurantType || Boolean(bizSettings?.kitchenEnabled) || Boolean((user as any)?.kitchenEnabled) || cart.some(item => Boolean(products.find(p => p.id === item.id)?.kitchenStation)) || showKitchenKot;
   
   const [invoiceDate, setInvoiceDate] = useState(() => new Date().toISOString().split('T')[0]);
   
@@ -1285,6 +1286,19 @@ const Sell: React.FC = () => {
                             title="Export Cart"
                         >
                             <Download className="w-4 h-4" />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setShowKitchenKot(prev => !prev)}
+                            className={`text-xs font-bold px-3 py-1.5 rounded-full transition-colors flex items-center gap-1 ${
+                                showKitchenKot || isRestaurantType 
+                                    ? 'bg-orange-100 text-orange-700 hover:bg-orange-200' 
+                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                            }`}
+                            title="Kitchen Order Ticket (KOT)"
+                        >
+                            <ChefHat className="w-3.5 h-3.5" />
+                            <span>KOT</span>
                         </button>
                         <button 
                             type="button"
