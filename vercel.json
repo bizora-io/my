@@ -5,7 +5,11 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://backend-seven-azure-96.vercel.app/api/$1"
+      "destination": "/api/index"
+    },
+    {
+      "source": "/health",
+      "destination": "/api/index"
     },
     {
       "source": "/(.*)",
