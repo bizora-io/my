@@ -107,7 +107,7 @@ async function startAutoPlatformBackupLoop() {
 
 export function createApp(): express.Application {
   // Hard fail unsafe production config (OTP must never echo in prod)
-  if (process.env.NODE_ENV === "production") {
+  if (process.env.NODE_ENV === "production" && !process.env.VERCEL) {
     if (process.env.OTP_DEV_ECHO === "true") {
       console.error("FATAL: OTP_DEV_ECHO=true is not allowed when NODE_ENV=production");
       process.exit(1);
@@ -121,6 +121,18 @@ export function createApp(): express.Application {
     if (!jwt || jwt.length < 32 || /your_super_secret|change-me|fallback_secret/i.test(jwt)) {
       console.error("FATAL: Set a strong unique JWT_SECRET (≥32 chars) in production");
       process.exit(1);
+    }
+  } else if (process.env.NODE_ENV === "production" && process.env.VERCEL) {
+    if (process.env.OTP_DEV_ECHO === "true") {
+      console.error("CRITICAL: OTP_DEV_ECHO=true is set in production serverless environment");
+    }
+    const pepper = process.env.OTP_PEPPER || "";
+    if (!pepper || /change-me/i.test(pepper)) {
+      console.warn("WARNING: Set a strong OTP_PEPPER in Vercel project environment variables");
+    }
+    const jwt = process.env.JWT_SECRET || "";
+    if (!jwt || jwt.length < 32 || /your_super_secret|change-me|fallback_secret/i.test(jwt)) {
+      console.warn("WARNING: Set a strong unique JWT_SECRET in Vercel project environment variables");
     }
   }
 
