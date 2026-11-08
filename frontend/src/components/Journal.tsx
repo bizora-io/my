@@ -186,6 +186,10 @@ const Journal: React.FC = () => {
 
   const reverseJournalEntry = (e: JournalEntry) => {
     if (reverseInFlightRef.current) return;
+    if ((e as any).isVoid || (e as any).reversedBy) {
+      alert(language === 'bn' ? 'এই এন্ট্রিটি ইতিমধ্যে রিভার্স করা হয়েছে।' : 'This journal entry has already been reversed.');
+      return;
+    }
     if (!confirm(language === 'bn'
       ? `"${e.memo}" এর রিভার্সিং এন্ট্রি পোস্ট করবেন?`
       : `Post reversing entry for "${e.memo}"?`)) return;

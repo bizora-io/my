@@ -78,8 +78,149 @@ router.post("/", requirePermission("pos.sell", "pos.view_sales", "finance.expens
     });
 
     const docRef = id ? col.doc(id) : col.doc();
-    await docRef.set(payload);
-    const full = { id: docRef.id, ...payload };
+
+    // ATOMIC POS INVENTORY DEDUCTION & VALIDATION (P0 / BZ-F01)
+    // For Sale transactions with physical catalog items, verify and deduct stock atomically in Firestore
+    const isSale = String(payload.type || "").toLowerCase() === "sale";
+    const rawItems: any[] = Array.isArray(payload.items) ? payload.items : [];
+    const stockItems = rawItems.filter(
+      (it: any) => it && (it.productId || it.id) && Number(it.qty || it.quantity || 0) > 0
+    );
+
+    const db = getDb();
+
+    if (isSale && stockItems.length > 0 && payload.stockDeducted !== true) {
+      const updatedProductsSummary: { id: string; name: string; remainingStock: number }[] = [];
+
+      try {
+        await db.runTransaction(async (t) => {
+          // Idempotency re-check inside transaction lock
+          if (id) {
+            const checkFresh = await t.get(docRef);
+            if (checkFresh.exists) {
+              return;
+            }
+          }
+
+          // 1. Authoritative stock check across all items in sale
+          const deductions: {
+            ref: FirebaseFirestore.DocumentReference;
+            prodId: string;
+            prodName: string;
+            qty: number;
+            nextStock: number;
+            variants?: any[];
+          }[] = [];
+
+          for (const item of stockItems) {
+            const prodId = String(item.productId || item.id);
+            const qty = Math.max(0, Number(item.qty || item.quantity || 0));
+            const prodRef = db.collection("businesses").doc(businessId).collection("products").doc(prodId);
+            const prodSnap = await t.get(prodRef);
+
+            if (!prodSnap.exists) {
+              // Custom or non-catalog item
+              continue;
+            }
+
+            const prodData = prodSnap.data() || {};
+            if (prodData.isDeleted) {
+              const err: any = new Error(`Product "${prodData.name || prodId}" has been deleted.`);
+              err.code = "product_deleted";
+              throw err;
+            }
+            if (prodData.type === "Service") {
+              // Services don't decrement physical inventory
+              continue;
+            }
+
+            const variantId = item.variantId;
+            let currentStock = Number(prodData.stock) || 0;
+            let variants = Array.isArray(prodData.variants) ? [...prodData.variants] : undefined;
+
+            if (variantId && variants) {
+              const vIdx = variants.findIndex((v: any) => v.id === variantId || v.name === variantId);
+              if (vIdx >= 0) {
+                const vStock = Number(variants[vIdx].stock) || 0;
+                if (vStock < qty) {
+                  const err: any = new Error(
+                    `Insufficient stock for ${prodData.name} (${variants[vIdx].name || variantId}). Available: ${vStock}, requested: ${qty}`
+                  );
+                  err.code = "insufficient_stock";
+                  err.available = vStock;
+                  err.productId = prodId;
+                  throw err;
+                }
+                variants[vIdx] = {
+                  ...variants[vIdx],
+                  stock: vStock - qty,
+                };
+                currentStock = variants.reduce((acc: number, v: any) => acc + (Number(v.stock) || 0), 0);
+              }
+            } else {
+              if (currentStock < qty) {
+                const err: any = new Error(
+                  `Insufficient stock for "${prodData.name || prodId}". Available: ${currentStock}, requested: ${qty}`
+                );
+                err.code = "insufficient_stock";
+                err.available = currentStock;
+                err.productId = prodId;
+                throw err;
+              }
+              currentStock = currentStock - qty;
+            }
+
+            deductions.push({
+              ref: prodRef,
+              prodId,
+              prodName: prodData.name || prodId,
+              qty,
+              nextStock: currentStock,
+              variants,
+            });
+
+            updatedProductsSummary.push({
+              id: prodId,
+              name: prodData.name || prodId,
+              remainingStock: currentStock,
+            });
+          }
+
+          // 2. Perform atomic updates
+          for (const d of deductions) {
+            const updatePayload: Record<string, any> = {
+              stock: d.nextStock,
+              updatedAt: new Date().toISOString(),
+            };
+            if (d.variants) {
+              updatePayload.variants = d.variants;
+            }
+            t.update(d.ref, updatePayload);
+          }
+
+          // 3. Save sale record inside the same atomic commit
+          t.set(docRef, { ...payload, stockDeducted: true });
+        });
+      } catch (txErr: any) {
+        if (txErr.code === "insufficient_stock") {
+          return res.status(409).json({
+            error: txErr.message,
+            code: "insufficient_stock",
+            available: txErr.available,
+            productId: txErr.productId,
+          });
+        }
+        if (txErr.code === "product_deleted") {
+          return res.status(400).json({ error: txErr.message, code: "product_deleted" });
+        }
+        console.error("Atomic sale transaction failed:", txErr);
+        return res.status(500).json({ error: txErr.message || "Failed to process sale inventory atomically." });
+      }
+    } else {
+      await docRef.set(payload);
+    }
+
+    const full = { id: docRef.id, ...payload, stockDeducted: isSale ? true : payload.stockDeducted };
     // Outbound webhooks (non-blocking)
     const evt = payload.type === "Sale" ? "sale.created" : "transaction.created";
     dispatchWebhooks(businessId, evt as any, { transaction: full }).catch(() => {});

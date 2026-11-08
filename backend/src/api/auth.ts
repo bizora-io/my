@@ -70,7 +70,15 @@ router.post("/register", loginRateLimitGuard, async (req, res) => {
       return res.status(409).json({ error: "An account with this mobile number already exists." });
     }
 
-    const passwordHash = await bcrypt.hash(password, 10);
+    const cleanMobile = mobile.trim();
+    const digits = cleanMobile.replace(/\D/g, "");
+    const normalizedMobile = digits.startsWith("880")
+      ? "+" + digits
+      : digits.startsWith("01")
+        ? "+88" + digits
+        : cleanMobile;
+
+    const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
 
     const trialEnds = new Date();
     trialEnds.setDate(trialEnds.getDate() + 14);
@@ -78,7 +86,8 @@ router.post("/register", loginRateLimitGuard, async (req, res) => {
       name: name || businessName,
       businessName,
       email: email.toLowerCase(),
-      mobile,
+      mobile: cleanMobile,
+      normalizedMobile,
       ...(firebaseUid ? { firebaseUid: String(firebaseUid) } : {}),
       phoneVerified: true,
       businessType: businessType || "Retail",
@@ -151,21 +160,33 @@ router.post("/login", loginRateLimitGuard, async (req, res) => {
     const cleanIdentifier = identifier.trim();
 
     let snapshot = await users.where("email", "==", cleanIdentifier.toLowerCase()).limit(1).get();
+
+    // Indexed equality & union lookups for mobile variants (BZ-F02 - ZERO unindexed full collection scans)
     if (snapshot.empty) {
-      snapshot = await users.where("mobile", "==", cleanIdentifier).limit(1).get();
-    }
-    // Digit-only mobile variants (e.g. 018... vs +88018...)
-    if (snapshot.empty) {
-      const digits = cleanIdentifier.replace(/\D/g, "");
-      if (digits.length >= 10) {
-        const all = await users.get();
-        const hit = all.docs.find((d) => {
-          const m = String(d.data()?.mobile || "").replace(/\D/g, "");
-          return m === digits || m.endsWith(digits) || digits.endsWith(m);
-        });
-        if (hit) {
-          snapshot = { empty: false, docs: [hit] } as any;
+      const cleanDigits = cleanIdentifier.replace(/\D/g, "");
+      const variants = new Set<string>();
+      variants.add(cleanIdentifier);
+      if (cleanDigits.length >= 10) {
+        variants.add(cleanDigits);
+        variants.add("+" + cleanDigits);
+        if (cleanDigits.startsWith("01") && cleanDigits.length === 11) {
+          variants.add("+88" + cleanDigits);
+          variants.add("88" + cleanDigits);
+          variants.add(cleanDigits.slice(1));
+        } else if (cleanDigits.startsWith("1") && cleanDigits.length === 10) {
+          variants.add("0" + cleanDigits);
+          variants.add("+880" + cleanDigits);
+          variants.add("880" + cleanDigits);
+        } else if (cleanDigits.startsWith("880") && cleanDigits.length === 13) {
+          variants.add("+" + cleanDigits);
+          variants.add("0" + cleanDigits.slice(3));
+          variants.add(cleanDigits.slice(3));
         }
+      }
+      const variantList = Array.from(variants).slice(0, 10);
+      snapshot = await users.where("mobile", "in", variantList).limit(1).get();
+      if (snapshot.empty) {
+        snapshot = await users.where("normalizedMobile", "in", variantList).limit(1).get();
       }
     }
 

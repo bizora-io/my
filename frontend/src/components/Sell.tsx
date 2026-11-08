@@ -987,7 +987,7 @@ const Sell: React.FC = () => {
       };
 
       const saleItems = cart.map(c => {
-        const lotLines = updateProductStock(c.id, c.qty, 'decrease', (c as any).variantId) || [];
+        const lotLines = updateProductStock(c.id, c.qty, 'decrease', (c as any).variantId, { skipBackendSync: true }) || [];
         const primary = lotLines[0];
         const prod = products.find((p) => p.id === c.id);
         let usedSerials: string[] | undefined;

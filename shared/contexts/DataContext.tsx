@@ -759,7 +759,7 @@ interface DataContextType {
   
   addProduct: (product: Product) => void;
   updateProduct: (id: string, data: Partial<Product>) => void;
-  updateProductStock: (id: string, qty: number, type: 'increase' | 'decrease', variantId?: string, opts?: { lots?: { lotNumber: string; qty: number; expiryDate?: string; warehouseId?: string }[]; lotNumber?: string; expiryDate?: string; warehouseId?: string }) => { lotNumber: string; qty: number; expiryDate?: string; warehouseId?: string }[] | void;
+  updateProductStock: (id: string, qty: number, type: 'increase' | 'decrease', variantId?: string, opts?: { lots?: { lotNumber: string; qty: number; expiryDate?: string; warehouseId?: string }[]; lotNumber?: string; expiryDate?: string; warehouseId?: string; skipBackendSync?: boolean }) => { lotNumber: string; qty: number; expiryDate?: string; warehouseId?: string }[] | void;
   refreshProducts: () => Promise<any[] | void>;
   lastProductsSyncAt: string | null;
   productsRealtimeActive: boolean;
@@ -1871,7 +1871,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     qty: number,
     type: 'increase' | 'decrease',
     variantId?: string,
-    opts?: { lots?: { lotNumber: string; qty: number; expiryDate?: string; warehouseId?: string }[]; lotNumber?: string; expiryDate?: string; warehouseId?: string }
+    opts?: { lots?: { lotNumber: string; qty: number; expiryDate?: string; warehouseId?: string }[]; lotNumber?: string; expiryDate?: string; warehouseId?: string; skipBackendSync?: boolean }
   ) => {
     let fefoLines: any[] | undefined;
     setProducts(prev => prev.map(p => {
@@ -2026,7 +2026,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
     }));
 
-    if (hasAuthToken()) {
+    if (hasAuthToken() && !opts?.skipBackendSync) {
       const current = products.find(p => p.id === id);
       if (current) {
         // Prefer FEFO commit on server for non-variant decreases
@@ -2825,6 +2825,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       if (type === 'transaction') {
           const tx = transactions.find(t => t.id === id);
+          if (tx && tx.isDeleted) {
+              return; // Already deleted/reversed; prevent duplicate execution
+          }
           if (tx && !tx.isDeleted && tx.accountId && tx.paymentMethod !== 'Due') {
               let balanceChange = 0;
               const amount = tx.amountPaid ?? tx.amount;
@@ -2838,7 +2841,45 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   ));
               }
           }
+
+          // Double-Entry Accounting Reversal (BZ-F08)
+          // Generates balanced immutable offsetting debit/credit lines in General Ledger
+          const targetJe = journalEntries.find(
+            (j) => (j as any).sourceTransactionId === id || j.id === `je-${id}` || (j as any).reference === id
+          );
+          if (targetJe && !(targetJe as any).isVoid) {
+            const reversalEntry: any = {
+              id: `je-rev-${id}-${Date.now()}`,
+              date: new Date().toISOString().slice(0, 10),
+              memo: `[REVERSAL] Reversal of ${targetJe.memo || 'Transaction ' + id}`,
+              reference: `REV-${targetJe.reference || id}`,
+              lines: targetJe.lines.map((l: any) => ({
+                accountId: l.accountId,
+                accountCode: l.accountCode,
+                accountName: l.accountName,
+                debit: Number(l.credit) || 0,
+                credit: Number(l.debit) || 0,
+              })),
+              createdAt: new Date().toISOString(),
+              isPosted: true,
+              sourceTransactionId: `${id}-reversal`,
+              reversalOf: targetJe.id,
+              autoPosted: true,
+            };
+            addJournalEntry(reversalEntry);
+            setJournalEntries((prev) =>
+              prev.map((j) => (j.id === targetJe.id ? { ...j, isVoid: true, reversedBy: reversalEntry.id } : j))
+            );
+          }
+
           setTransactions(prev => prev.map(t => t.id === id ? { ...t, isDeleted: true } : t));
+
+          if (hasAuthToken()) {
+            authFetch(`/api/transactions/${id}`, {
+              method: 'PATCH',
+              body: JSON.stringify({ isDeleted: true }),
+            }).catch((err) => console.warn('Transaction deletion backend sync failed:', err));
+          }
       }
       logAction('System', 'Delete Item', `Deleted ${type} ID: ${id}`);
   };
@@ -4141,6 +4182,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const deleteJournalEntry = (id: string) => {
+    // Financial Immutability: Posted journal entries cannot be directly deleted
+    const target = journalEntries.find(e => e.id === id);
+    if (target && target.isPosted && !target.isVoid) {
+      console.warn("Direct deletion of posted journal entry is prohibited. Use reversal instead.");
+      return;
+    }
     setJournalEntries(prev => prev.filter(e => e.id !== id));
     if (hasAuthToken()) {
       authFetch(`/api/journal-entries/${id}`, { method: 'DELETE' })

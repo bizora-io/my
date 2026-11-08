@@ -38,6 +38,7 @@ import subscriptionMigrationsRouter from "./src/api/subscriptionMigrations.js";
 import invoiceTemplatesRouter from "./src/api/invoiceTemplates.js";
 import notificationsRouter from "./src/api/notifications.js";
 import warehousesRouter from "./src/api/warehouses.js";
+import storesRouter from "./src/api/stores.js";
 import { giftCardsRouter } from "./src/api/giftCards.js";
 import backupsRouter from "./src/api/backups.js";
 import { payrollRunsRouter } from "./src/api/payroll.js";
@@ -113,23 +114,13 @@ export function createApp(): express.Application {
     }
     const pepper = process.env.OTP_PEPPER || "";
     if (!pepper || /change-me/i.test(pepper)) {
-      if (process.env.VERCEL) {
-        console.warn("[WARNING] OTP_PEPPER not set in Vercel. Using temporary secure fallback.");
-        process.env.OTP_PEPPER = "bizora-prod-otp-pepper-auto-secure-fallback-2026";
-      } else {
-        console.error("FATAL: Set a strong OTP_PEPPER in production (not default/change-me)");
-        process.exit(1);
-      }
+      console.error("FATAL: Set a strong OTP_PEPPER in production (not default/change-me)");
+      process.exit(1);
     }
     const jwt = process.env.JWT_SECRET || "";
     if (!jwt || jwt.length < 32 || /your_super_secret|change-me|fallback_secret/i.test(jwt)) {
-      if (process.env.VERCEL) {
-        console.warn("[WARNING] JWT_SECRET not set in Vercel. Using temporary secure fallback.");
-        process.env.JWT_SECRET = "bizora-prod-jwt-secret-auto-secure-fallback-2026-key";
-      } else {
-        console.error("FATAL: Set a strong unique JWT_SECRET (≥32 chars) in production");
-        process.exit(1);
-      }
+      console.error("FATAL: Set a strong unique JWT_SECRET (≥32 chars) in production");
+      process.exit(1);
     }
   }
 
@@ -257,6 +248,7 @@ export function createApp(): express.Application {
   app.use("/api/auth", saasAuthRouter);
   app.use("/api/products", productsRouter);
   app.use("/api/warehouses", warehousesRouter);
+  app.use("/api/stores", storesRouter);
   app.use("/api/gift-cards", giftCardsRouter);
   app.use("/api/backups", backupsRouter);
   app.use("/api/payroll-runs", payrollRunsRouter);
