@@ -101,8 +101,18 @@ export async function sendEmailResend(to: string, subject: string, text: string)
   });
   if (!res.ok) {
     const textBody = await res.text().catch(() => "");
+    let detail = "";
+    try {
+      const parsed = JSON.parse(textBody);
+      detail = parsed.message || parsed.error || "";
+    } catch {
+      detail = textBody.slice(0, 150);
+    }
     console.error("[notify] Resend error:", res.status, textBody.slice(0, 300));
-    return { ok: false, error: `Email send failed (${res.status}).` };
+    if (res.status === 403 && /resend\.dev|domain restriction/i.test(textBody)) {
+      console.warn("[notify] Resend sandbox restriction: onboarding@resend.dev can only send to the Resend account owner email. Verify a custom domain in Resend and update EMAIL_FROM.");
+    }
+    return { ok: false, error: detail ? `Email send failed (${res.status}): ${detail}` : `Email send failed (${res.status}).` };
   }
   return { ok: true };
 }
