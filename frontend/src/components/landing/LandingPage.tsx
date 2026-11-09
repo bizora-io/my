@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Navbar } from './Navbar';
 import { HeroSection } from './HeroSection';
-import { CoreFeaturesSection } from './CoreFeaturesSection';
+import { CoreFeaturesSection, FeatureTabId } from './CoreFeaturesSection';
 import { ProductPreviewSection } from './ProductPreviewSection';
 import { IndustrySolutionsSection } from './IndustrySolutionsSection';
 import { WorkflowSection } from './WorkflowSection';
 import { PricingSection } from './PricingSection';
 import { FaqSection } from './FaqSection';
+import { ContactSection } from './ContactSection';
 import { FooterSection } from './FooterSection';
 import { ScrollToTop } from './ScrollToTop';
 
@@ -171,7 +172,21 @@ export const formatPlanLimit = (plan: any, prop: string, isBn: boolean, unit = '
 };
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) => {
+  // Theme System (Light Mode vs Dark Mode)
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    try {
+      const saved = localStorage.getItem('bizora_theme');
+      if (saved === 'light' || saved === 'dark') return saved;
+      if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+        return 'light';
+      }
+    } catch {}
+    return 'dark';
+  });
+
   const [isBn, setIsBn] = useState<boolean>(false);
+  const [activeFeatureTab, setActiveFeatureTab] = useState<FeatureTabId>('pos');
+  const [selectedIndustry, setSelectedIndustry] = useState<string>('retail');
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [plans, setPlans] = useState<any[]>(FALLBACK_PLANS);
   const [isPlansLoading, setIsPlansLoading] = useState<boolean>(true);
@@ -199,6 +214,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) =>
     });
   };
 
+  const toggleTheme = () => {
+    setTheme((prev) => {
+      const next = prev === 'dark' ? 'light' : 'dark';
+      try {
+        localStorage.setItem('bizora_theme', next);
+      } catch {}
+      return next;
+    });
+  };
+
   // Open legal modal with target document
   const openLegalModal = (doc: LegalDocType, e?: React.MouseEvent) => {
     if (e) e.preventDefault();
@@ -206,7 +231,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) =>
     setLegalModalOpen(true);
   };
 
-  // Listen to hash changes for legal deep linking (#privacy, #terms, etc.)
+  // Listen to hash changes for deep linking
   useEffect(() => {
     const handleHash = () => {
       const hash = window.location.hash.toLowerCase().replace('#/', '#');
@@ -310,12 +335,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) =>
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500/30 selection:text-emerald-200">
+    <div className={`min-h-screen flex flex-col font-sans transition-colors duration-200 selection:bg-emerald-500/30 selection:text-emerald-700 dark:selection:text-emerald-200 ${
+      theme === 'light' ? 'bg-slate-50 text-slate-900 light' : 'bg-slate-950 text-slate-100 dark'
+    }`}>
       {/* Dynamic SEO Meta Tags & JSON-LD Structured Data */}
       <SEOHead
         title={
           isBn
-            ? 'বিজোরা ইআরপি ও পিওএস — আধুনিক রিটেল ও মাল্টি-ব্রাঞ্চ বিজনেসের স্মার্ট সমাধান'
+            ? 'বিজোরা ইআরপি ও পিওএস — আধুনিক রিটেল ও মাল্টি-ব্রাঞ্চ বাণিজ্যের ক্লাউড প্ল্যাটফর্ম'
             : 'Bizora ERP & POS — Intelligent Cloud Platform for Retail & Multi-Branch Commerce'
         }
         description={
@@ -327,44 +354,56 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) =>
         canonicalUrl="https://bizora-app-io.vercel.app/"
       />
 
-      {/* 0. Sticky Global Header */}
+      {/* 0. Sticky Global Header with Day/Night Theme Switcher */}
       <Navbar
         isBn={isBn}
+        theme={theme}
         onToggleLang={toggleLanguage}
+        onToggleTheme={toggleTheme}
         onPortalClick={handlePortalClick}
       />
 
       <main className="flex-1">
-        {/* 1. Hero & Value Proposition */}
+        {/* 1. Hero & Interactive 3D WebGL Canvas + Authentic Terminal */}
         <HeroSection
           isBn={isBn}
+          theme={theme}
           onPortalClick={handlePortalClick}
         />
 
-        {/* 2. Interactive Core Features (5 Pillars) */}
+        {/* 2. Interactive Core Features (5 Pillars with Tab State Control) */}
         <CoreFeaturesSection
           isBn={isBn}
+          theme={theme}
+          activeTab={activeFeatureTab}
+          onTabChange={setActiveFeatureTab}
         />
 
-        {/* 3. Authentic Product Interface Preview */}
+        {/* 3. Authentic Product Interface Walkthrough */}
         <ProductPreviewSection
           isBn={isBn}
+          theme={theme}
         />
 
-        {/* 4. Tailored Industry Solutions */}
+        {/* 4. Tailored Industry Solutions (With Deep Linking) */}
         <IndustrySolutionsSection
           isBn={isBn}
+          theme={theme}
+          selectedIndustry={selectedIndustry}
+          onSelectIndustry={setSelectedIndustry}
           onPortalClick={handlePortalClick}
         />
 
         {/* 5. 5-Step Operational Pipeline */}
         <WorkflowSection
           isBn={isBn}
+          theme={theme}
         />
 
         {/* 6. Transparent Dynamic Pricing */}
         <PricingSection
           isBn={isBn}
+          theme={theme}
           plans={plans}
           isLoading={isPlansLoading}
           billingCycle={billingCycle}
@@ -376,19 +415,31 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigatePortal }) =>
         {/* 7. Business & Technical FAQ */}
         <FaqSection
           isBn={isBn}
+          theme={theme}
+        />
+
+        {/* 8. Dedicated Contact & Onboarding Assistance */}
+        <ContactSection
+          isBn={isBn}
+          theme={theme}
+          onPortalClick={handlePortalClick}
         />
       </main>
 
-      {/* 8. Comprehensive Enterprise Footer */}
+      {/* 9. Comprehensive Enterprise Footer (With Active Deep-Link Handlers) */}
       <FooterSection
         isBn={isBn}
+        theme={theme}
         onOpenLegal={openLegalModal}
+        onSelectFeatureTab={(tab) => setActiveFeatureTab(tab)}
+        onSelectIndustry={(ind) => setSelectedIndustry(ind)}
         onPortalClick={handlePortalClick}
       />
 
       {/* Global Utilities */}
       <ScrollToTop
         isBn={isBn}
+        theme={theme}
       />
 
       {/* Plan Details Modal */}

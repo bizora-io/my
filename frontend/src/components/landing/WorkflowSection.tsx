@@ -6,9 +6,12 @@ import {
 
 interface WorkflowSectionProps {
   isBn: boolean;
+  theme: 'light' | 'dark';
 }
 
-export const WorkflowSection: React.FC<WorkflowSectionProps> = ({ isBn }) => {
+export const WorkflowSection: React.FC<WorkflowSectionProps> = ({ isBn, theme }) => {
+  const isLight = theme === 'light';
+
   const steps = [
     {
       num: '01',
@@ -53,20 +56,29 @@ export const WorkflowSection: React.FC<WorkflowSectionProps> = ({ isBn }) => {
   ];
 
   return (
-    <section className="py-20 sm:py-28 border-t border-slate-800/80 bg-slate-900/40">
+    <section 
+      id="workflow" 
+      className={`py-20 sm:py-28 border-t transition-colors duration-200 ${
+        isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-slate-900/40 border-slate-800/80 text-white'
+      }`}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-14 sm:mb-16">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 mb-4">
+          <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold mb-4 border ${
+            isLight
+              ? 'bg-blue-50 text-blue-800 border-blue-200'
+              : 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+          }`}>
             <CheckCircle2 className="w-3.5 h-3.5" />
             <span>{isBn ? 'সহজ ৫-ধাপের বাস্তবায়ন' : '5-Step Implementation Pipeline'}</span>
           </div>
-          <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight mb-4">
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-4">
             {isBn
               ? 'প্রথম দিন থেকেই নির্বিঘ্ন অপারেশন'
               : 'From Setup to Counter Billing in Hours, Not Weeks'}
           </h2>
-          <p className="text-base sm:text-lg text-slate-400">
+          <p className={`text-base sm:text-lg ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
             {isBn
               ? 'জটিল কনফিগারেশন ছাড়াই আধুনিক রিটেল ও ডিস্ট্রিবিউশন ওয়ার্কফ্লো বাস্তবায়ন করুন।'
               : 'Replace disjointed spreadsheets and fragile software with a clear, reliable operational pipeline.'}
@@ -80,28 +92,40 @@ export const WorkflowSection: React.FC<WorkflowSectionProps> = ({ isBn }) => {
             return (
               <div
                 key={idx}
-                className="relative rounded-2xl border border-slate-800 bg-slate-950/80 p-6 flex flex-col justify-between hover:border-slate-700 transition-all group"
+                className={`relative rounded-2xl border p-6 flex flex-col justify-between transition-all group ${
+                  isLight
+                    ? 'bg-slate-50 border-slate-200 hover:border-slate-300 hover:bg-white shadow-sm hover:shadow-md'
+                    : 'bg-slate-950/80 border-slate-800 hover:border-slate-700'
+                }`}
               >
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <span className="text-2xl font-black text-slate-700 font-mono group-hover:text-emerald-400 transition-colors">
+                    <span className={`text-2xl font-black font-mono transition-colors ${
+                      isLight ? 'text-slate-400 group-hover:text-emerald-600' : 'text-slate-700 group-hover:text-emerald-400'
+                    }`}>
                       {st.num}
                     </span>
-                    <div className="w-9 h-9 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-300 group-hover:text-emerald-400 group-hover:border-emerald-500/30 transition-all">
+                    <div className={`w-9 h-9 rounded-lg border flex items-center justify-center transition-all ${
+                      isLight
+                        ? 'bg-white border-slate-200 text-slate-700 group-hover:text-emerald-600 group-hover:border-emerald-300'
+                        : 'bg-slate-900 border-slate-800 text-slate-300 group-hover:text-emerald-400 group-hover:border-emerald-500/30'
+                    }`}>
                       <Icon className="w-4 h-4" />
                     </div>
                   </div>
 
-                  <h3 className="text-base font-bold text-white mb-2">
+                  <h3 className={`text-base font-bold mb-2 ${isLight ? 'text-slate-900' : 'text-white'}`}>
                     {st.title}
                   </h3>
 
-                  <p className="text-xs text-slate-400 leading-relaxed">
+                  <p className={`text-xs leading-relaxed ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
                     {st.desc}
                   </p>
                 </div>
 
-                <div className="pt-4 mt-4 border-t border-slate-900 text-[11px] text-emerald-400/90 font-mono flex items-center gap-1">
+                <div className={`pt-4 mt-4 border-t text-[11px] font-mono font-bold flex items-center gap-1 ${
+                  isLight ? 'border-slate-200 text-emerald-700' : 'border-slate-900 text-emerald-400'
+                }`}>
                   <span>{isBn ? 'ধাপ সম্পূর্ণ' : 'Ready out-of-the-box'}</span>
                 </div>
               </div>

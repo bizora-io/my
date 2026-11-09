@@ -3,10 +3,12 @@ import { HelpCircle, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface FaqSectionProps {
   isBn: boolean;
+  theme: 'light' | 'dark';
 }
 
-export const FaqSection: React.FC<FaqSectionProps> = ({ isBn }) => {
+export const FaqSection: React.FC<FaqSectionProps> = ({ isBn, theme }) => {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
+  const isLight = theme === 'light';
 
   const faqs = [
     {
@@ -58,18 +60,27 @@ export const FaqSection: React.FC<FaqSectionProps> = ({ isBn }) => {
   };
 
   return (
-    <section id="faq" className="py-20 sm:py-28 border-t border-slate-800/80 bg-slate-900/30">
+    <section 
+      id="faq" 
+      className={`py-20 sm:py-28 border-t transition-colors duration-200 ${
+        isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-slate-900/30 border-slate-800/80 text-white'
+      }`}
+    >
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-12 sm:mb-16">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mb-4">
+          <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold mb-4 border ${
+            isLight
+              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+              : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+          }`}>
             <HelpCircle className="w-3.5 h-3.5" />
             <span>{isBn ? 'সাধারণ প্রশ্নোত্তর' : 'Frequently Asked Questions'}</span>
           </div>
-          <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight mb-4">
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-4">
             {isBn ? 'সচরাচর জিজ্ঞাসিত প্রশ্নসমূহ' : 'Clear Answers to Business & Technical Questions'}
           </h2>
-          <p className="text-base text-slate-400">
+          <p className={`text-base ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
             {isBn
               ? 'বিজোরা প্ল্যাটফর্ম নিয়ে আপনার যাবতীয় প্রশ্নের সহজ ও সঠিক উত্তর।'
               : 'Everything you need to know about adoption, offline resilience, and multi-tenant security.'}
@@ -83,7 +94,11 @@ export const FaqSection: React.FC<FaqSectionProps> = ({ isBn }) => {
             return (
               <div
                 key={idx}
-                className="rounded-2xl border border-slate-800/80 bg-slate-950/80 overflow-hidden transition-colors"
+                className={`rounded-2xl border transition-colors overflow-hidden ${
+                  isLight
+                    ? 'bg-slate-50 border-slate-200'
+                    : 'bg-slate-950/80 border-slate-800/80'
+                }`}
               >
                 <button
                   type="button"
@@ -91,16 +106,20 @@ export const FaqSection: React.FC<FaqSectionProps> = ({ isBn }) => {
                   className="w-full px-6 py-5 text-left flex items-center justify-between gap-4 focus:outline-none focus:ring-1 focus:ring-emerald-500/50"
                   aria-expanded={isOpen}
                 >
-                  <span className="text-base font-semibold text-white">
+                  <span className={`text-base font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
                     {faq.q}
                   </span>
-                  <div className="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center shrink-0 text-slate-400">
-                    {isOpen ? <ChevronUp className="w-4 h-4 text-emerald-400" /> : <ChevronDown className="w-4 h-4" />}
+                  <div className={`w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 ${
+                    isLight ? 'bg-white border-slate-200 text-slate-700' : 'bg-slate-900 border-slate-800 text-slate-400'
+                  }`}>
+                    {isOpen ? <ChevronUp className="w-4 h-4 text-emerald-600" /> : <ChevronDown className="w-4 h-4" />}
                   </div>
                 </button>
 
                 {isOpen && (
-                  <div className="px-6 pb-6 pt-1 text-sm text-slate-300 leading-relaxed border-t border-slate-900">
+                  <div className={`px-6 pb-6 pt-1 text-sm leading-relaxed border-t ${
+                    isLight ? 'border-slate-200 text-slate-700' : 'border-slate-900 text-slate-300'
+                  }`}>
                     {faq.a}
                   </div>
                 )}

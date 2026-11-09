@@ -7,13 +7,21 @@ import { PortalType } from '../../lib/domainRouter';
 
 interface IndustrySolutionsSectionProps {
   isBn: boolean;
+  theme: 'light' | 'dark';
+  selectedIndustry?: string;
+  onSelectIndustry?: (id: string) => void;
   onPortalClick: (portal: PortalType, e: React.MouseEvent, params?: { plan?: string; billing?: string; mode?: 'login' | 'register' }) => void;
 }
 
 export const IndustrySolutionsSection: React.FC<IndustrySolutionsSectionProps> = ({
   isBn,
+  theme,
+  selectedIndustry,
+  onSelectIndustry,
   onPortalClick,
 }) => {
+  const isLight = theme === 'light';
+
   const industries = [
     {
       id: 'retail',
@@ -138,20 +146,29 @@ export const IndustrySolutionsSection: React.FC<IndustrySolutionsSectionProps> =
   ];
 
   return (
-    <section id="solutions" className="py-20 sm:py-28 border-t border-slate-800/80 bg-slate-950">
+    <section 
+      id="solutions" 
+      className={`py-20 sm:py-28 border-t transition-colors duration-200 ${
+        isLight ? 'bg-slate-50 border-slate-200 text-slate-900' : 'bg-slate-950 border-slate-800/80 text-white'
+      }`}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-14 sm:mb-16">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mb-4">
+          <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold mb-4 border ${
+            isLight
+              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+              : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+          }`}>
             <Store className="w-3.5 h-3.5" />
             <span>{isBn ? 'ব্যবসায়িক সমাধান' : 'Tailored Industry Solutions'}</span>
           </div>
-          <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight mb-4">
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-4">
             {isBn
               ? 'আপনার ব্যবসার নির্দিষ্ট চাহিদায় বিশেষভাবে উপযোগী'
               : 'Engineered for the Exact Demands of Your Trade'}
           </h2>
-          <p className="text-base sm:text-lg text-slate-400">
+          <p className={`text-base sm:text-lg ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
             {isBn
               ? 'সাধারণ কোনো টেমপ্লেট নয়। রিটেল, ফার্মেসি, গ্রোসারি কিংবা ফ্যাশন—প্রতিটি বাণিজ্যের রয়েছে নিজস্ব বিশেষায়িত ওয়ার্কফ্লো।'
               : 'Generic accounting software fails modern commerce. Bizora adapts to the specific compliance and checkout flows of your industry.'}
@@ -162,43 +179,62 @@ export const IndustrySolutionsSection: React.FC<IndustrySolutionsSectionProps> =
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
           {industries.map((ind) => {
             const Icon = ind.icon;
+            const isHighlighted = selectedIndustry === ind.id;
+
             return (
               <div
                 key={ind.id}
-                className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-6 sm:p-8 backdrop-blur-sm hover:border-slate-700 hover:bg-slate-900/90 transition-all duration-200 flex flex-col justify-between group"
+                id={`industry-${ind.id}`}
+                onClick={() => onSelectIndustry && onSelectIndustry(ind.id)}
+                className={`rounded-2xl border p-6 sm:p-8 transition-all duration-200 flex flex-col justify-between group cursor-pointer ${
+                  isHighlighted
+                    ? isLight
+                      ? 'bg-white border-emerald-500 ring-2 ring-emerald-500/20 shadow-lg'
+                      : 'bg-slate-900 border-emerald-500 ring-1 ring-emerald-500/30 shadow-2xl'
+                    : isLight
+                    ? 'bg-white border-slate-200 hover:border-slate-300 shadow-sm hover:shadow-md'
+                    : 'bg-slate-900/60 border-slate-800 hover:border-slate-700 hover:bg-slate-900/90'
+                }`}
               >
                 <div>
-                  <div className="w-12 h-12 rounded-xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-center text-emerald-400 mb-5 group-hover:scale-105 group-hover:bg-emerald-500/10 transition-all">
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-5 transition-all ${
+                    isLight 
+                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 group-hover:bg-emerald-100' 
+                      : 'bg-slate-800/80 text-emerald-400 border border-slate-700/60 group-hover:scale-105 group-hover:bg-emerald-500/10'
+                  }`}>
                     <Icon className="w-6 h-6" />
                   </div>
 
-                  <span className="text-[11px] font-semibold tracking-wider uppercase text-emerald-400/90 font-mono">
+                  <span className="text-[11px] font-bold tracking-wider uppercase text-emerald-600 font-mono">
                     {ind.tag}
                   </span>
 
-                  <h3 className="text-xl font-bold text-white mt-1 mb-3">
+                  <h3 className={`text-xl font-bold mt-1 mb-3 ${isLight ? 'text-slate-900' : 'text-white'}`}>
                     {ind.title}
                   </h3>
 
-                  <p className="text-sm text-slate-300 leading-relaxed mb-6">
+                  <p className={`text-sm leading-relaxed mb-6 ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>
                     {ind.desc}
                   </p>
 
-                  <div className="space-y-2.5 pt-4 border-t border-slate-800/80">
+                  <div className={`space-y-2.5 pt-4 border-t ${isLight ? 'border-slate-200' : 'border-slate-800/80'}`}>
                     {ind.bullets.map((bullet, idx) => (
-                      <div key={idx} className="flex items-start gap-2.5 text-xs text-slate-400">
-                        <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
-                        <span>{bullet}</span>
+                      <div key={idx} className="flex items-start gap-2.5 text-xs">
+                        <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                        <span className={isLight ? 'text-slate-700' : 'text-slate-400'}>{bullet}</span>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div className="pt-6 mt-6 border-t border-slate-800/60">
+                <div className={`pt-6 mt-6 border-t ${isLight ? 'border-slate-200' : 'border-slate-800/60'}`}>
                   <button
                     type="button"
-                    onClick={(e) => onPortalClick('shop', e, { plan: 'trial', mode: 'register' })}
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onPortalClick('shop', e, { plan: 'trial', mode: 'register' });
+                    }}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 hover:text-emerald-500 transition-colors"
                   >
                     <span>{isBn ? 'এই সলিউশনটি শুরু করুন' : 'Launch for this industry'}</span>
                     <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
